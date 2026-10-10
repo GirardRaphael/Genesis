@@ -99,6 +99,8 @@ Date basis: America/Toronto, 2026-10-10. Records summarize actual actions; futur
 
 | A079 | Independent budget-email verifier, assigned gpt-6-astra/high; lead | Approved frozen local U13 implementation and architecture decision D31 | Normalized-LF manifest23 material files SHA256 fd9c4b1f082d82d3517b870240de345dd149ea773dba3e623d82e7a303047b27. Independent final48 notification/API/wire and20 runtime/usage/SDK checks passed; evidence and docs matched. No local blocker; external SMTP/recipient remains missing and no inbox claim is approved. Only publication metadata may follow without material rereview |
 
+| A080 | Lead | Verified23 staged material hashes,27 staged paths/known credential patterns/whitespace, ignored .env and actual remote; committed/pushed reviewed U13 normally | Commitf2502eb pushed to origin/codex/logistics-implementation. No force push, external email, new account or model-provider call. Only this publication record follows the approved source; recipient/SMTP setup is still pending operator input |
+
 ## Verification and publishing records
 
 Records are appended after execution. Historical planning entries describe their state at the time; implementation and paid API evidence appears in A037 onwards.
