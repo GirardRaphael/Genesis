@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowRight,
   Clock3,
@@ -16,9 +16,11 @@ import {
 import { api } from "./api";
 import { BrokerPlanning } from "./BrokerPlanning";
 import { DispatchMap, dispatchColor } from "./DispatchMap";
+import { RouteLibrary } from "./RouteLibrary";
 import type {
   BrokerDelivery,
   DispatchTrip,
+  DispatchPreview,
   GeocodeResult,
   Place,
   Traffic,
@@ -108,14 +110,35 @@ export function Dispatch() {
   const [vehicle, setVehicle] = useState("van1");
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
-  const [depot, setDepot] = useState<Place | null>(EXAMPLE[0].pickup);
+  const [depot, setDepot] = useState<Place | null>(null);
   const [parcels, setParcels] = useState(1);
   const [deadline, setDeadline] = useState(120);
   const [draft, setDraft] = useState<BrokerDelivery[]>([]);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [preview, setPreview] = useState<DispatchPreview | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const previewRequest = useRef<AbortController | null>(null);
+  const draftSnapshot = useRef(draft);
+  draftSnapshot.current = draft;
+  const [showPreview, setShowPreview] = useState(true);
+  const [showTrips, setShowTrips] = useState(true);
+  const [tripFilter, setTripFilter] = useState("all");
+  const [mapTarget, setMapTarget] = useState<"selected" | "draft" | "all">(
+    "selected",
+  );
   const [traffic, setTraffic] = useState<Traffic | null>(null);
   const [trafficError, setTrafficError] = useState("");
   const [showRoadworks, setShowRoadworks] = useState(false);
   const [trafficRefresh, setTrafficRefresh] = useState(0);
+
+  useEffect(() => {
+    previewRequest.current?.abort();
+    setPreview(null);
+    setPreviewError("");
+    setPreviewBusy(false);
+    return () => previewRequest.current?.abort();
+  }, [draft]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -175,13 +198,77 @@ export function Dispatch() {
   const chosen = trips.find((trip) => trip.id === selected);
   const selectTrip = (id: string) => {
     setSelected(id);
+    setShowTrips(true);
+    setTripFilter("all");
+    setMapTarget("selected");
     setMapFocus((n) => n + 1);
   };
   const active = trips.filter((trip) => trip.status === "running").length;
   const planned = trips.filter((trip) => trip.status === "ready").length;
+  const visibleTrips = trips.filter(
+    (trip) => tripFilter === "all" || trip.status === tripFilter,
+  );
+  const draftPlaces = [
+    ...draft.flatMap((delivery, index) => [
+      {
+        ...delivery.pickup,
+        label: `${index + 1}. Ramassage · ${delivery.pickup.label}`,
+      },
+      {
+        ...delivery.dropoff,
+        label: `${index + 1}. Livraison · ${delivery.dropoff.label}`,
+      },
+    ]),
+    ...(pickup
+      ? [{ ...pickup, label: `Saisie · Ramassage · ${pickup.label}` }]
+      : []),
+    ...(dropoff
+      ? [{ ...dropoff, label: `Saisie · Livraison · ${dropoff.label}` }]
+      : []),
+  ];
+
+  function focusDraft() {
+    setMapTarget("draft");
+    setMapFocus((n) => n + 1);
+  }
+
+  async function previewDraft() {
+    if (!draft.length || previewBusy) return;
+    previewRequest.current?.abort();
+    const controller = new AbortController();
+    previewRequest.current = controller;
+    setPreviewBusy(true);
+    setPreviewError("");
+    setPreview(null);
+    try {
+      const value = await api<DispatchPreview>(
+        "/dispatch/preview",
+        controller.signal,
+        {
+          deliveries: draft.map(({ pickup, dropoff, parcels }) => ({
+            pickup,
+            dropoff,
+            parcels,
+          })),
+        },
+      );
+      if (!controller.signal.aborted) {
+        setPreview(value);
+        setShowPreview(true);
+        focusDraft();
+      }
+    } catch (reason) {
+      if (!controller.signal.aborted)
+        setPreviewError(
+          reason instanceof Error ? reason.message : "Aperçu indisponible",
+        );
+    } finally {
+      if (!controller.signal.aborted) setPreviewBusy(false);
+    }
+  }
 
   function addDelivery() {
-    if (draft.length >= 10) {
+    if (draft.length >= 10 && editing == null) {
       setFormError("Un trajet peut contenir au plus 10 livraisons.");
       return;
     }
@@ -201,14 +288,18 @@ export function Dispatch() {
       );
       return;
     }
-    setDraft((current) => [
-      ...current,
-      { pickup, dropoff, parcels, deadline_minutes: deadline },
-    ]);
+    const delivery = { pickup, dropoff, parcels, deadline_minutes: deadline };
+    setDraft((current) =>
+      editing == null
+        ? [...current, delivery]
+        : current.map((item, index) => (index === editing ? delivery : item)),
+    );
+    setEditing(null);
     setPickup(null);
     setDropoff(null);
     setParcels(1);
     setFormError("");
+    focusDraft();
   }
 
   async function createTrip() {
@@ -225,6 +316,7 @@ export function Dispatch() {
         parcels,
       })),
     };
+    const submittedDraft = draft;
     const body = JSON.stringify(payload);
     if (createIntent.current?.body !== body)
       createIntent.current = { body, key: crypto.randomUUID() };
@@ -238,9 +330,7 @@ export function Dispatch() {
         createIntent.current.key,
       );
       createIntent.current = null;
-      setDraft([]);
-      setPickup(null);
-      setDropoff(null);
+      if (draftSnapshot.current === submittedDraft) setDraft([]);
       selectTrip(trip.id);
       setRefresh((n) => n + 1);
     } catch (reason) {
@@ -323,12 +413,18 @@ export function Dispatch() {
           <PlaceSearch
             label="Lieu de ramassage"
             place={pickup}
-            onChange={setPickup}
+            onChange={(place) => {
+              setPickup(place);
+              if (place) focusDraft();
+            }}
           />
           <PlaceSearch
             label="Lieu de livraison"
             place={dropoff}
-            onChange={setDropoff}
+            onChange={(place) => {
+              setDropoff(place);
+              if (place) focusDraft();
+            }}
           />
           <div className="dispatch-form-row">
             <label>
@@ -358,10 +454,28 @@ export function Dispatch() {
             className="dispatch-add"
             type="button"
             onClick={addDelivery}
-            disabled={draft.length >= 10}
+            disabled={
+              busy === "create" || (draft.length >= 10 && editing == null)
+            }
           >
-            <Plus size={16} /> Ajouter cette livraison
+            <Plus size={16} />{" "}
+            {editing == null
+              ? "Ajouter cette livraison"
+              : `Mettre à jour la livraison ${editing + 1}`}
           </button>
+          {editing != null && (
+            <button
+              type="button"
+              className="dispatch-example"
+              onClick={() => {
+                setEditing(null);
+                setPickup(null);
+                setDropoff(null);
+              }}
+            >
+              Annuler la modification
+            </button>
+          )}
           <div className="dispatch-draft-head">
             <strong>Livraisons à planifier</strong>
             <span>{draft.length}/10</span>
@@ -384,12 +498,32 @@ export function Dispatch() {
                   </div>
                   <button
                     type="button"
+                    disabled={busy === "create"}
+                    aria-label={`Modifier la livraison ${index + 1}`}
+                    onClick={() => {
+                      setPickup(item.pickup);
+                      setDropoff(item.dropoff);
+                      setParcels(item.parcels);
+                      setDeadline(item.deadline_minutes ?? 120);
+                      setEditing(index);
+                    }}
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy === "create"}
                     aria-label={`Retirer la livraison ${index + 1}`}
-                    onClick={() =>
+                    onClick={() => {
+                      if (editing != null) {
+                        setPickup(null);
+                        setDropoff(null);
+                      }
+                      setEditing(null);
                       setDraft((current) =>
                         current.filter((_, i) => i !== index),
-                      )
-                    }
+                      );
+                    }}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -402,13 +536,62 @@ export function Dispatch() {
           <button
             type="button"
             className="dispatch-example"
+            disabled={busy === "create"}
             onClick={() => {
               setDraft(EXAMPLE.map((item) => ({ ...item })));
+              setEditing(null);
+              setPickup(null);
+              setDropoff(null);
+              focusDraft();
               setFormError("");
             }}
           >
-            Charger un exemple montréalais
+            Exemple facultatif : charger deux livraisons
           </button>
+          <div className="dispatch-preview-controls">
+            <button
+              type="button"
+              className="dispatch-preview-button"
+              disabled={!draft.length || previewBusy}
+              onClick={() => void previewDraft()}
+            >
+              {previewBusy ? (
+                <LoaderCircle className="spin" size={16} />
+              ) : (
+                <Route size={16} />
+              )}{" "}
+              Aperçu routier des livraisons
+            </button>
+            {previewBusy && (
+              <button
+                type="button"
+                onClick={() => {
+                  previewRequest.current?.abort();
+                  setPreviewBusy(false);
+                }}
+              >
+                Annuler l’aperçu
+              </button>
+            )}
+            <p>
+              Ordre saisi, départ au premier ramassage. Aucun véhicule réservé
+              et aucun appel IA ; les délais et l’affectation seront vérifiés
+              lors de la planification.
+            </p>
+            {previewError && (
+              <p className="dispatch-error" role="alert">
+                {previewError}
+              </p>
+            )}
+            {preview && (
+              <p className="dispatch-preview-summary" role="status">
+                Aperçu · {preview.route.distance_km.toFixed(1)} km ·{" "}
+                {Math.round(preview.route.duration_minutes)} min routières
+                estimées · {preview.stops.length} arrêts. Toute modification
+                invalide cet aperçu.
+              </p>
+            )}
+          </div>
           {formError && (
             <p className="dispatch-error" role="alert">
               {formError}
@@ -421,8 +604,8 @@ export function Dispatch() {
               onChange={setDepot}
             />
             <p>
-              Gare Centrale est une hypothèse d’exemple. Choisissez votre vrai
-              point de départ avant une mission personnalisée.
+              Choisissez votre point de départ pour les véhicules sans position
+              connue. L’aperçu manuel peut être calculé sans dépôt.
             </p>
           </div>
           <BrokerPlanning
@@ -498,10 +681,13 @@ export function Dispatch() {
             </div>
           </div>
           <DispatchMap
-            trips={trips}
+            trips={showTrips ? visibleTrips : []}
             selected={selected}
             onSelect={selectTrip}
             focusVersion={mapFocus}
+            focusTarget={mapTarget}
+            draftPlaces={showPreview ? draftPlaces : []}
+            preview={showPreview ? preview : null}
             roadworks={traffic?.available ? traffic.items : []}
             showRoadworks={showRoadworks}
           />
@@ -516,6 +702,10 @@ export function Dispatch() {
                 <i className="roadwork" />
                 Chantier déclaré
               </span>
+              <span>
+                <i className="draft" />
+                Saisie / aperçu (pointillé)
+              </span>
             </div>
             <p>
               {trafficError
@@ -529,6 +719,53 @@ export function Dispatch() {
                 </a>
               )}
             </p>
+          </div>
+          <div className="dispatch-map-filters">
+            <label>
+              <input
+                type="checkbox"
+                checked={showPreview}
+                onChange={(event) => setShowPreview(event.target.checked)}
+              />{" "}
+              Saisie et aperçu
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showTrips}
+                onChange={(event) => setShowTrips(event.target.checked)}
+              />{" "}
+              Trajets enregistrés
+            </label>
+            <label>
+              État{" "}
+              <select
+                value={tripFilter}
+                onChange={(event) => setTripFilter(event.target.value)}
+              >
+                <option value="all">Tous</option>
+                <option value="ready">Prêts</option>
+                <option value="running">En simulation</option>
+                <option value="completed">Terminés</option>
+                <option value="cancelled">Annulés</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setMapTarget("all");
+                setMapFocus((n) => n + 1);
+              }}
+            >
+              Voir les routes affichées
+            </button>
+            <button
+              type="button"
+              disabled={!draftPlaces.length}
+              onClick={focusDraft}
+            >
+              Centrer la saisie
+            </button>
           </div>
         </section>
 
@@ -615,6 +852,19 @@ export function Dispatch() {
           {chosen && <TripDetail trip={chosen} busy={busy} onAction={act} />}
         </aside>
       </div>
+      <RouteLibrary
+        refreshVersion={
+          refresh + trips.filter((trip) => trip.status === "completed").length
+        }
+        onLoad={(deliveries) => {
+          setDraft(deliveries);
+          setEditing(null);
+          setPickup(null);
+          setDropoff(null);
+          setFormError("");
+          focusDraft();
+        }}
+      />
       <p className="dispatch-page-note">
         <MapPin size={14} /> Géocodage public et fond OpenFreeMap /
         OpenStreetMap. Itinéraires routiers calculés au serveur. Cette vue
@@ -640,8 +890,23 @@ function PlaceSearch({
   const [error, setError] = useState("");
   const request = useRef(0);
   const controller = useRef<AbortController | null>(null);
+  const previousPlace = useRef<Place | null>(null);
+  const resultList = useRef<HTMLUListElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const statusId = useId();
   useEffect(() => {
-    if (place) setText(place.label);
+    const previous = previousPlace.current;
+    setText((current) =>
+      place ? place.label : previous?.label === current ? "" : current,
+    );
+    previousPlace.current = place;
+    if (place) {
+      request.current += 1;
+      controller.current?.abort();
+      setSearching(false);
+      setItems([]);
+      setError("");
+    }
   }, [place]);
   useEffect(() => () => controller.current?.abort(), []);
   async function search() {
@@ -680,6 +945,7 @@ function PlaceSearch({
         {label}
         <span className="dispatch-search-line">
           <input
+            ref={searchInput}
             type="search"
             value={text}
             onChange={(event) => {
@@ -696,9 +962,21 @@ function PlaceSearch({
                 event.preventDefault();
                 void search();
               }
+              if (event.key === "ArrowDown" && items.length) {
+                event.preventDefault();
+                resultList.current?.querySelector("button")?.focus();
+              }
+              if (event.key === "Escape") {
+                request.current += 1;
+                controller.current?.abort();
+                setSearching(false);
+                setItems([]);
+                setError("");
+              }
             }}
             placeholder="Adresse ou lieu à Montréal"
             aria-label={label}
+            aria-describedby={statusId}
           />
           <button
             type="button"
@@ -726,6 +1004,8 @@ function PlaceSearch({
               setSearching(false);
               onChange(null);
               setText("");
+              setItems([]);
+              setError("");
             }}
           >
             <X size={13} />
@@ -734,6 +1014,7 @@ function PlaceSearch({
       )}
       {items.length > 0 && (
         <ul
+          ref={resultList}
           className="dispatch-results"
           aria-label={`Résultats pour ${label.toLowerCase()}`}
         >
@@ -749,6 +1030,24 @@ function PlaceSearch({
                   setText(item.label);
                   setItems([]);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const buttons =
+                      resultList.current?.querySelectorAll<HTMLButtonElement>(
+                        "button",
+                      );
+                    buttons?.[
+                      (index +
+                        (event.key === "ArrowDown" ? 1 : items.length - 1)) %
+                        items.length
+                    ]?.focus();
+                  }
+                  if (event.key === "Escape") {
+                    setItems([]);
+                    searchInput.current?.focus();
+                  }
+                }}
               >
                 <MapPin size={15} />
                 <span>{item.label}</span>
@@ -762,6 +1061,15 @@ function PlaceSearch({
           {error}
         </span>
       )}
+      <span id={statusId} className="dispatch-search-status" role="status">
+        {searching
+          ? "Recherche en cours…"
+          : items.length
+            ? `${items.length} résultats. Flèche bas pour les parcourir, Entrée pour choisir.`
+            : !place && text.trim().length >= 3
+              ? "Recherchez puis choisissez un résultat pour valider cette adresse."
+              : ""}
+      </span>
     </div>
   );
 }

@@ -174,13 +174,16 @@ describe("as-of replay boundaries", () => {
       created_trip_ids: ["future-trip"],
       candidates: [],
       fleet_snapshot: { vehicles: [{ id: "van1", available: true }] },
+      route_memory: { outcome: "reused" as const, planned_explanation_calls: 0, omitted_explanation_roles: ["planning", "traffic", "optimization", "monitoring", "exception"] },
     };
     const early = agentSnapshot(broker, events, 0);
     expect(early.broker_solution).toBeUndefined();
     expect(early.created_trip_ids).toBeUndefined();
     expect(early.fleet_snapshot).toBeUndefined();
+    expect(early.route_memory).toBeUndefined();
     expect(agentSnapshot(broker, events, 6).created_trip_ids).toEqual([
       "future-trip",
     ]);
+    expect(agentSnapshot(broker, events, 6).route_memory?.outcome).toBe("reused");
   });
 });

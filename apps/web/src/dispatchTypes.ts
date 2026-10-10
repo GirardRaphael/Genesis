@@ -39,7 +39,30 @@ export type BrokerPlan = {
   status: string;
   workflow_kind?: "broker";
   final_kind?: "accepted_plan" | "accepted_diagnostic" | null;
-  request?: { mode?: "live" | "fixture" };
+  request?: {
+    mode?: "live" | "fixture";
+    explanation_policy?: "always" | "routine";
+  };
+  route_memory?: {
+    outcome: "miss" | "changed" | "reused";
+    admission_outcome?: "created" | "rejected" | "not_attempted";
+    admission_reason?: string | null;
+    selection_outcome?: "miss" | "changed" | "reused";
+    reason?: string | null;
+    source_run_id?: string | null;
+    omitted_explanation_roles: string[];
+    planned_explanation_calls: number;
+    context?: {
+      completed_mission_count?: number;
+      completed_sample_count?: number;
+      mean_elapsed_simulation_seconds?: number | null;
+      p50_elapsed_simulation_seconds?: number | null;
+      mean_distance_km?: number | null;
+      deliveries_per_simulation_hour?: number | null;
+      history_limit?: number;
+      scanned_trip_count?: number;
+    };
+  };
   created_at?: string;
   agents?: {
     role: string;
@@ -111,6 +134,42 @@ export type DispatchTrip = {
 };
 
 export type GeocodeResult = Place & { id?: string };
+
+export type DispatchPreview = Pick<
+  DispatchTrip,
+  "deliveries" | "stops" | "route" | "tracking_mode"
+>;
+
+export type RouteHistory = {
+  id: string;
+  name: string;
+  deliveries: BrokerDelivery[];
+  trip_count: number;
+  completed_sample_count: number;
+  mean_elapsed_simulation_seconds: number | null;
+  p50_elapsed_simulation_seconds: number | null;
+  mean_distance_km: number | null;
+  deliveries_per_simulation_hour: number | null;
+  on_time_rate: number | null;
+  on_time_sample_count: number;
+  latest_used_at: string | null;
+  latest_completed_at: string | null;
+  tracking_mode: "simulation";
+  variant_count: number;
+};
+
+export type RouteVariant = Omit<
+  RouteHistory,
+  "name" | "deliveries" | "variant_count"
+> & {
+  stop_order: string[];
+  latest_trip_id: string;
+  stops: (Place & { kind: "pickup" | "dropoff"; delivery_id: string })[];
+};
+export type RouteHistoryDetail = RouteHistory & {
+  variants: RouteVariant[];
+  best_observed_variant_id: string | null;
+};
 
 export type Roadwork = {
   id: string;

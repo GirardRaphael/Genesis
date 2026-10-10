@@ -84,6 +84,32 @@ class TripRequest(BaseModel):
     deliveries: list[Delivery] = Field(min_length=1, max_length=10)
 
 
+class PreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    deliveries: list[Delivery] = Field(min_length=1, max_length=10)
+
+
+class ReuseRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    vehicle_id: str = Field(pattern=r"^van[1-4]$")
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    variant_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+
+def _validated_deliveries(deliveries: list[dict]) -> list[dict]:
+    for delivery in deliveries:
+        delivery["id"] = delivery["id"] or str(uuid4())
+        if any(not _inside(delivery[kind]["coordinates"]) for kind in ("pickup", "dropoff")):
+            raise _error(
+                422,
+                "outside_service_area",
+                "All stops must be within the Montréal demonstration area",
+            )
+    if len({d["id"] for d in deliveries}) != len(deliveries):
+        raise _error(422, "duplicate_delivery_id", "Delivery IDs must be unique")
+    return deliveries
+
+
 def _error(status: int, code: str, message: str, retryable: bool = False) -> HTTPException:
     return HTTPException(status, {"code": code, "message": message, "retryable": retryable})
 
@@ -142,7 +168,8 @@ def _provider_base(name: str, default: str) -> str:
 
 def _search(query: str) -> dict:
     global _last_geocode_request
-    key = " ".join(query.casefold().split())
+    base = _provider_base("GENESIS_GEOCODER_URL", PHOTON)
+    key = base + "|" + " ".join(query.casefold().split())
     with _provider_lock:
         cached = _geocode_cache.get(key)
         if cached and cached[0] > time.monotonic():
@@ -151,7 +178,6 @@ def _search(query: str) -> dict:
         if delay:
             time.sleep(delay)
         _last_geocode_request = time.monotonic()
-        base = _provider_base("GENESIS_GEOCODER_URL", PHOTON)
         source_url = f"{base}/api"
         data = _provider_json(
             source_url, {"q": query, "bbox": ",".join(map(str, BBOX)), "limit": 5, "lang": "fr"}
@@ -408,6 +434,8 @@ def materialize_broker_trips(
     certificate_artifact_id: str,
 ) -> list[str]:
     """Commit every selected ready trip together after the last model call."""
+    from .route_memory import constraint_policy
+
     routes = sorted(
         (route for route in solution["vehicle_routes"] if route["node_order"]),
         key=lambda route: route["vehicle_id"],
@@ -488,6 +516,7 @@ def materialize_broker_trips(
             "stop_order": stop_order,
             "service_seconds": service_seconds,
             "owner_run_id": run_id,
+            "broker_policy": constraint_policy(request),
             "broker_plan": {
                 "input_hash": problem["input_hash"],
                 "solution_hash": solution["solution_hash"],
@@ -629,7 +658,7 @@ def _project(row: dict) -> dict:
     for stop_index, stop_id in enumerate(ordered):
         delivery_id, kind = stop_id.rsplit(":", 1)
         delivery = by_id[delivery_id]
-        if request.get("owner_run_id"):
+        if request.get("owner_run_id") or request.get("includes_origin"):
             offset += (service_seconds if stop_index else 0) + route["legs"][stop_index][
                 "duration_seconds"
             ]
@@ -698,6 +727,22 @@ def _project(row: dict) -> dict:
     }
 
 
+def _ready_values(request: dict, route: dict, fingerprint: str, key: str | None) -> dict:
+    return {
+        "id": str(uuid4()),
+        "name": request["name"],
+        "vehicle_id": request["vehicle_id"],
+        "status": "ready",
+        "request_json": json.dumps(request),
+        "route_json": json.dumps(route),
+        "request_hash": fingerprint,
+        "idempotency_key": key,
+        "created_at": _stamp(),
+        "started_at": None,
+        "cancelled_at": None,
+    }
+
+
 def register_dispatch(app: FastAPI) -> None:
     """Attach dispatch endpoints to an app whose state.store is already configured."""
     _trips.create(app.state.store.engine, checkfirst=True)
@@ -737,6 +782,143 @@ def register_dispatch(app: FastAPI) -> None:
             raise _error(422, "invalid_query", "Search requires at least three characters")
         return _search(query)
 
+    @app.post("/api/v1/dispatch/preview")
+    def preview_route(body: PreviewRequest):
+        deliveries = _validated_deliveries(body.model_dump(mode="json")["deliveries"])
+        road = _road_route([d[kind] for d in deliveries for kind in ("pickup", "dropoff")])
+        projected = _project(
+            _ready_values(
+                {"name": "Preview", "vehicle_id": "van1", "deliveries": deliveries}, road, "", None
+            )
+        )
+        return {key: projected[key] for key in ("tracking_mode", "deliveries", "stops", "route")}
+
+    def get_route(route_id: str) -> dict:
+        from .route_memory import route_history
+
+        route = next(
+            (r for r in route_history(app.state.store.engine)["items"] if r["id"] == route_id), None
+        )
+        if route is None:
+            raise _error(404, "route_not_found", "Saved route is outside the retained history")
+        return route
+
+    @app.get("/api/v1/dispatch/routes")
+    def list_routes(limit: int = Query(50, ge=1, le=100)):
+        from .route_memory import route_history
+
+        history = route_history(app.state.store.engine)
+        history["items"] = [
+            {k: v for k, v in route.items() if k not in {"variants", "recent_trips"}}
+            for route in history["items"][:limit]
+        ]
+        return history
+
+    @app.get("/api/v1/dispatch/routes/{route_id}")
+    def route_detail(route_id: str):
+        return get_route(route_id)
+
+    @app.post("/api/v1/dispatch/routes/{route_id}/reuse", status_code=201)
+    def reuse_route(
+        route_id: str,
+        body: ReuseRequest,
+        idempotency_key: str | None = Header(default=None, min_length=1, max_length=128),
+    ):
+        original = {"route_id": route_id, **body.model_dump(mode="json")}
+        fingerprint = hashlib.sha256(json.dumps(original, sort_keys=True).encode()).hexdigest()
+        engine = app.state.store.engine
+
+        def existing_trip(conn):
+            if not idempotency_key:
+                return None
+            existing = (
+                conn.execute(select(_trips).where(_trips.c.idempotency_key == idempotency_key))
+                .mappings()
+                .first()
+            )
+            if existing and existing["request_hash"] != fingerprint:
+                raise _error(409, "idempotency_conflict", "Key belongs to a different trip")
+            return _project(dict(existing)) if existing else None
+
+        with engine.connect() as conn:
+            existing = existing_trip(conn)
+        if existing:
+            return existing
+        template = get_route(route_id)
+        variant = next(
+            (
+                v
+                for v in template["variants"]
+                if body.variant_id is None or v["id"] == body.variant_id
+            ),
+            None,
+        )
+        if variant is None:
+            raise _error(404, "route_variant_not_found", "Saved stop ordering not found")
+        source = json.loads(get_row(UUID(variant["latest_trip_id"]))["request_json"])
+        deliveries = _validated_deliveries(source["deliveries"])
+        service = source.get("service_seconds", 0)
+        request = {
+            "name": body.name or template["name"],
+            "vehicle_id": body.vehicle_id,
+            "deliveries": deliveries,
+            "stop_order": variant["stop_order"],
+            "service_seconds": service,
+            "includes_origin": True,
+            "reused_from_trip_id": variant["latest_trip_id"],
+        }
+        if source.get("broker_policy"):
+            request["broker_policy"] = source["broker_policy"]
+        depot = source.get("broker_policy", {}).get("depot") or {
+            "coordinates": deliveries[0]["pickup"]["coordinates"]
+        }
+        frozen = fleet_snapshot(engine, [body.vehicle_id], depot)["vehicles"][0]
+        if not frozen["available"]:
+            raise _error(409, "vehicle_busy", "Van is busy or has unresolved cargo")
+        by_id = {d["id"]: d for d in deliveries}
+        stops = [{"coordinates": frozen["origin"]}]
+        load, elapsed = 0, 0.0
+        for stop_id in request["stop_order"]:
+            delivery_id, kind = stop_id.rsplit(":", 1)
+            delivery = by_id[delivery_id]
+            load += delivery["parcels"] * (1 if kind == "pickup" else -1)
+            if not 0 <= load <= 40:
+                raise _error(422, "route_capacity", "Saved route exceeds current parcel capacity")
+            stops.append(delivery[kind])
+        road = _road_route(stops, continue_straight=False)
+        for index, stop_id in enumerate(request["stop_order"]):
+            elapsed += road["legs"][index]["duration_seconds"]
+            elapsed += service
+            delivery_id, kind = stop_id.rsplit(":", 1)
+            deadline = by_id[delivery_id].get("deadline_minutes")
+            if kind == "dropoff" and deadline is not None and elapsed > deadline * 60:
+                raise _error(
+                    409,
+                    "road_route_changed",
+                    "Current roads no longer meet the saved deadline; replan",
+                )
+        if elapsed > 28800:
+            raise _error(
+                409, "road_route_changed", "Current route exceeds the supported duty period; replan"
+            )
+        road["driving_duration_seconds"] = road["duration_seconds"]
+        road["duration_seconds"] = elapsed
+        road["duration_minutes"] = round(elapsed / 60, 1)
+        values = _ready_values(request, road, fingerprint, idempotency_key)
+        with app.state.store.transaction() as conn:
+            if engine.dialect.name == "postgresql":
+                conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+            existing = existing_trip(conn)
+            if existing:
+                return existing
+            current = _fleet_state(conn, [body.vehicle_id], depot)["vehicles"][0]
+            if current != frozen:
+                raise _error(
+                    409, "fleet_changed", "Van changed while routing; retry with the current fleet"
+                )
+            conn.execute(insert(_trips).values(**values))
+        return _project(values)
+
     @app.get("/api/v1/dispatch/trips")
     def list_trips(limit: int = Query(50, ge=1, le=100)):
         with app.state.store.engine.connect() as conn:
@@ -753,20 +935,7 @@ def register_dispatch(app: FastAPI) -> None:
         idempotency_key: str | None = Header(default=None, min_length=1, max_length=128),
     ):
         request = body.model_dump(mode="json")
-        for delivery in request["deliveries"]:
-            delivery["id"] = delivery["id"] or str(uuid4())
-            if not _inside(delivery["pickup"]["coordinates"]) or not _inside(
-                delivery["dropoff"]["coordinates"]
-            ):
-                raise _error(
-                    422,
-                    "outside_service_area",
-                    "All stops must be within the Montréal demonstration area",
-                )
-        if len({delivery["id"] for delivery in request["deliveries"]}) != len(
-            request["deliveries"]
-        ):
-            raise _error(422, "duplicate_delivery_id", "Delivery IDs must be unique")
+        _validated_deliveries(request["deliveries"])
         # Idempotency is based on user input; generated delivery IDs are stable only after first persistence.
         original = body.model_dump(mode="json")
         fingerprint = hashlib.sha256(json.dumps(original, sort_keys=True).encode()).hexdigest()
@@ -787,19 +956,7 @@ def register_dispatch(app: FastAPI) -> None:
             for kind in ("pickup", "dropoff"):
                 stops.append(delivery[kind])
         route = _road_route(stops)
-        values = {
-            "id": str(uuid4()),
-            "name": request["name"],
-            "vehicle_id": request["vehicle_id"],
-            "status": "ready",
-            "request_json": json.dumps(request),
-            "route_json": json.dumps(route),
-            "request_hash": fingerprint,
-            "idempotency_key": idempotency_key,
-            "created_at": _stamp(),
-            "started_at": None,
-            "cancelled_at": None,
-        }
+        values = _ready_values(request, route, fingerprint, idempotency_key)
         try:
             with app.state.store.transaction() as conn:
                 if engine.dialect.name == "postgresql":

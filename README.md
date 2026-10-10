@@ -6,6 +6,8 @@ Implemented: independently validated baseline/OR-Tools routes, a bounded depot-o
 
 Cost monitoring refreshes during operations and shows every model attempt, agent/model totals and the overall ledger across all handled requests.
 
+The dispatcher now previews operator-entered addresses and multiple deliveries before reserving a van. Its route library recognizes completed recurring work and compares historical stop orders with simulated elapsed time, distance and cadence. Routine explanations use three live calls on a history miss and zero when a completed historical assignment matches the newly validated plan; the complete five-call policy remains selectable. Current roads, fleet, deadlines and certificates are checked every time. See [route-memory contract](docs/ROUTE-MEMORY.md).
+
 **Live execution is Anthropic only.** Haiku handles traffic/exception explanations, Sonnet planning/optimization, and Opus monitoring. Historical OpenAI failures remain readable but cannot execute again. No provider fallback. All calls share the persistent **C$100** ceiling; unknown charges keep their reservations. Cost figures are provider-usage estimates, not invoices. The CAD budget valuation uses a conservative cushion rather than market FX.
 
 ## Run locally
@@ -38,6 +40,8 @@ Set-Location qa
 npm.cmd ci
 npx.cmd playwright install chromium
 npm.cmd test
+# New address/memory checks use an isolated fleet and prohibit paid provider calls:
+npx.cmd playwright test --config playwright.routes.config.ts
 ```
 
 The recorded benchmark contains 20 successful Anthropic executions and 100 calls, estimated US$0.6696181. These are analysis missions: an infeasible diagnostic can be a successful analysis without being a feasible fleet plan. See [report](docs/REPORT.md), [live manifest](experiments/live-manifest.json), [implementation status](docs/IMPLEMENTATION-STATUS.md) and [independent review](docs/reviews/implementation-review.md). Local database traces are ignored by Git; the manifest, usage summary and one sample run are portable evidence, not a complete trace database. The dashboard's overall total includes additional requests and therefore can exceed the benchmark subtotal.

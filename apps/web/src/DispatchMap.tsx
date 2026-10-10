@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Coordinates, DispatchTrip, Roadwork } from "./dispatchTypes";
+import type {
+  Coordinates,
+  DispatchTrip,
+  DispatchPreview,
+  Place,
+  Roadwork,
+} from "./dispatchTypes";
+import { mapFocusCoordinates } from "./dispatchView";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -79,6 +86,9 @@ type Props = {
   focusVersion: number;
   roadworks?: Roadwork[];
   showRoadworks?: boolean;
+  draftPlaces?: Place[];
+  preview?: DispatchPreview | null;
+  focusTarget?: "selected" | "draft" | "all";
 };
 
 export function DispatchMap({
@@ -88,6 +98,9 @@ export function DispatchMap({
   focusVersion,
   roadworks = [],
   showRoadworks = false,
+  draftPlaces = [],
+  preview = null,
+  focusTarget = "selected",
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -96,8 +109,6 @@ export function DispatchMap({
   const animations = useRef(new Map<string, number>());
   const lastFit = useRef(0);
   const onSelectRef = useRef(onSelect);
-  const viewRef = useRef({ trips, selected });
-  viewRef.current = { trips, selected };
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   onSelectRef.current = onSelect;
@@ -106,28 +117,9 @@ export function DispatchMap({
     if (!container.current) return;
     let map: maplibregl.Map;
     let loaded = false;
-    let width = container.current.clientWidth;
     const resize = new ResizeObserver(() => {
       const currentMap = mapRef.current;
-      const nextWidth = container.current?.clientWidth || width;
       currentMap?.resize();
-      if (currentMap && loaded && Math.abs(nextWidth - width) > 1) {
-        const view = viewRef.current;
-        const points = view.trips.find((trip) => trip.id === view.selected)
-          ?.route.coordinates;
-        const bounds = points?.length
-          ? points.reduce(
-              (box, point) => box.extend(point),
-              new maplibregl.LngLatBounds(points[0], points[0]),
-            )
-          : ISLAND_BOUNDS;
-        currentMap.fitBounds(bounds, {
-          padding: 45,
-          maxZoom: points?.length ? 13.5 : 10.8,
-          duration: 0,
-        });
-      }
-      width = nextWidth;
     });
     try {
       map = new maplibregl.Map({
@@ -196,6 +188,28 @@ export function DispatchMap({
             "text-halo-color": "#ffffff",
             "text-halo-width": 1.5,
           },
+        });
+        map.addSource("dispatch-preview", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        map.addLayer({
+          id: "dispatch-preview-casing",
+          type: "line",
+          source: "dispatch-preview",
+          paint: { "line-color": "#fff", "line-width": 8 },
+          layout: { "line-cap": "round", "line-join": "round" },
+        });
+        map.addLayer({
+          id: "dispatch-preview",
+          type: "line",
+          source: "dispatch-preview",
+          paint: {
+            "line-color": "#923d88",
+            "line-width": 4,
+            "line-dasharray": [2, 1.5],
+          },
+          layout: { "line-cap": "round", "line-join": "round" },
         });
         map.addSource("dispatch-roadworks", {
           type: "geojson",
@@ -323,6 +337,42 @@ export function DispatchMap({
     )?.setData({ type: "FeatureCollection", features });
     markers.current.forEach((marker) => marker.remove());
     markers.current = [];
+    const previewFeatures = preview?.route.coordinates.length
+      ? [
+          {
+            type: "Feature" as const,
+            properties: {},
+            geometry: {
+              type: "LineString" as const,
+              coordinates: preview.route.coordinates,
+            },
+          },
+        ]
+      : [];
+    (
+      map.getSource("dispatch-preview") as maplibregl.GeoJSONSource | undefined
+    )?.setData({ type: "FeatureCollection", features: previewFeatures });
+    draftPlaces.forEach((place, index) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.className = "dispatch-map-stop draft";
+      element.textContent = String(index + 1);
+      element.title = `Saisie · ${place.label}`;
+      element.setAttribute("aria-label", element.title);
+      element.addEventListener("click", () => {
+        const content = document.createElement("div");
+        content.textContent = element.title;
+        new maplibregl.Popup()
+          .setLngLat(place.coordinates)
+          .setDOMContent(content)
+          .addTo(map);
+      });
+      markers.current.push(
+        new maplibregl.Marker({ element })
+          .setLngLat(place.coordinates)
+          .addTo(map),
+      );
+    });
     for (const trip of trips) {
       if (trip.id !== selected) continue;
       trip.stops.forEach((stop, index) => {
@@ -340,7 +390,7 @@ export function DispatchMap({
         );
       });
     }
-  }, [trips, selected, ready]);
+  }, [trips, selected, ready, draftPlaces, preview]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -425,8 +475,13 @@ export function DispatchMap({
 
   useEffect(() => {
     if (!focusVersion || focusVersion <= lastFit.current) return;
-    const trip = trips.find((item) => item.id === selected);
-    const points = trip?.route?.coordinates;
+    const points = mapFocusCoordinates(
+      trips,
+      selected,
+      draftPlaces,
+      preview,
+      focusTarget,
+    );
     const map = mapRef.current;
     if (!map || !ready || !points?.length) return;
     lastFit.current = focusVersion;
@@ -441,7 +496,7 @@ export function DispatchMap({
         ? 0
         : 350,
     });
-  }, [focusVersion, ready, selected, trips]);
+  }, [focusVersion, ready, selected, trips, focusTarget, draftPlaces, preview]);
 
   return (
     <div className="dispatch-map-shell">

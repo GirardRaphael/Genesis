@@ -27,6 +27,7 @@ class BrokerRequest(BaseModel):
     depot: Place
     vehicle_ids: list[Literal["van1", "van2", "van3", "van4"]] = Field(default_factory=lambda: ["van1", "van2", "van3", "van4"], min_length=1, max_length=4)
     objective: Literal["cost", "fastest", "balanced"] = "balanced"
+    explanation_policy: Literal["always", "routine"] = "always"
     activation_cost_cad: Decimal = Field(default=Decimal("18"), ge=0, le=10000)
     cost_per_km_cad: Decimal = Field(default=Decimal("0.95"), ge=0, le=1000)
     driver_cost_per_hour_cad: Decimal = Field(default=Decimal("28"), ge=0, le=1000)
@@ -58,6 +59,7 @@ def _public(row):
         "finished_at": row["finished_at"], "objective": row["request"]["objective"],
         "delivery_count": len(row["request"]["deliveries"]),
         "provenance": row["request"]["mode"],
+        "explanation_policy": row["request"].get("explanation_policy", "always"),
         "final_kind": row["detail"].get("final_kind"),
         "created_trip_ids": row["detail"].get("created_trip_ids", []),
     }
@@ -73,14 +75,18 @@ def register_broker(app: FastAPI) -> None:
         request = json.loads(json.dumps(original))
         for index, delivery in enumerate(request["deliveries"]):
             if not delivery["id"]:
-                source = json.dumps({"request": original, "index": index}, sort_keys=True, separators=(",", ":"))
+                source = json.dumps({"delivery": delivery, "index": index}, sort_keys=True, separators=(",", ":"))
                 delivery["id"] = "d-" + hashlib.sha256(source.encode()).hexdigest()[:16]
         if len({d["id"] for d in request["deliveries"]}) != len(request["deliveries"]):
             raise HTTPException(422, {"code": "duplicate_delivery_id", "message": "Delivery IDs must be unique", "retryable": False})
         if idempotency_key:
             old = next((r for r in app.state.store.list_runs() if r["idempotency_key"] == idempotency_key), None)
             if old:
-                if not all(old["request"].get(key) == value for key, value in request.items()):
+                # Existing keys retain their previously generated IDs across identity-policy changes.
+                for index, (submitted, persisted) in enumerate(zip(request["deliveries"], old["request"].get("deliveries", []))):
+                    if not body.deliveries[index].id:
+                        submitted["id"] = persisted["id"]
+                if not all(old["request"].get(key, "always" if key == "explanation_policy" else None) == value for key, value in request.items()):
                     raise HTTPException(409, {"code": "idempotency_conflict", "message": "Key belongs to a different plan", "retryable": False})
                 return _public(old)
         snapshot = fleet_snapshot(app.state.store.engine, request["vehicle_ids"], request["depot"])

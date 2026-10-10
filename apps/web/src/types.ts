@@ -113,7 +113,7 @@ export type RunDetail = Run &
     certificate?: Certificate | { valid: boolean; issues: string[] } | null;
   } & Pick<
     import("./dispatchTypes").BrokerPlan,
-    "broker_solution" | "candidates" | "created_trip_ids" | "fleet_snapshot"
+    "broker_solution" | "candidates" | "created_trip_ids" | "fleet_snapshot" | "route_memory"
   >;
 export function hasArtifacts(detail: RunDetail): detail is Detail {
   return !!(

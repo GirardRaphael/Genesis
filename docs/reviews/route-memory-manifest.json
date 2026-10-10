@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "reviewed_base": "06b09194e3d429afc8093183818e0196fad161d4",
+  "date": "2026-10-10",
+  "normalization": "UTF-8 decode; CRLF and CR replaced with LF; UTF-8 encode",
+  "digest_format": "SHA256 of sorted path + NUL + lowercase sha256_lf + LF for every entry",
+  "excluded": [
+    "docs/reviews/*",
+    "docs/ACTION-LOG.md",
+    "docs/IMPLEMENTATION-STATUS.md"
+  ],
+  "content_sha256": "a6a55eed46d4b92624eec265d4ffa3a84356f312eaa6829010054ddf8ea6ab63",
+  "file_count": 34,
+  "files": [
+    {
+      "path": "README.md",
+      "sha256_lf": "df52842dd883457c8d1074fe507f4f1d92b8668ef381b3be4556c37bfc8d0509"
+    },
+    {
+      "path": "apps/web/src/BrokerOutcome.test.tsx",
+      "sha256_lf": "d9e7396eeb170380d03d7709766815faee11f8c828ff93fcf0607175212d3c8c"
+    },
+    {
+      "path": "apps/web/src/BrokerPlanning.css",
+      "sha256_lf": "c91061548cdb2e379f74a73ee3ef0a59898529f662eba28935679663fe6dd5d2"
+    },
+    {
+      "path": "apps/web/src/BrokerPlanning.tsx",
+      "sha256_lf": "f1854ad6dd53e7c6f13e70d33b43379947ad217a762e2da0fb7aca59633848e1"
+    },
+    {
+      "path": "apps/web/src/Dispatch.css",
+      "sha256_lf": "a94a31869fc37b1831b6511d928311df25ee4c00e3e9548b459262a575d35489"
+    },
+    {
+      "path": "apps/web/src/Dispatch.tsx",
+      "sha256_lf": "c7064e25b107e3f06ce3b3541e0cec228bb9344774875b274f9d4ad2aafdaac5"
+    },
+    {
+      "path": "apps/web/src/DispatchMap.tsx",
+      "sha256_lf": "a8e63ef713f00b2e4b17f996345239e2c440e3b9e72213c749e590a68cf6e77d"
+    },
+    {
+      "path": "apps/web/src/RouteLibrary.tsx",
+      "sha256_lf": "2eaf788ec552c6fb874b5201aa48216651214b5bd6b021ff35131e49dc184ce8"
+    },
+    {
+      "path": "apps/web/src/dispatchTypes.ts",
+      "sha256_lf": "2bb3ebe523f977c587cde325764854db9c0123ba17a4461a18cc6ad9c01142b8"
+    },
+    {
+      "path": "apps/web/src/dispatchView.test.ts",
+      "sha256_lf": "afa0382ac7b60ec8170765c457f6669fbc9d0bc9977bd1d6109a8dec99d4e1a4"
+    },
+    {
+      "path": "apps/web/src/dispatchView.ts",
+      "sha256_lf": "2269d2f005aabc76446ad5ce1cbfc8beee8bd03b6b3406314902daf83921de50"
+    },
+    {
+      "path": "apps/web/src/replayState.test.tsx",
+      "sha256_lf": "1048f3b00865e99973ad39afebfcd6b7fbe1681aee64b3353127e154e15a7f17"
+    },
+    {
+      "path": "apps/web/src/replayState.ts",
+      "sha256_lf": "3ee88a6d181616a81bed795731adea0ecb8875d1752747cc0f98b3c8df464cf7"
+    },
+    {
+      "path": "apps/web/src/types.ts",
+      "sha256_lf": "dba9364b9833c659b18b36fe2c72ca1f5556733ed8f00c8716b2f3029d9229f6"
+    },
+    {
+      "path": "docs/BUDGET.md",
+      "sha256_lf": "1896c0861b7ed0d3259d1ff57e06fbd69e6a8d8c77fbedecc9fbd58d775d16cb"
+    },
+    {
+      "path": "docs/DATA-CONTRACT.md",
+      "sha256_lf": "ad3c1f08cb35092482a4a2c4e4429d2cffcc9d29c4e879ff6cb7cac28e0e483a"
+    },
+    {
+      "path": "docs/DISPATCH.md",
+      "sha256_lf": "a87168316f654e98e568a52ae757a7a7bfdde9f1645e2bd7206721916cc05c1a"
+    },
+    {
+      "path": "docs/PLAN.md",
+      "sha256_lf": "01ec4cec0e98295b9150f42a2c6bc722cde091ba9510559b6ab2bbbd82ef7c22"
+    },
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "sha256_lf": "b246dc81d4f8570d1212e9aff75cd507e45e5ea966fed8da51f10b5a7eaba40b"
+    },
+    {
+      "path": "docs/ROUTE-MEMORY.md",
+      "sha256_lf": "4dac20a3b6d5413fcd32f960bf0f54e68674a7f979ddead94e760a30094f5797"
+    },
+    {
+      "path": "experiments/address-preview-smoke.json",
+      "sha256_lf": "5745b9a273a023f8e08d85b070e414b2a5650d31b84ae80fe2595e2db5ae3ab1"
+    },
+    {
+      "path": "experiments/route-memory-road-smoke.json",
+      "sha256_lf": "0335a9092016a0b797bfcb436e556de84c88e521f4c2670e9ced3e74383bac99"
+    },
+    {
+      "path": "packages/contracts/openapi.json",
+      "sha256_lf": "ab5876fc9a24c3cb42f21afd2df5d6adeba8ef274a79d6201278b7670d64dbeb"
+    },
+    {
+      "path": "qa/playwright.routes.config.ts",
+      "sha256_lf": "f711a4b3f98ce1d4d1e66f6efea9c5a5ac66466cd9ac5c4d8423e8f9be04d685"
+    },
+    {
+      "path": "qa/route_memory_server.py",
+      "sha256_lf": "cd825d3fad4254e96cdfa46fca18bcafe0beac5c7abdd395cd644c95f137c5f1"
+    },
+    {
+      "path": "qa/tests/observatory.spec.ts",
+      "sha256_lf": "ea1eef75fc70cbf08f61f411eef4523b0769737e7c69788c45600840fa87ea58"
+    },
+    {
+      "path": "qa/tests/routes.browser.spec.ts",
+      "sha256_lf": "088b10b7b0a2c49cf089b1762e7fe5c8e8bf00d4ddf9aa3fec2d0dde6cf428f3"
+    },
+    {
+      "path": "services/genesis/broker_api.py",
+      "sha256_lf": "2a9cb69702f1951b22ed691641085b8ce96de51dbe6502a998b1038a69f071e5"
+    },
+    {
+      "path": "services/genesis/broker_runtime.py",
+      "sha256_lf": "78b7586eedf6dd60a3abcb9db9f90568fadec8c7997ba647859289b7d9aeee2c"
+    },
+    {
+      "path": "services/genesis/dispatch.py",
+      "sha256_lf": "4d91168df6ead1849a5cdd5bd41ada87dab4a5872c3f4e2660668bc80b43aac3"
+    },
+    {
+      "path": "services/genesis/route_memory.py",
+      "sha256_lf": "47f0d497d5b3162e04f34ab18e785df0f531aa616a74d95bcb5a2f53f3876a3d"
+    },
+    {
+      "path": "services/genesis/workflow.py",
+      "sha256_lf": "3d8d00700474bb9e7407681771a23aefba012e9e119c153434127d22d6bbe2d9"
+    },
+    {
+      "path": "tests/test_broker_runtime.py",
+      "sha256_lf": "6612e3193140b74011c63175d1c95fbf42604d018c02e5ac9a1ae92d74c38f7b"
+    },
+    {
+      "path": "tests/test_route_memory.py",
+      "sha256_lf": "8e5abcb07878a9b5a5ae1a24e0f6bcb60586db3dc548be0d3833868a4da15142"
+    }
+  ]
+}

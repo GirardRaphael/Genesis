@@ -1,0 +1,115 @@
+{
+  "provenance": "actual Photon/OSRM public-provider preview; no trip created or model invoked",
+  "cases": [
+    {
+      "request": {
+        "deliveries": [
+          {
+            "pickup": {
+              "label": "Bibliothèque de Kirkland, 17100, Boulevard Hymus, Kirkland",
+              "coordinates": [
+                -73.8577361,
+                45.4484029
+              ]
+            },
+            "dropoff": {
+              "label": "Parc La Fontaine, 3819, Avenue Calixa-Lavallée, Montréal",
+              "coordinates": [
+                -73.5689672,
+                45.5262562
+              ]
+            },
+            "parcels": 1
+          }
+        ]
+      },
+      "stop_count": 2,
+      "route": {
+        "distance_km": 29.63,
+        "duration_minutes": 35.6,
+        "source": "OSRM driving",
+        "computed_at": "2026-10-10T19:40:12.205040+00:00"
+      },
+      "geometry_point_count": 865
+    },
+    {
+      "request": {
+        "deliveries": [
+          {
+            "pickup": {
+              "label": "Parc La Fontaine, 3819, Avenue Calixa-Lavallée, Montréal",
+              "coordinates": [
+                -73.5689672,
+                45.5262562
+              ]
+            },
+            "dropoff": {
+              "label": "Les Galeries d'Anjou, Montréal",
+              "coordinates": [
+                -73.5637365,
+                45.5995088
+              ]
+            },
+            "parcels": 1
+          }
+        ]
+      },
+      "stop_count": 2,
+      "route": {
+        "distance_km": 10.5,
+        "duration_minutes": 21.1,
+        "source": "OSRM driving",
+        "computed_at": "2026-10-10T19:40:13.078305+00:00"
+      },
+      "geometry_point_count": 397
+    },
+    {
+      "request": {
+        "deliveries": [
+          {
+            "pickup": {
+              "label": "Bibliothèque de Kirkland, 17100, Boulevard Hymus, Kirkland",
+              "coordinates": [
+                -73.8577361,
+                45.4484029
+              ]
+            },
+            "dropoff": {
+              "label": "Parc La Fontaine, 3819, Avenue Calixa-Lavallée, Montréal",
+              "coordinates": [
+                -73.5689672,
+                45.5262562
+              ]
+            },
+            "parcels": 1
+          },
+          {
+            "pickup": {
+              "label": "Parc La Fontaine, 3819, Avenue Calixa-Lavallée, Montréal",
+              "coordinates": [
+                -73.5689672,
+                45.5262562
+              ]
+            },
+            "dropoff": {
+              "label": "Les Galeries d'Anjou, Montréal",
+              "coordinates": [
+                -73.5637365,
+                45.5995088
+              ]
+            },
+            "parcels": 1
+          }
+        ]
+      },
+      "stop_count": 4,
+      "route": {
+        "distance_km": 40.25,
+        "duration_minutes": 58.0,
+        "source": "OSRM driving",
+        "computed_at": "2026-10-10T19:40:14.203375+00:00"
+      },
+      "geometry_point_count": 1272
+    }
+  ]
+}

@@ -93,6 +93,184 @@
         }
       }
     },
+    "/api/v1/dispatch/preview": {
+      "post": {
+        "summary": "Preview Route",
+        "operationId": "preview_route_api_v1_dispatch_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dispatch/routes": {
+      "get": {
+        "summary": "List Routes",
+        "operationId": "list_routes_api_v1_dispatch_routes_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dispatch/routes/{route_id}": {
+      "get": {
+        "summary": "Route Detail",
+        "operationId": "route_detail_api_v1_dispatch_routes__route_id__get",
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Route Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dispatch/routes/{route_id}/reuse": {
+      "post": {
+        "summary": "Reuse Route",
+        "operationId": "reuse_route_api_v1_dispatch_routes__route_id__reuse_post",
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Route Id"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReuseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dispatch/trips": {
       "get": {
         "summary": "List Trips",
@@ -1572,6 +1750,15 @@
             "title": "Objective",
             "default": "balanced"
           },
+          "explanation_policy": {
+            "type": "string",
+            "enum": [
+              "always",
+              "routine"
+            ],
+            "title": "Explanation Policy",
+            "default": "always"
+          },
           "activation_cost_cad": {
             "anyOf": [
               {
@@ -1750,6 +1937,65 @@
           "coordinates"
         ],
         "title": "Place"
+      },
+      "PreviewRequest": {
+        "properties": {
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/Delivery"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Deliveries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "deliveries"
+        ],
+        "title": "PreviewRequest"
+      },
+      "ReuseRequest": {
+        "properties": {
+          "vehicle_id": {
+            "type": "string",
+            "pattern": "^van[1-4]$",
+            "title": "Vehicle Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "variant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vehicle_id"
+        ],
+        "title": "ReuseRequest"
       },
       "RunRequest": {
         "properties": {

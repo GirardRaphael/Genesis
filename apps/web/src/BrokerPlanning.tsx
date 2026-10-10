@@ -11,6 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import { api } from "./api";
+import { selectedVehiclesAfterRefresh } from "./dispatchView";
 import { money, num } from "./state";
 import type { Usage } from "./analyticsData";
 import type {
@@ -107,6 +108,9 @@ export function BrokerPlanning({
     "balanced",
   );
   const [mode, setMode] = useState<"live" | "fixture">("live");
+  const [explanationPolicy, setExplanationPolicy] = useState<
+    "always" | "routine"
+  >("routine");
   const [rates, setRates] = useState({
     activation_cost_cad: 18,
     cost_per_km_cad: 0.95,
@@ -119,6 +123,8 @@ export function BrokerPlanning({
   const [usage, setUsage] = useState<Usage | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelRequested, setCancelRequested] = useState(false);
   const [fleetRefresh, setFleetRefresh] = useState(0);
   const [planRefresh, setPlanRefresh] = useState(0);
   const [health, setHealth] = useState<{
@@ -141,13 +147,10 @@ export function BrokerPlanning({
         if (!controller.signal.aborted) {
           setFleet(value);
           setFleetError("");
-          const available = value.vehicles
-            .filter((v) => v.available)
-            .map((v) => v.id);
           const first = !initialFleet.current;
           initialFleet.current = true;
           setEligible((current) =>
-            !first ? current.filter((id) => available.includes(id)) : available,
+            selectedVehiclesAfterRefresh(current, value.vehicles, first),
           );
         }
       } catch (reason) {
@@ -250,7 +253,7 @@ export function BrokerPlanning({
   const canSubmit =
     !!depot &&
     deliveries.length > 0 &&
-    eligible.length > 0 &&
+    available.some((vehicle) => eligible.includes(vehicle.id)) &&
     !!fleet &&
     !fleetError &&
     costsValid &&
@@ -266,6 +269,7 @@ export function BrokerPlanning({
       objective,
       ...rates,
       mode,
+      explanation_policy: explanationPolicy,
       ...(mode === "live" ? { budget_usd: 1 } : {}),
     };
     const body = JSON.stringify(payload);
@@ -297,6 +301,7 @@ export function BrokerPlanning({
       notified.current = "";
       submittedPlanId.current = result.id;
       setPlan(result);
+      setCancelRequested(false);
       setUsage(null);
       setPlanId(result.id);
       setPlanRefresh((n) => n + 1);
@@ -361,6 +366,11 @@ export function BrokerPlanning({
             </label>
           ))}
         </div>
+        <p className="broker-origin-note">
+          Vos choix sont conservés lorsque les véhicules deviennent occupés. Le
+          serveur garde ces véhicules verrouillés et les exclut de l’affectation
+          tant qu’ils ne sont pas libres.
+        </p>
         {fleet?.vehicles.some((van) => van.available && van.origin_assumed) && (
           <p className="broker-origin-note">
             Origine des véhicules sans trajet antérieur présumée ; vérifiez le
@@ -372,12 +382,13 @@ export function BrokerPlanning({
             Flotte : {fleetError}
           </p>
         )}
-        {fleet && !available.length && (
-          <p className="broker-diagnostic">
-            Aucun véhicule libre. Attendez la fin d’une simulation ou annulez un
-            trajet actif avant de planifier.
-          </p>
-        )}
+        {fleet &&
+          !available.some((vehicle) => eligible.includes(vehicle.id)) && (
+            <p className="broker-diagnostic">
+              Aucun véhicule sélectionné n’est libre. Sélectionnez un véhicule
+              libre ou attendez la fin d’une simulation avant de planifier.
+            </p>
+          )}
       </div>
       <fieldset className="broker-objectives">
         <legend>Priorité de planification</legend>
@@ -470,6 +481,37 @@ export function BrokerPlanning({
         Plafond global de 100 $ CAD appliqué par le serveur. Dépenses API
         estimées en USD, séparées du coût de flotte en CAD.
       </p>
+      <fieldset className="broker-explanations">
+        <legend>Explications et contexte historique</legend>
+        <label>
+          <input
+            type="radio"
+            name="broker-explanations"
+            checked={explanationPolicy === "routine"}
+            onChange={() => setExplanationPolicy("routine")}
+          />{" "}
+          Routine · explications ciblées
+        </label>
+        <p>
+          Les routes, la capacité, les délais et la flotte sont contrôlés à
+          nouveau. Deux explications sont omises ; si une tournée terminée
+          correspond exactement au plan revérifié, les trois autres peuvent
+          aussi être omises. Le contexte historique est borné.
+        </p>
+        <label>
+          <input
+            type="radio"
+            name="broker-explanations"
+            checked={explanationPolicy === "always"}
+            onChange={() => setExplanationPolicy("always")}
+          />{" "}
+          Complètes · cinq explications
+        </label>
+        <p>
+          Chaque rôle explique ses résultats. Le nombre réel d’appels et les
+          tokens restent visibles ; aucun gain en dollars n’est présumé.
+        </p>
+      </fieldset>
       {liveUnavailable && (
         <p className="broker-error" role="alert">
           IA en direct indisponible :{" "}
@@ -512,6 +554,29 @@ export function BrokerPlanning({
           planId={planId}
           trips={trips}
           refresh={() => setPlanRefresh((n) => n + 1)}
+          cancelling={cancelling}
+          cancelRequested={cancelRequested}
+          onCancel={async () => {
+            if (cancelling || cancelRequested) return;
+            setCancelling(true);
+            try {
+              await api(
+                `/runs/${encodeURIComponent(planId)}/cancel`,
+                undefined,
+                {},
+              );
+              setCancelRequested(true);
+              setPlanRefresh((n) => n + 1);
+            } catch (reason) {
+              setError(
+                reason instanceof Error
+                  ? reason.message
+                  : "Annulation indisponible",
+              );
+            } finally {
+              setCancelling(false);
+            }
+          }}
         />
       )}
     </section>
@@ -524,12 +589,18 @@ function PlanResult({
   planId,
   trips,
   refresh,
+  cancelling,
+  cancelRequested,
+  onCancel,
 }: {
   plan: BrokerPlan | null;
   usage: Usage | null;
   planId: string;
   trips: DispatchTrip[];
   refresh: () => void;
+  cancelling: boolean;
+  cancelRequested: boolean;
+  onCancel: () => Promise<void>;
 }) {
   const selected = plan?.broker_solution?.selected_strategy;
   const selectedCandidate = plan?.candidates?.find(
@@ -561,6 +632,20 @@ function PlanResult({
           <RefreshCw size={15} />
         </button>
       </div>
+      {plan && !final && (
+        <button
+          type="button"
+          className="broker-cancel"
+          disabled={cancelling || cancelRequested}
+          onClick={() => void onCancel()}
+        >
+          {cancelRequested
+            ? "Annulation demandée · attente du serveur"
+            : cancelling
+              ? "Demande d’annulation…"
+              : "Demander l’annulation de la mission"}
+        </button>
+      )}
       <div className={`broker-run-status ${plan?.status || "queued"}`}>
         {!plan || !final ? (
           <LoaderCircle size={14} className="spin" />
@@ -583,17 +668,21 @@ function PlanResult({
         {ROLES.map((role, index) => {
           const agent = plan?.agents?.find((item) => item.role === role);
           const spend = usage?.agents?.find((item) => item.role === role);
+          const omitted =
+            plan?.route_memory?.omitted_explanation_roles.includes(role);
           return (
             <div key={role} className="broker-agent">
               <span className="broker-agent-index">{index + 1}</span>
               <div>
                 <strong>{ROLE_NAMES[role]}</strong>
                 <small>
-                  {plan?.request?.mode === "fixture"
-                    ? "Démonstration déterministe"
-                    : agent?.model ||
-                      agent?.requested_model ||
-                      (agent ? "Modèle indisponible" : "En attente")}
+                  {omitted
+                    ? "Contrôle déterministe · explication IA omise"
+                    : plan?.request?.mode === "fixture"
+                      ? "Démonstration déterministe"
+                      : agent?.model ||
+                        agent?.requested_model ||
+                        (agent ? "Modèle indisponible" : "En attente")}
                 </small>
               </div>
               <span className="broker-agent-status">
@@ -605,9 +694,11 @@ function PlanResult({
                 {agentStatus(agent?.status)}
               </span>
               <small>
-                {spend?.total_tokens == null
-                  ? "tokens —"
-                  : `${num(spend.total_tokens, 0)} tokens`}{" "}
+                {omitted
+                  ? "Aucun appel d’explication"
+                  : spend?.total_tokens == null
+                    ? "tokens —"
+                    : `${num(spend.total_tokens, 0)} tokens`}{" "}
                 · {money(spend?.cost_usd, "USD")}
               </small>
             </div>
@@ -620,6 +711,12 @@ function PlanResult({
           tokens déclarés · {money(usage.totals.cost_usd, "USD")} API estimés ·
           couverture coût {num(usage.totals.cost_coverage * 100, 0)} %
         </p>
+      )}
+      {plan?.route_memory && (
+        <BrokerOutcome
+          memory={plan.route_memory}
+          policy={plan.request?.explanation_policy}
+        />
       )}
       {final && (
         <>
@@ -739,6 +836,71 @@ function PlanResult({
       >
         Inspecter les sorties des cinq agents <ArrowRight size={14} />
       </a>
+    </div>
+  );
+}
+
+export function BrokerOutcome({
+  memory,
+  policy,
+}: {
+  memory: NonNullable<BrokerPlan["route_memory"]>;
+  policy?: "always" | "routine";
+}) {
+  return (
+    <div className="broker-memory" role="status">
+      <strong>
+        {memory.admission_outcome === "rejected"
+          ? "Admission refusée · replanification nécessaire"
+          : memory.outcome === "reused"
+            ? "Tournée habituelle revérifiée"
+            : memory.outcome === "changed"
+              ? "Contexte modifié · contrôles à jour"
+              : "Aucune tournée habituelle admissible"}
+      </strong>
+      {memory.admission_outcome === "rejected" && (
+        <p>
+          Aucun trajet prêt à démarrer. Motif serveur :{" "}
+          {memory.admission_reason ?? memory.reason ?? "raison indisponible"}.
+          Actualisez la flotte et relancez la planification.
+        </p>
+      )}
+      <p>
+        {memory.omitted_explanation_roles.length} rôle(s) sans explication IA ·{" "}
+        {memory.planned_explanation_calls} appels d’explication prévus par la
+        politique {policy === "routine" ? "routine" : "complète"}. Les contrôles
+        déterministes restent exécutés.
+      </p>
+      {memory.source_run_id && (
+        <a
+          href={`?view=observatory&run=${encodeURIComponent(memory.source_run_id)}`}
+        >
+          Voir la mission historique {memory.source_run_id.slice(0, 8)}
+        </a>
+      )}
+      {memory.context && (
+        <p>
+          Contexte :{" "}
+          {memory.context.completed_mission_count ??
+            memory.context.completed_sample_count ??
+            0}{" "}
+          mission(s) simulée(s) terminée(s) admissible(s).
+          {memory.context.mean_elapsed_simulation_seconds != null
+            ? ` Temps moyen : ${num(memory.context.mean_elapsed_simulation_seconds / 60, 1)} min simulées.`
+            : " Temps moyen indisponible."}
+          {memory.context.mean_distance_km != null
+            ? ` Distance moyenne : ${num(memory.context.mean_distance_km, 1)} km.`
+            : ""}
+          {memory.context.history_limit
+            ? ` Historique borné à ${memory.context.history_limit} trajets.`
+            : ""}
+        </p>
+      )}
+      <small>
+        La fréquence et les temps simulés de la bibliothèque donnent le
+        contexte. Les coûts API ci-dessus proviennent des appels observés ;
+        aucune économie monétaire mesurée n’est déduite.
+      </small>
     </div>
   );
 }

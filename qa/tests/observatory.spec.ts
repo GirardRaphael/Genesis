@@ -146,7 +146,7 @@ test('Montreal street map and persisted multiple-delivery dispatch',async({page,
     const canvas=element.querySelector('canvas');
     return canvas ? Math.abs(canvas.getBoundingClientRect().width-element.getBoundingClientRect().width) : 999;
   })).toBeLessThan(3);
-  await page.getByRole('button',{name:'Charger un exemple montréalais',exact:true}).click();
+  await page.getByRole('button',{name:'Exemple facultatif : charger deux livraisons',exact:true}).click();
   await expect(page.locator('.dispatch-draft li')).toHaveCount(2);
   await page.getByText('Créer manuellement un trajet routier',{exact:true}).click();
   const fleet=(await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles;
@@ -188,7 +188,11 @@ test('broker fixture allocation and live observatory replay evidence',async({pag
   test.skip(process.env.CI==='true','Public road provider integration is verified locally; Python mocks run in CI');
   test.setTimeout(90000);
   await page.goto('/?view=dispatch');
-  await page.getByRole('button',{name:'Charger un exemple montréalais',exact:true}).click();
+  await page.getByRole('button',{name:'Exemple facultatif : charger deux livraisons',exact:true}).click();
+  const depot=page.getByRole('searchbox',{name:'Dépôt de départ présumé',exact:true});
+  await depot.fill('Gare Centrale Montréal');
+  await depot.press('Enter');
+  await page.getByRole('list',{name:'Résultats pour dépôt de départ présumé'}).getByRole('button').first().click();
   await page.getByRole('radio',{name:'Démonstration sans appel IA',exact:true}).check();
   await expect.poll(async()=> (await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles.some(van=>van.available),{timeout:45000}).toBeTruthy();
   const fleet=(await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles;

@@ -63,6 +63,14 @@ class Runtime:
     def prompt_path(self, role):
         return PROMPT_ROOT / f"{role}-v1.txt"
 
+    def explanation_skip_reason(self, role, state, result):
+        return None
+
+    def model_evidence(self, role, state, output):
+        index = ROLES.index(role)
+        prior_message = state.get(ROLES[index - 1], {}).get("agent_message") if index else None
+        return {**output, "prior_agent_message": prior_message}
+
     def __init__(self, store, row):
         self.store, self.run_id, self.request = store, row["id"], row["request"]
         self.fence = (row["owner"], row["generation"])
@@ -271,17 +279,17 @@ class Runtime:
                 self.check()
                 usage = None
                 explanation = None
-                if self.request["mode"] == "live":
+                skip_reason = self.explanation_skip_reason(role, state, result)
+                if self.request["mode"] == "live" and not skip_reason:
                     prompt = self.prompt_path(role).read_text(encoding="utf-8")
-                    index = ROLES.index(role)
-                    prior_message = (
-                        state.get(ROLES[index - 1], {}).get("agent_message") if index else None
-                    )
-                    evidence = {**output, "prior_agent_message": prior_message}
+                    evidence = self.model_evidence(role, {**state, role: result}, output)
                     explanation, usage = ModelAdapter(
                         self.store, self.run_id, self.fence, role
                     ).explain(role, prompt, evidence, invocation_id)
                     output = {**output, "explanation": explanation}
+                elif self.request["mode"] == "live":
+                    output = {**output, "explanation_omitted": skip_reason}
+                    self.event("model.omitted", {"role": role, "usage_source": skip_reason}, invocation_id)
                 output_artifact = self.store.put_artifact(
                     self.run_id, "agent_output", output, self.fence, invocation_id
                 )
@@ -301,7 +309,7 @@ class Runtime:
                     "input_tokens": usage["input_tokens"] if usage else None,
                     "output_tokens": usage["output_tokens"] if usage else None,
                     "cost": usage["cost_usd"] if usage else None,
-                    "usage_source": usage["usage_source"] if usage else "not_applicable_fixture",
+                    "usage_source": usage["usage_source"] if usage else skip_reason if self.request["mode"] == "live" else "not_applicable_fixture",
                     "prompt_version": "v1",
                     "output": output,
                     "output_artifact_id": output_artifact,

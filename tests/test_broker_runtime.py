@@ -3,6 +3,8 @@
 from genesis.broker_runtime import BrokerRuntime
 from genesis.dispatch import _project, _trips, fleet_snapshot, materialize_broker_trips
 from genesis.llm import LiveUnavailable
+from genesis.llm import BillingUncertain
+from genesis.workflow import agent_id
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
@@ -63,7 +65,7 @@ def test_five_role_broker_creates_ordered_ready_trip(store, monkeypatch):
     assert all(item["route"]["duration_seconds"] == 180 * len(item["stops"]) for item in projected)
     assert all([stop["eta_seconds"] for stop in item["stops"]] == [60 + 180 * i for i in range(len(item["stops"]))] for item in projected)
     assert len({s["id"] for item in projected for s in item["stops"]}) == 4
-    assert all(c["name"] in {"freeze_free_fleet", "osrm_static_table", "compare_fleet_strategies", "independent_broker_certificate", "dispatch_admissibility"} for a in detail["agents"] for c in a["tool_calls"])
+    assert all(c["name"] in {"freeze_free_fleet", "osrm_static_table", "compare_fleet_strategies", "revalidate_route_memory", "independent_broker_certificate", "dispatch_admissibility"} for a in detail["agents"] for c in a["tool_calls"])
 
 
 def test_service_dwell_keeps_van_busy_until_last_service(store, monkeypatch):
@@ -263,3 +265,169 @@ def test_cancel_between_trip_commit_and_run_finish_retires_ready_trip(store, mon
         row = conn.execute(select(_trips).where(_trips.c.idempotency_key.like(f"broker:{run['id']}:%"))).mappings().one()
     assert row["status"] == "cancelled"
     assert fleet_snapshot(store.engine, ["van1"], request["depot"])["vehicles"][0]["available"]
+
+
+@pytest.mark.parametrize(("policy", "history", "admit", "expected_roles"), [
+    ("always", False, True, ["planning", "traffic", "optimization", "monitoring", "exception"]),
+    ("routine", False, True, ["optimization", "monitoring", "exception"]),
+    ("routine", True, True, []),
+    ("routine", True, False, []),
+])
+def test_explanation_policy_calls_and_truthful_omissions(store, monkeypatch, policy, history, admit, expected_roles):
+    from genesis.broker_solver import compare_strategies
+
+    request = {**_request(), "mode": "live", "budget_usd": "1", "explanation_policy": policy}
+    row = store.create_run(request, f"policy-{policy}-{history}")
+    runtime = BrokerRuntime(store, store.claim("policy-worker"))
+    monkeypatch.setattr("genesis.broker_runtime.road_matrix", _matrix)
+    monkeypatch.setattr("genesis.dispatch._road_route", _route)
+    if not admit:
+        def changed_geometry(*_args, **_kwargs):
+            raise HTTPException(409, {"code": "road_route_changed", "message": "Current geometry changed"})
+        monkeypatch.setattr("genesis.dispatch._road_route", changed_geometry)
+    # A bounded historical allocation contains no old cost or trusted certificate.
+    def context(_engine, _request):
+        candidates = []
+        if history:
+            nodes = [{"coordinates": request["depot"]["coordinates"], "kind": "start", "vehicle_id": v} for v in request["vehicle_ids"]]
+            deliveries = []
+            for delivery in request["deliveries"]:
+                pickup = len(nodes)
+                nodes.extend({"coordinates": delivery[k]["coordinates"], "kind": k, "delivery_id": delivery["id"]} for k in ("pickup", "dropoff"))
+                deliveries.append({"id": delivery["id"], "pickup_index": pickup, "dropoff_index": pickup + 1, "parcels": delivery["parcels"], "deadline_s": 7200})
+            from genesis.models import content_hash
+            problem = {"nodes": nodes, "vehicles": [{"id": v, "start_index": i, "capacity": 40, "fixed_cost_cents": 1800, "cost_per_km_cents": 95, "driver_hour_cents": 2800} for i, v in enumerate(request["vehicle_ids"])], "deliveries": deliveries, "durations": _matrix(nodes)["durations"], "distances": _matrix(nodes)["distances"], "service_seconds": 120, "objective": "cost", "balance_value_cents_per_minute": 50, "max_duration_s": 28800}
+            problem["input_hash"] = content_hash(problem)
+            selected = compare_strategies(problem)["selected"]
+            candidates = [{"source_run_id": "historical-run", "source_trip_ids": ["historical-trip"], "problem_input_hash": "old-road-hash", "solution_hash": "untrusted-old-solution", "provider_matches": True, "vehicle_routes": [{"vehicle_id": r["vehicle_id"], "stop_order": [f"{nodes[i]['delivery_id']}:{nodes[i]['kind']}" for i in r["node_order"]]} for r in selected["vehicle_routes"]]}]
+        return {"tracking_mode": "simulation", "history_limit": 500,
+                "completed_sample_count": 1 if history else 0,
+                "completed_mission_count": 1 if history else 0,
+                "completed_trip_sample_count": 1 if history else 0,
+                "sample_unit": "completed_mission",
+                "ranking_basis": "completed_simulated_mission_makespan_then_distance",
+                "candidates": candidates}
+    monkeypatch.setattr("genesis.broker_runtime.route_context", context)
+    seen = []
+    class TestAdapter:
+        def __init__(self, *_args):
+            pass
+        def explain(self, role, _prompt, evidence, _invocation):
+            seen.append(role)
+            import json
+            prompt_context = json.dumps(evidence["route_history"])
+            assert evidence["route_history"]["sample_unit"] == "completed_mission"
+            assert evidence["route_history"]["ranking_basis"] == "completed_simulated_mission_makespan_then_distance"
+            assert evidence["route_history"]["completed_mission_count"] == int(history)
+            assert evidence["route_history"]["completed_trip_sample_count"] == int(history)
+            assert "coordinates" not in prompt_context and "Depot" not in prompt_context
+            assert "candidates" not in prompt_context and "stop_order" not in prompt_context
+            return {"summary": "Stub explanation"}, {"resolved_model": "test-model", "requested_model": "test-model", "input_tokens": 10, "output_tokens": 2, "cost_usd": "0.001", "usage_source": "test_stub"}
+    monkeypatch.setattr("genesis.workflow.ModelAdapter", TestAdapter)
+    runtime.execute()
+    completed = store.get_run(row["id"])
+    assert completed["status"] == "succeeded"
+    assert seen == expected_roles
+    assert completed["detail"]["certificate"]["valid"]
+    assert bool(completed["detail"]["created_trip_ids"]) is admit
+    assert len(completed["detail"]["handoffs"]) == 5
+    for agent in completed["detail"]["agents"]:
+        if agent["role"] not in expected_roles:
+            assert agent["input_tokens"] is agent["output_tokens"] is agent["cost"] is None
+            assert agent["usage_source"] in {"not_applicable_route_memory", "not_applicable_routine_policy"}
+    memory = completed["detail"]["route_memory"]
+    assert memory["outcome"] == ("changed" if not admit else "reused" if history else "miss")
+    assert memory["admission_outcome"] == ("created" if admit else "rejected")
+    if not admit:
+        assert memory["selection_outcome"] == "reused"
+        assert memory["admission_reason"] == "road_route_changed"
+        assert completed["detail"]["final_kind"] == "accepted_diagnostic"
+        assert completed["detail"]["final_output"]["feasible"] is False
+    assert memory["planned_explanation_calls"] == len(expected_roles)
+    assert memory["omitted_explanation_roles"] == [role for role in ("planning", "traffic", "optimization", "monitoring", "exception") if role not in expected_roles]
+    assert memory["fresh_road_computed_at"] == _matrix([])["computed_at"]
+    assert sum(e["kind"] == "model.omitted" for e in store.history(row["id"])) == 5 - len(expected_roles)
+
+
+def test_routine_recovery_does_not_bypass_prior_provider_intent(store, monkeypatch):
+    request = {**_request(), "mode": "live", "budget_usd": "1", "explanation_policy": "routine"}
+    row = store.create_run(request, "routine-recovery")
+    old = store.claim("old", lease_seconds=-1)
+    store.append_event(row["id"], "model.started", {"attempt_id": "prior-intent"}, agent_id(row["id"], "planning"), fence=(old["owner"], old["generation"]))
+    runtime = BrokerRuntime(store, store.claim("recovered"))
+    monkeypatch.setattr("genesis.workflow.ModelAdapter", lambda *_args: pytest.fail("Unsafe redispatch"))
+    with pytest.raises(BillingUncertain, match="prior provider intent"):
+        runtime.node("planning", runtime.planning)({"run_id": row["id"]})
+
+
+def test_generated_delivery_ids_ignore_explanation_policy(store):
+    from genesis.api import create_app
+    api = TestClient(create_app(store))
+    body = {k: v for k, v in _request().items() if k not in {"workflow_kind", "scenario_id", "policy", "seed"}}
+    for delivery in body["deliveries"]:
+        delivery["id"] = None
+    first = api.post("/api/v1/dispatch/plans", json=body)
+    assert first.status_code == 202 and first.json()["explanation_policy"] == "always"
+    second = api.post("/api/v1/dispatch/plans", json={**body, "explanation_policy": "routine"})
+    assert second.status_code == 202
+    assert [d["id"] for d in store.get_run(first.json()["id"])["request"]["deliveries"]] == [d["id"] for d in store.get_run(second.json()["id"])["request"]["deliveries"]]
+    assert api.post("/api/v1/dispatch/plans", json={**body, "explanation_policy": "invalid"}).status_code == 422
+    legacy = _request()
+    legacy["deliveries"][0]["id"] = "legacy-generated-id"
+    legacy_run = store.create_run(legacy, "legacy-idempotency")
+    replay = api.post("/api/v1/dispatch/plans", json=body, headers={"Idempotency-Key": "legacy-idempotency"})
+    assert replay.status_code == 202 and replay.json()["id"] == legacy_run["id"]
+    body["deliveries"][0]["parcels"] += 1
+    assert api.post("/api/v1/dispatch/plans", json=body, headers={"Idempotency-Key": "legacy-idempotency"}).status_code == 409
+
+
+def test_history_rebuild_uses_current_roads_and_rejects_invalid_or_changed_winner(store, monkeypatch):
+    from genesis.broker_solver import _materialize
+    monkeypatch.setattr("genesis.broker_runtime.road_matrix", _matrix)
+    store.create_run(_request(), "rebuild-history")
+    runtime = BrokerRuntime(store, store.claim("rebuild-worker"))
+    planning, _ = runtime.planning({}, [])
+    traffic, _ = runtime.traffic({"planning": planning}, [])
+    problem = traffic["problem"]
+    selected = _materialize(problem, {"van1": [2, 3, 4, 5]}, "feasible_candidate")
+    candidate = {"source_run_id": "history", "source_trip_ids": ["trip"], "provider_matches": True, "problem_input_hash": "obsolete", "vehicle_routes": [{"vehicle_id": "van1", "stop_order": ["a:pickup", "a:dropoff", "b:pickup", "b:dropoff"]}]}
+    assert runtime.assess_route_memory(problem, selected, {"candidates": [candidate]})["outcome"] == "reused"
+    # A changed current matrix is rebuilt; the historical totals never enter the calculation.
+    from genesis.models import content_hash
+    problem["durations"][0][2] += 60
+    problem["input_hash"] = content_hash({k: v for k, v in problem.items() if k != "input_hash"})
+    updated = _materialize(problem, {"van1": [2, 3, 4, 5]}, "feasible_candidate")
+    assert updated["fleet_cost_cents"] > selected["fleet_cost_cents"]
+    assert runtime.assess_route_memory(problem, updated, {"candidates": [candidate]})["reason"] == "same_assignment_revalidated"
+    assert runtime.assess_route_memory(problem, selected, {"candidates": [candidate]})["outcome"] == "changed"
+    assert runtime.assess_route_memory(problem, updated, {"candidates": [{**candidate, "provider_matches": False}]})["outcome"] == "changed"
+    invalid = {**candidate, "vehicle_routes": [{"vehicle_id": "van1", "stop_order": ["a:dropoff", "a:pickup", "b:pickup", "b:dropoff"]}]}
+    assert runtime.assess_route_memory(problem, updated, {"candidates": [invalid]})["outcome"] == "changed"
+    separated = _materialize(problem, {"van1": [2, 3], "van2": [4, 5]}, "feasible_candidate")
+    reversed_records = {**candidate, "vehicle_routes": [{"vehicle_id": "van2", "stop_order": ["b:pickup", "b:dropoff"]}, {"vehicle_id": "van1", "stop_order": ["a:pickup", "a:dropoff"]}]}
+    assert runtime.assess_route_memory(problem, separated, {"candidates": [reversed_records]})["outcome"] == "reused"
+
+
+def test_model_history_evidence_preserves_units_without_raw_input(store):
+    import json
+    store.create_run(_request(), "history-units")
+    runtime = BrokerRuntime(store, store.claim("history-units-worker"))
+    context = {"tracking_mode": "simulation", "sample_unit": "completed_mission",
+               "ranking_basis": "completed_simulated_mission_makespan_then_distance",
+               "completed_mission_count": 2, "completed_trip_sample_count": 3,
+               "coordinates": [-73.56, 45.50], "raw_address": "Private address",
+               "candidates": [{"stop_order": ["raw-address:pickup"]}]}
+    evidence = runtime.model_evidence("optimization", {"planning": {"route_memory_context": context}}, {})
+    aggregate = evidence["route_history"]
+    assert aggregate["sample_unit"] == "completed_mission"
+    assert aggregate["ranking_basis"] == context["ranking_basis"]
+    assert aggregate["completed_mission_count"] == 2
+    assert aggregate["completed_trip_sample_count"] == 3
+    guidance = aggregate["interpretation"]
+    assert "simulated mission makespans" in guidance and "approach and service" in guidance
+    assert "vehicle origins may vary" in guidance
+    assert "mission completion cadence, not measured driver labor" in guidance
+    assert "do not isolate the effect of stop order" in guidance
+    assert len(guidance) < 400
+    assert not {"coordinates", "raw_address", "candidates", "stop_order"} & aggregate.keys()
+    assert "Private address" not in json.dumps(evidence)

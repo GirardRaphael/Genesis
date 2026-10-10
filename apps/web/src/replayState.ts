@@ -94,6 +94,7 @@ export function agentSnapshot(
     candidates: finished ? detail.candidates : undefined,
     created_trip_ids: finished ? detail.created_trip_ids : undefined,
     fleet_snapshot: finished ? detail.fleet_snapshot : undefined,
+    route_memory: finished ? detail.route_memory : undefined,
     metrics: finished ? detail.metrics : null,
     baseline: validated ? detail.baseline : undefined,
     candidate: validated ? detail.candidate : undefined,
