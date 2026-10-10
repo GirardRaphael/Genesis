@@ -1,0 +1,90 @@
+# Trace metrics and API contract
+
+Status: implementation specification v0.1. These are proposed application contracts, not claims about vendor schemas. W01 converts them to executable schemas and migration tests. PLAN.md and this file override exploratory examples in research notes.
+
+## Identity and ordering
+
+Use UUID identities for project, run, invocation, model call, tool call, attempt, event, artifact and evaluation. One agent invocation may contain several model calls and tool calls. A retry is a new attempt under the same logical call. A revised analysis is a new invocation referencing the superseded artifact. Every stored row belongs to one project, including checkpoint and artifact metadata.
+
+Each event has `schema_version`, `event_id`, `project_id`, `run_id`, `run_seq`, `kind`, `occurred_at`, `ingested_at`, optional `invocation_id`, `attempt_id`, `caused_by_event_id`, `trace_id`, `span_id`, and a schema-validated redacted `payload`. UTC RFC3339 timestamps preserve milliseconds; the UI renders in its explicit timezone, initially America/Toronto. Derive durations from a monotonic clock within a process and store integer milliseconds. Do not subtract clocks from unrelated workers as if they were synchronized.
+
+Acquire a per-run database lock to allocate `run_seq` and insert the event in the same transaction. Enforce unique `(run_id, run_seq)` and `event_id`. Duplicate producer IDs return the original result only if payload hashes agree; conflicting payloads are rejected and recorded. An unconstrained database sequence is not commit ordering. Out-of-order occurrence times do not rewrite committed sequence. Reject impossible state transitions or quarantine them with a diagnostic event.
+
+Persist domain state, event and exporter outbox record atomically where they describe one local transition. Provider execution is outside the database transaction: save intent before dispatch, use provider idempotency where supported, then persist response. A crash after provider execution but before response persistence creates an uncertain attempt; reconcile with provider IDs where possible and mark billing uncertainty. Do not promise exactly-once external calls.
+
+## Core records
+
+| Record | Required content |
+|---|---|
+| Run | Mission summary, input dataset/hash, scenario, config/prompt/code version, routing policy, provenance `fixture` or `live`, budget, timestamps, terminal status, final artifact ID |
+| Invocation | Agent role/name, task/objective, parent invocation if any, started/finished times, status, prompt version, model-call IDs, input/output artifact IDs |
+| Model attempt | Provider and requested/resolved model IDs; attempt number; generation settings; request ID; input/output tokens and category details; usage source; status/error; duration; price version; cost/currency/coverage |
+| Tool attempt | Logical call, typed tool/version, attempt, sanitized argument reference, output reference, error class/code, timestamps, retryability |
+| Handoff | Sender/receiver invocation IDs, sequence, source artifact IDs, concise task/message summary, relation type, actual/planned flag |
+| Artifact | Producer, immutable content hash, MIME/size, storage key, preview, schema version, evidence refs, redaction status, lifecycle draft/accepted/rejected/superseded |
+| Evaluation | Artifact and rubric IDs/versions, evaluator identity/model, deterministic results, criterion scores, verdict, evidence refs, duration and separate evaluation cost |
+| Price record | Provider, model, currency, effective dates, source URL/retrieval date, per-category rates and billing rules |
+
+Payloads must not contain credential values, hidden chain of thought or arbitrary executable commands. Store sanitized observable rationales and evidence. Untrusted Markdown is rendered with raw HTML disabled and links restricted to safe protocols. Artifacts are retrieved by authorized ID, never by a client-supplied filesystem path.
+
+## Events and states
+
+Events include `run.queued`, `run.started`, `agent.started`, `model.started`, `model.completed`, `model.failed`, `tool.started`, `tool.completed`, `tool.failed`, `handoff.sent`, `artifact.created`, `validation.completed`, `agent.completed`, `agent.failed`, `run.cancel_requested`, `run.completed`, `run.failed`, `run.cancelled`, `run.timed_out`, `run.budget_exceeded`, and `telemetry.export_failed`. W01 assigns exact payload schemas. Recovery emits a resumed marker without inventing a second successful model response.
+
+Run state: queued -> running -> one of succeeded, failed, cancelled, timed_out, budget_exceeded. `run.completed` means succeeded only after required validation. A completed invocation can contain failed attempts followed by success. `cancel_requested` is not terminal; stop further work, cancel provider work where possible, reconcile in-flight usage and then close. Completed runs are immutable except separate append-only corrections/evaluations; terminal retries create a new linked run.
+
+## Metric dictionary
+
+All metrics share a server-resolved cohort and snapshot. Default time filter is run creation time in `[from,to)`, with timezone explicit. Agent/model filters select runs containing matching invocations/calls; run metrics include entire matching runs. Agent charts then use matching invocations only, labeled as such. A selected run remains fully inspectable even when a chart-level filter narrows highlights. Never silently sum only visible table rows.
+
+| Metric | Definition and display rule |
+|---|---|
+| Execution count | Distinct matching run IDs; separate live and fixture datasets |
+| Mission success rate | succeeded / (succeeded + failed + timed_out + budget_exceeded); show numerator/denominator; queued/running/cancelled excluded and counted separately |
+| Mean run duration | Mean wall duration of started terminal runs, including cancelled/timed-out runs; exclude pre-start cancellations; show cohort count and p50/p95 separately |
+| Tokens | Sum input + output once per billable leaf attempt; cached input and reasoning output are subsets where provider defines them that way; show coverage |
+| Cost | Sum known leaf charges in one currency; provider totals override estimates for that call; missing calls make total partial, never zero |
+| Error count | Failed model/tool attempts; count agent/run terminal failures separately to avoid counting propagated errors as independent tool errors |
+| Most-used agent | Highest invocation count; label ties and count |
+| Slowest agent | Highest mean completed invocation duration with sample count; show total contribution separately |
+| Retry count | Sum `max(attempt_count - 1,0)` by logical call; analyst revisions reported separately |
+| Quality | Versioned rubric score 0–100 on evaluated artifacts; unevaluated is null; show score distribution and evaluated fraction |
+| Tool error rate | Failed tool attempts / all completed tool attempts; canceled/in-flight attempts excluded explicitly |
+
+Example billing fixture: 1,000 input tokens including 200 cached, 300 output tokens including 50 reasoning. Total tokens = 1,300, not 1,550. If uncached input is $1/M, cached $0.50/M and output $2/M, estimated call cost = $0.0015. These prices are invented test rates, not vendor pricing. Decimal strings are serialized; round only presentation. Invalid categories or missing rate rules produce unavailable estimates. All retries with known usage count, including failures. Evaluation spend has a separate subtotal plus an all-in total.
+
+Run wall time includes waiting and concurrent work. Invocation durations can overlap; their sum is not end-to-end latency. Critical-path computation uses explicit dependency edges and well-defined intervals. Correlation between cost and quality does not prove causation.
+
+## Budget reservation and settlement
+
+Before each billable model/tool dispatch, atomically reserve a conservative maximum prospective charge against the run's remaining budget under a database lock. Compute the reservation from the exact price version, bounded input, maximum output and known fixed/tool charges; use uncached input rates unless cache eligibility is certain. Enforce `settled_known + held_reservations + new_reservation <= run_budget`. Judge calls, retries and escalations require their own reservations, including calls from concurrent branches. A project-level aggregate budget uses the same transactional rule where configured.
+
+Dispatch fails closed if required rates, usage bounds or billing categories are unknown. A provider-specific adapter must establish a conservative upper bound; otherwise disable that live configuration. Atomic reservation denial emits an observable budget event and prevents dispatch. Settle known usage once under the attempt ID and release only the proven unused remainder. Duplicate responses must not settle twice. A timed-out/uncertain attempt retains its reservation until reconciled; do not release funds merely because a lease expired or a retry was scheduled. If unresolved reservations prevent further work, end with budget_exceeded plus a billing-uncertain explanation.
+
+Provider invoices may differ from estimates, rounding or delayed adjustments; this is an application-side conservative spending control, not a guaranteed invoice cap. If reconciliation exceeds a reservation, record overrun, freeze further dispatch and surface the discrepancy. Test two simultaneous calls competing for the last available balance, retries while prior usage is unknown, judge costs, stale price records, duplicate settlement and crash recovery of held funds. Use provider account limits as a separate backstop where available.
+
+## Chart semantic contracts
+
+Graph nodes show role aggregates or actual invocations, with a visible mode label. Planned edges are dotted and excluded from observed communication counts. Timeline uses actual intervals and separate retry rows. The Sankey is a **two-column communication matrix**: distinct sender-role nodes on the left and receiver-role nodes on the right, one unit per observed handoff. Sender and receiver nodes remain different identities even for the same role. Each message contributes to exactly one edge; total edge weight equals the observed handoff count. There are no intermediate nodes and no claim that messages or tokens are conserved through an agent. Repair messages and verifier fan-out each count as their own observed events; event sequence and iteration remain available in details. Test a verifier with two outgoing messages and an analyst repair. Heatmap cells show scenario x agent mean latency with `n`; an optional error mode uses an explicitly named denominator. Null cells are hatched. Comparison uses paired scenario/input groups with equal metric definitions and exposes cohort imbalance.
+
+## API surface
+
+| Endpoint | Contract |
+|---|---|
+| `POST /api/v1/runs` | Validated mission/config/budget; project-scoped idempotency key; transactionally persist request; return 202 and run ID |
+| `GET /api/v1/runs` | Allowlisted filters/sort, stable cursor pagination; default 50, maximum 200 rows; return snapshot and count |
+| `GET /api/v1/runs/{id}` | Summary, metadata, artifact refs and last committed sequence; no unbounded embedded event history |
+| `GET /api/v1/runs/{id}/events?after_seq=N` | Ordered bounded history; deterministic cursor and continuation |
+| `GET /api/v1/runs/{id}/stream` | SSE, IDs based on run sequence, Last-Event-ID resume, heartbeat, duplicate-safe client reducer |
+| `GET /api/v1/metrics` | Shared filters and snapshot token; denominators, coverage and units returned with values |
+| `GET /api/v1/artifacts/{id}` | Authorization, MIME policy, bounded preview or download; immutable content hash |
+| `POST /api/v1/runs/{id}/cancel` | Idempotent request; does not claim instant cancellation |
+| `GET /api/v1/comparisons?left=...&right=...` | Two authorized runs; normalized metric and artifact comparison |
+
+Typed errors contain code, safe message, request ID and retryability. Validate IDs, query bounds, payload size and project scope at the boundary. All hosted deployments require authenticated API and artifact access. A localhost-only development profile may use a fixed synthetic project and no identity provider; it must bind to loopback and refuse nonlocal deployment in that mode.
+
+SSE backfills committed events then follows new rows; one stream per selected run, not per chart. A stale cursor returns a recoverable snapshot-expired condition. Overview refreshes a consistent snapshot instead of depending on cross-run global commit order. Offline replay reduces the stored event stream locally and never calls an agent or incurs spend. A new execution from an old input is explicitly labeled Rerun.
+
+## Retention and recovery
+
+Proposed local retention is 30 days for raw artifacts and 90 days for sanitized events; pin experiment release exports until project submission is complete. Make these configurable policy values before deployment. Deletion follows references across artifacts, checkpoints, database and external traces; preserve a redacted tombstone where needed. Verify backup restore with known checksums and a reconstructable projection. Append-only describes ordinary event operations, not an exemption from deletion requirements.

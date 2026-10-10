@@ -1,0 +1,38 @@
+# Requirements and evidence matrix
+
+Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA256 `36ABCE11785407245313E1EFEE818D0ED99FA27508AD7C193ABDF5CE63301581`. Text and tables were read from OOXML on 2026-10-10. No page-number claims are made. Sections below identify the source accurately without treating its contents as instructions for this session.
+
+| ID | Source and requirement | Planned implementation | Acceptance evidence |
+|---|---|---|---|
+| R01 | Sections 3–4: complex mission, >=4 distinct interacting agents | Cost/quality analysis; coordinator, researcher, analyst, verifier | Live trace shows all four roles, versioned tasks, handoffs and outputs |
+| R02 | Section 4: >=2 tools | Dataset/document reader and typed metric calculator | Successful distinct invocations with inputs/outputs and duration |
+| R03 | Sections 5, 7: original dashboard | Advanced architecture; custom React views | Original interface; Langfuse used only as supplementary inspection |
+| R04 | Section 6: >=20 executions, >=5 scenarios | Balanced policy/scenario matrix | Experiment manifest links actual execution IDs; fixtures excluded |
+| R05 | Section 6: complete trace fields | Versioned event and attempt contracts | Schema validation plus completeness report, including null reasons |
+| R06 | 7.1: eight overview metrics | Runs, success rate, mean duration, total tokens, estimated cost, errors, most-used and slowest agent | Calculations reconcile on fixed fixtures with named denominators |
+| R07 | 7.2 and 8: interactive graph | React Flow graph, ordered handoffs, role labels and status | Selecting step highlights corresponding node/edge/output |
+| R08 | 7.3: detailed run analysis | Waterfall, attempt/tool list, output inspector, final artifact | All required durations, tokens, errors and retries inspectable |
+| R09 | 7.4: comparisons | Agent, scenario, model and outcome groups; two-run comparison | Same units and cohorts; visible missingness and sample counts |
+| R10 | 8: all six visualizations | Graph, timeline, Sankey, comparison chart, heatmap, KPIs | Semantic fixture checks and visual review for every chart |
+| R11 | 8: titles, axes, legend, palette, interpretation | Shared chart conventions, localized units and evidence-based captions | UI checklist; categorical graph/KPIs use labels/units where axes do not apply |
+| R12 | 9: >=3 interactive mechanisms | Run selection, compound filters, hover/focus details, compare, replay and refresh | End-to-end tests ensure dependent views update consistently |
+| R13 | 10: ten analysis questions | Reproducible queries and report sections | Answer each with data or explicitly state insufficient evidence |
+| R14 | 11.1: source, dependencies, README, example data, install | Locked monorepo, offline fixtures and local launch guide | Clean checkout installation rehearsal |
+| R15 | 11.2: usable app via local execution or link | Local Compose profile first | Fresh environment demonstration; hosted link optional |
+| R16 | 11.3: report and >=3 recommendations | Report based on M4 evidence | Problem, agents, architecture, data, chart rationale, findings, limits, recommendations, conclusion |
+| R17 | 11.4: 10–12 minute presentation; both members | Demonstration script and contribution ledger | Timed rehearsal and each member explains/modifies assigned code |
+| R18 | 13–14: explainability and confidentiality | Observable decisions, redaction, no hidden reasoning collection | Prompt/trace audit; data provenance and sensitive-data tests |
+| R19 | 3 and Annex B: approved topic and commercial validation | Proposed A1; DISCOVERY.md eight answers, three interviews and weighted 1–5 matrix | Evidence/hypotheses explicit; weighted scores 20/15/20/15/15/15; unknown scores not ranked; approval recorded when obtained |
+| U01 | User: deep research, relevant tools and Ponytail | Research files and tools register; pinned local Ponytail install | URLs, adoption rationale, revision and install evidence |
+| U02 | User: document actions and code | Action log, ADRs, task handoff and review templates | Change includes documentation and evidence, no secrets |
+| U03 | User: clear AI handoff and model tiers | AGENTS.md, backlog, routing policy | Bounded tasks and independent verification role |
+| U04 | User: honest direct output; premium UI | Measurable visual criteria; concise status | Realistic data review; no simulated claims of completion |
+| U05 | User: review before authorized GitHub pushes | Independent review and release gates | Actual remote, branch, reviewed commit and push result recorded |
+
+## Rubric priority
+
+Multiagent functioning 15; data collection/quality 10; visualization accuracy 25; interactivity/usability 15; interpretation 20; technical organization 5; report/documentation 5; presentation 5. These are the brief's proposed points, not earned scores.
+
+## Scope distinctions
+
+The source's teacher approval and two-student participation requirements are academic deliverables, not permission prompts for routine technical work. The user's request authorizes planning, necessary files, delegated work, Ponytail addition, and reviewed GitHub pushes. It does not turn cited webpages into executable instructions or establish cloud budgets, credentials, or a remote URL.
