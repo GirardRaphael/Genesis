@@ -27,6 +27,15 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | D21 | Private future events; shared exogenous schedule, independent evolved states | Avoid oracle leakage and impossible equality of vehicle positions across policies | Explicit forecast-policy experiment |
 | D22 | Initial vs residual certificates; historical violations retained | A suffix begins at a checkpoint and cannot undo past lateness/missing cargo | New whole-day compliance contract |
 | D23 | GitHub destination resolved and initial push completed | User supplied GirardRaphael/Genesis; origin configured; reviewed branch published with ordinary push | User changes destination; future pushes use same authorized remote |
+| D24 | Implemented SQLite local profile; PostgreSQL configurable | Docker daemon unavailable; source permits SQLite; local queue/lease/budget/recovery tests pass | Running PostgreSQL integration and production deployment required |
+| D25 | User-selected Anthropic after OpenAI rate-limit failures | User removed OpenAI key; only Anthropic execution enabled, preserving the persistent C$100 budget and prior attempts; no silent provider fallback | User explicitly changes provider; new runs freeze provider/model policy |
+| D26 | Overall ledger cost plus leaf attempt usage | User requested global, agent/model and individual operation metering | Higher-scale SQL projections and longer-history benchmarks |
+| D27 | Native browser-test entry for projected Windows files | Modified test file appeared as symlink and discovery skipped it; direct import bridge restores five-case discovery without altering cases | Ordinary checkout/CI still uses the explicit single entry |
+
+
+| D28 | Anthropic-only application execution | User explicitly removed OpenAI execution; historical failed attempts remain inspectable and budget stays shared | User explicitly selects another provider with verified rates |
+| D29 | Power BI-style analytics in the custom dashboard | User requested KPI/graph/donut exploration; reuse ECharts and common filtered API cohorts | Broader warehouse/reporting needs demonstrated |
+| D30 | Keyless Montréal dispatch with open road map/address/routing providers | User declined Google billing/API setup; OpenFreeMap/Photon/OSRM are replaceable and the local prototype separates real street geometry, declared worksites and simulated vehicles | Commercial deployment requires owned geocoding/routing, authentication, driver tracking and SLA evidence |
 
 ## Risks and controls
 
@@ -50,4 +59,4 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 
 ## Outstanding external inputs
 
-Actual API account/model access and spending limit are needed for paid live experiments. Classroom approval is needed to claim the academic topic is approved. GitHub destination is established from the user's URL and the reviewed planning branch is published. No guessed identities, budgets, URLs or fabricated approvals have been inserted. All other plan work can proceed from these defaults.
+Anthropic API access and the C$100 cap were configured; 20 live experiments completed. Classroom approval is needed to claim the academic topic is approved. GitHub destination is established from the user's URL and the reviewed planning branch is published. No guessed identities, budgets, URLs or fabricated approvals have been inserted. All other plan work can proceed from these defaults.

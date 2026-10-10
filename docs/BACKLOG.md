@@ -1,6 +1,6 @@
 # Executable work packages
 
-Every task uses docs/templates/TASK.md. The owner records the actual model and command evidence. Effort estimates in PLAN.md apply to the whole implementation, not guarantees per task. No work package below is claimed implemented.
+Every task uses docs/templates/TASK.md. The owner records the actual model and command evidence. Effort estimates in PLAN.md apply to the whole implementation, not guarantees per task. These are the original acceptance packages. The implementation evidence and remaining exceptions are tracked in IMPLEMENTATION-STATUS.md; this table must not be read as blanket acceptance of deferred production/commercial gates.
 
 | ID | Owner tier | Dependencies | Owned deliverable | Acceptance / done |
 |---|---|---|---|---|
@@ -26,3 +26,7 @@ Backend owns schema/migrations and API semantics. Solver owner owns constraints,
 ## Change request format
 
 State the new requirement, affected IDs, reason, alternative considered, implementation cost, test impact and whether scope/timing changes. Record acceptance in DECISIONS.md. Avoid silently broadening the MVP into a general SaaS control plane.
+
+## Execution status — 2026-10-10
+
+W00 planning was independently reviewed. W01–W05 are delivered for the synthetic SQLite loopback profile with domain/runtime/browser evidence; PostgreSQL, external Langfuse and scale measurements remain deferred. W06 has automated tests and an independent review; final approval/publication is in the review and action log. W07 contains 20 actual Anthropic runs and paired outcome analysis, with semantic/human-quality limits explicit. W08 contains installation commands, report and demonstration script; human rehearsal and fresh-machine installation are unverified. W09 records the ordinary reviewed branch push after final approval. No hosted production deployment is claimed.

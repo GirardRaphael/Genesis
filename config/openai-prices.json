@@ -1,0 +1,49 @@
+{
+  "prices": [
+    {
+      "version": "openai-standard-short-2026-10-10-luna",
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "currency": "USD",
+      "effective_at": "2026-10-10T00:00:00Z",
+      "expires_at": "2026-10-17T00:00:00Z",
+      "retrieved_at": "2026-10-10T00:00:00Z",
+      "source_url": "https://developers.openai.com/api/docs/pricing",
+      "input_per_million": "0.10",
+      "output_per_million": "0.50",
+      "max_input_tokens": 16000,
+      "max_output_tokens": 2048,
+      "billing_rules": "text_input_output_only"
+    },
+    {
+      "version": "openai-standard-short-2026-10-10-sol",
+      "provider": "openai",
+      "model": "gpt-6.1-sol",
+      "currency": "USD",
+      "effective_at": "2026-10-10T00:00:00Z",
+      "expires_at": "2026-10-17T00:00:00Z",
+      "retrieved_at": "2026-10-10T00:00:00Z",
+      "source_url": "https://developers.openai.com/api/docs/pricing",
+      "input_per_million": "2.00",
+      "output_per_million": "10.00",
+      "max_input_tokens": 16000,
+      "max_output_tokens": 2048,
+      "billing_rules": "text_input_output_only"
+    },
+    {
+      "version": "openai-standard-short-2026-10-10-astra",
+      "provider": "openai",
+      "model": "gpt-6-astra",
+      "currency": "USD",
+      "effective_at": "2026-10-10T00:00:00Z",
+      "expires_at": "2026-10-17T00:00:00Z",
+      "retrieved_at": "2026-10-10T00:00:00Z",
+      "source_url": "https://developers.openai.com/api/docs/pricing",
+      "input_per_million": "10.00",
+      "output_per_million": "50.00",
+      "max_input_tokens": 16000,
+      "max_output_tokens": 2048,
+      "billing_rules": "text_input_output_only"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# API execution budget
+
+User authorized OpenAI API use with a maximum aggregate budget of **C$100** on 2026-10-10. This covers this project's application live-agent experiments, not unrelated ChatGPT account usage. No API key was configured at authorization time; no billable application calls had been executed at that point.
+
+Subsequent execution: OpenAI generation was rate limited; rejected attempts remain in the event history. User then selected Anthropic and removed the OpenAI key. The **same aggregate C$100 ceiling** includes historical provider attempts and new Anthropic executions, all requests, retries and verifier calls; switching providers never resets spent or reserved funds. Twenty accepted Anthropic runs consumed US$0.6696181 in provider-usage-based estimates. OverallCost uses the persistent settlement ledger; model/agent/call views show categorized usage and coverage.
+
+Anthropic defaults: Claude Haiku 5.5 for traffic/exception explanations, Sonnet 5.5 for planning/optimization, Opus 5.5 for monitoring. Standard first-party global pricing and cache categories are snapshotted in config/anthropic-prices.json from [official pricing](https://platform.claude.com/docs/en/about-claude/pricing). Cache writes use the conservative one-hour upper rate where duration is not supplied; cache reads and writes are input subsets and are not double-counted. No thinking content is stored.
+
+The application reserves before each billable dispatch, includes retries/verifier calls, and keeps uncertain charges held. A persistent project-wide ceiling covers all runs, so concurrent individual run budgets cannot independently spend the same allowance. Default conservative spending policy: 2 CAD per USD, resulting in at most US$50 in reserved/settled API estimates. This is a precautionary conversion cushion, not a quoted FX rate. Provider invoicing, taxes and exchange may differ; use provider account limits as an independent backstop.
+
+OpenAI execution and SDK dependency have been removed by user instruction. Its price snapshot is historical provenance only and cannot activate a run. New live requests require Anthropic configuration and a matching current Anthropic price record; stale or unknown billing configuration fails closed. Default per-run budget is US$1; the 20-run harness stops on any provider, schema or budget failure.
+
+Bank of Canada latest daily observation retrieved during implementation: 2026-10-09 USD/CAD 1.4271 ([Valet series endpoint](https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=1)). The 2.0 policy cushion remains deliberately separate from that historical observed rate. Runtime price snapshots expire 2026-10-17 and must be revalidated before further live calls after expiry.

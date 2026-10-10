@@ -87,3 +87,7 @@ W01 must record provider availability and account limits, actual model IDs, pric
 ## 8 Release definition
 
 The product is releasable when every mandatory source requirement has evidence, all blocking review findings are resolved, the dashboard's numbers reconcile with trace records, all six views support their intended questions, and a new environment can replay fixtures without credentials. Live-run evidence remains separately labeled. Quality is established through these gates, never through an assertion that the project is perfect.
+
+## Accepted execution extensions — 2026-10-10
+
+User authorized implementation and then added Anthropic-only execution, live agent/model/individual/overall metering, Power BI-style analytics, and an address-based Montréal delivery workflow. Google Maps was replaced with a keyless stack at the user's direction. IMPLEMENTATION-STATUS tracks achieved evidence; DISPATCH.md specifies the new local operator workflow and company release gates. Original synthetic benchmarks remain separate from operator-entered trips, municipal worksite permits and simulated positions. No external-provider fallback may silently change costs, physical constraints or provenance.

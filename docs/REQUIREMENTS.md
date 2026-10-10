@@ -29,6 +29,10 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 | U04 | User: honest direct output; premium UI | Measurable visual criteria; concise status | Realistic data review; no simulated claims of completion |
 | U05 | User: review before authorized GitHub pushes | Independent review and release gates | Actual remote, branch, reviewed commit and push result recorded |
 | U06 | User selects A11 logistics | LOGISTICS-SPEC, OR-Tools, cached matrices and MapLibre; map/fleet metrics supplement required charts | Five roles, capacity/windows checked, delays/distance/cost/utilization/emissions coverage and paired scenarios; no invented savings |
+| U07 | User: costs/tokens throughout operations, each agent/model/individual request and overall handled total; Anthropic only | Persisted leaf attempts, refresh polling, agent/model groups, request inspector and independent all-request settlement ledger; no OpenAI dispatch | Decimal settlement reconciliation, coverage/nulls/cache subsets, retained uncertain funds, pre-terminal replay, disabled legacy-provider test |
+| U08 | User: Power BI-style analytics with graphs and donut charts | Dedicated analytics page, KPI cards, cost shares, token/latency bars, status distribution and filter-linked breakdowns | Populated chart/table browser checks, accessible filter alternatives, common cohort and labeled missing usage; no invented numbers |
+
+| U09 | User: Montréal address-based multiple deliveries, directions/traffic, company use; keyless alternative accepted | Persistent pickup/drop dispatch, OpenFreeMap/Photon/OSRM, timestamped municipal worksites, simulated vehicle tracking and company release gates | API/road/sample/browser flow, safe search/state races, no fabricated GPS/live speeds; public-provider and hosting limits explicit |
 
 ## Rubric priority
 

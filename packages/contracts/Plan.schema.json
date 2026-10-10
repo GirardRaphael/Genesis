@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "Route": {
+      "additionalProperties": false,
+      "properties": {
+        "vehicle_id": {
+          "title": "Vehicle Id",
+          "type": "string"
+        },
+        "stop_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Stop Ids",
+          "type": "array"
+        },
+        "visits": {
+          "items": {
+            "$ref": "#/$defs/Visit"
+          },
+          "title": "Visits",
+          "type": "array"
+        },
+        "departure_s": {
+          "title": "Departure S",
+          "type": "integer"
+        },
+        "return_s": {
+          "title": "Return S",
+          "type": "integer"
+        },
+        "initial_load": {
+          "title": "Initial Load",
+          "type": "integer"
+        },
+        "distance_m": {
+          "title": "Distance M",
+          "type": "integer"
+        },
+        "travel_s": {
+          "title": "Travel S",
+          "type": "integer"
+        },
+        "service_s": {
+          "title": "Service S",
+          "type": "integer"
+        },
+        "waiting_s": {
+          "title": "Waiting S",
+          "type": "integer"
+        },
+        "duty_s": {
+          "title": "Duty S",
+          "type": "integer"
+        },
+        "operating_cost_cents": {
+          "title": "Operating Cost Cents",
+          "type": "integer"
+        },
+        "geometry": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Geometry",
+          "type": "array"
+        },
+        "geometry_source": {
+          "default": "schematic synthetic grid — not road verified",
+          "title": "Geometry Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "stop_ids",
+        "visits",
+        "departure_s",
+        "return_s",
+        "initial_load",
+        "distance_m",
+        "travel_s",
+        "service_s",
+        "waiting_s",
+        "duty_s",
+        "operating_cost_cents",
+        "geometry",
+        "geometry_source"
+      ],
+      "title": "Route",
+      "type": "object"
+    },
+    "Visit": {
+      "additionalProperties": false,
+      "properties": {
+        "stop_id": {
+          "title": "Stop Id",
+          "type": "string"
+        },
+        "arrival_s": {
+          "title": "Arrival S",
+          "type": "integer"
+        },
+        "service_start_s": {
+          "title": "Service Start S",
+          "type": "integer"
+        },
+        "departure_s": {
+          "title": "Departure S",
+          "type": "integer"
+        },
+        "load_after": {
+          "title": "Load After",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "stop_id",
+        "arrival_s",
+        "service_start_s",
+        "departure_s",
+        "load_after"
+      ],
+      "title": "Visit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "input_hash": {
+      "title": "Input Hash",
+      "type": "string"
+    },
+    "matrix_hash": {
+      "title": "Matrix Hash",
+      "type": "string"
+    },
+    "policy": {
+      "title": "Policy",
+      "type": "string"
+    },
+    "routes": {
+      "items": {
+        "$ref": "#/$defs/Route"
+      },
+      "title": "Routes",
+      "type": "array"
+    },
+    "unserved_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unserved Ids",
+      "type": "array"
+    },
+    "distance_m": {
+      "default": 0,
+      "title": "Distance M",
+      "type": "integer"
+    },
+    "operating_cost_cents": {
+      "default": 0,
+      "title": "Operating Cost Cents",
+      "type": "integer"
+    },
+    "penalty_cents": {
+      "default": 0,
+      "title": "Penalty Cents",
+      "type": "integer"
+    },
+    "objective_cents": {
+      "default": 0,
+      "title": "Objective Cents",
+      "type": "integer"
+    },
+    "solver_status": {
+      "title": "Solver Status",
+      "type": "string"
+    },
+    "solver_runtime_ms": {
+      "default": 0,
+      "title": "Solver Runtime Ms",
+      "type": "number"
+    },
+    "solver_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Solver Version"
+    },
+    "search_limit_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Search Limit S"
+    },
+    "diagnostics": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "scope": {
+      "default": "initial_full_plan",
+      "enum": [
+        "initial_full_plan",
+        "residual_suffix"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "parent_plan_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Plan Id"
+    }
+  },
+  "required": [
+    "id",
+    "input_hash",
+    "matrix_hash",
+    "policy",
+    "routes",
+    "unserved_ids",
+    "distance_m",
+    "operating_cost_cents",
+    "penalty_cents",
+    "objective_cents",
+    "solver_status",
+    "solver_runtime_ms",
+    "solver_version",
+    "search_limit_s",
+    "diagnostics",
+    "scope",
+    "parent_plan_id"
+  ],
+  "title": "Plan",
+  "type": "object"
+}

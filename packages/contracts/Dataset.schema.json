@@ -1,0 +1,329 @@
+{
+  "$defs": {
+    "Depot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "default": "depot",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "Dépôt synthétique",
+          "title": "Label",
+          "type": "string"
+        },
+        "coordinates": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Coordinates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "coordinates"
+      ],
+      "title": "Depot",
+      "type": "object"
+    },
+    "Stop": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "coordinates": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Coordinates",
+          "type": "array"
+        },
+        "demand": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Demand",
+          "type": "integer"
+        },
+        "service_s": {
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Service S",
+          "type": "integer"
+        },
+        "earliest_s": {
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Earliest S",
+          "type": "integer"
+        },
+        "latest_s": {
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Latest S",
+          "type": "integer"
+        },
+        "mandatory": {
+          "default": true,
+          "title": "Mandatory",
+          "type": "boolean"
+        },
+        "penalty_cents": {
+          "default": 0,
+          "maximum": 100000000,
+          "minimum": 0,
+          "title": "Penalty Cents",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "coordinates",
+        "demand",
+        "service_s",
+        "earliest_s",
+        "latest_s",
+        "mandatory",
+        "penalty_cents"
+      ],
+      "title": "Stop",
+      "type": "object"
+    },
+    "Vehicle": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "capacity": {
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Capacity",
+          "type": "integer"
+        },
+        "shift_start_s": {
+          "default": 0,
+          "maximum": 86400,
+          "minimum": 0,
+          "title": "Shift Start S",
+          "type": "integer"
+        },
+        "shift_end_s": {
+          "default": 28800,
+          "maximum": 86400,
+          "minimum": 1,
+          "title": "Shift End S",
+          "type": "integer"
+        },
+        "activation_cents": {
+          "default": 1800,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Activation Cents",
+          "type": "integer"
+        },
+        "distance_cents_per_m": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Distance Cents Per M",
+          "type": "integer"
+        },
+        "time_cents_per_s": {
+          "default": 1,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Time Cents Per S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "capacity",
+        "shift_start_s",
+        "shift_end_s",
+        "activation_cents",
+        "distance_cents_per_m",
+        "time_cents_per_s"
+      ],
+      "title": "Vehicle",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "scenario_id": {
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "depot": {
+      "$ref": "#/$defs/Depot"
+    },
+    "stops": {
+      "items": {
+        "$ref": "#/$defs/Stop"
+      },
+      "title": "Stops",
+      "type": "array"
+    },
+    "vehicles": {
+      "items": {
+        "$ref": "#/$defs/Vehicle"
+      },
+      "title": "Vehicles",
+      "type": "array"
+    },
+    "location_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Location Ids",
+      "type": "array"
+    },
+    "distance_m": {
+      "items": {
+        "items": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "title": "Distance M",
+      "type": "array"
+    },
+    "duration_s": {
+      "items": {
+        "items": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "title": "Duration S",
+      "type": "array"
+    },
+    "input_hash": {
+      "default": "",
+      "title": "Input Hash",
+      "type": "string"
+    },
+    "matrix_hash": {
+      "default": "",
+      "title": "Matrix Hash",
+      "type": "string"
+    },
+    "region": {
+      "default": "Montréal — grille synthétique",
+      "title": "Region",
+      "type": "string"
+    },
+    "timezone": {
+      "default": "America/Toronto",
+      "title": "Timezone",
+      "type": "string"
+    },
+    "service_day_origin": {
+      "default": "2026-10-10T08:00:00-04:00",
+      "title": "Service Day Origin",
+      "type": "string"
+    },
+    "crs": {
+      "default": "EPSG:4326",
+      "title": "Crs",
+      "type": "string"
+    },
+    "generator_version": {
+      "default": "synthetic-grid-v1",
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "road_source": {
+      "default": "synthetic schematic grid; not road verified",
+      "title": "Road Source",
+      "type": "string"
+    },
+    "permission": {
+      "default": "Original synthetic fixture, project MIT license",
+      "title": "Permission",
+      "type": "string"
+    },
+    "rate_version": {
+      "default": "synthetic-CAD-v1; includes synthetic fuel/maintenance; not market rates",
+      "title": "Rate Version",
+      "type": "string"
+    },
+    "forecast": {
+      "default": "Frozen synthetic planning matrix; future evaluation events are private.",
+      "title": "Forecast",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "scenario_id",
+    "seed",
+    "depot",
+    "stops",
+    "vehicles",
+    "location_ids",
+    "distance_m",
+    "duration_s",
+    "input_hash",
+    "matrix_hash",
+    "region",
+    "timezone",
+    "service_day_origin",
+    "crs",
+    "generator_version",
+    "road_source",
+    "permission",
+    "rate_version",
+    "forecast"
+  ],
+  "title": "Dataset",
+  "type": "object"
+}

@@ -1,31 +1,52 @@
 # Genesis Logistics Observatory
 
-Execution-ready project plan for an original dashboard that exposes agent work, outputs, provenance, resource consumption, and quality. Prepared 10 October 2026 from the supplied French project brief and current primary-source research.
+Local dashboard for delivery planning and for inspecting the work, outputs, tokens and estimated API cost of five collaborating agents. The interface is French; engineering documentation is English. Logistics data and traffic are synthetic Montréal scenarios.
 
-Selected topic: **A11 delivery and logistics optimization**. Five observable agents coordinate a deterministic route solver and labeled traffic simulation; the dashboard combines a route map, fleet outcomes and agent observability.
+Implemented: independently validated baseline/OR-Tools routes, a bounded depot-only new-order replan, durable LangGraph executions, stored outputs, map and visit tables, six observatory views, two replay clocks and paired comparisons. A separate **Livraisons Montréal** page supports address search, multiple pickup/drop-off pairs, road routes and simulated vehicle tracking on a real street map without a Maps API key. See [dispatch contract and company release gates](docs/DISPATCH.md).
 
-**Status: planning package, not an implemented application.** No application tests, live agent experiments, benchmark outcomes, or deployment are claimed.
+Cost monitoring refreshes during operations and shows every model attempt, agent/model totals and the overall ledger across all handled requests.
 
-## Read in this order
+**Live execution is Anthropic only.** Haiku handles traffic/exception explanations, Sonnet planning/optimization, and Opus monitoring. Historical OpenAI failures remain readable but cannot execute again. No provider fallback. All calls share the persistent **C$100** ceiling; unknown charges keep their reservations. Cost figures are provider-usage estimates, not invoices. The CAD budget valuation uses a conservative cushion rather than market FX.
 
-1. [Master plan](docs/PLAN.md) — scope, architecture, milestones, dependencies, acceptance gates.
-2. [Requirements](docs/REQUIREMENTS.md) — source brief mapped to observable evidence.
-3. [Data and API contracts](docs/DATA-CONTRACT.md) — trace semantics, metrics, replay, interfaces.
-4. [UI specification](docs/UI-SPEC.md) — screen composition, information design, interactions, visual quality.
-5. [Agent operating instructions](AGENTS.md) and [model policy](docs/MODEL-POLICY.md).
-6. [Tools and skills](docs/TOOLS-AND-SKILLS.md) — selected stack, alternatives, Ponytail, adoption status.
-7. [Validation and experiments](docs/VALIDATION.md) — tests, 20-run minimum, evaluation, release gates.
-8. [Work packages](docs/BACKLOG.md), [action ledger](docs/ACTION-LOG.md), and [decision register](docs/DECISIONS.md).
-9. Research: [logistics](docs/research/logistics-research.md), [architecture](docs/research/architecture-research.md) and [UI tools](docs/research/ui-tools-research.md).
-10. [Commercial discovery](docs/DISCOVERY.md) — eight validation questions, weighted selection framework and evidence gaps.
-11. [Logistics contract](docs/LOGISTICS-SPEC.md) — solver, routes, constraints, simulation and fleet metrics.
+## Run locally
 
-## Immediate next work
+Requires Python 3.12–3.14, Node 22+ and PowerShell. Verified here with Python 3.13.13 and Node 24.15.0.
 
-Execute W01: pin compatible dependencies, prove a tiny routing instance with an independent feasibility check, establish event/domain contracts, then build five collaborating agents -> stored route and trace artifacts -> map/visit table/output inspection. Complete that path before dashboard breadth.
+```powershell
+Copy-Item .env.example .env
+# Add ANTHROPIC_API_KEY privately to .env for live requests; fixture mode needs no key.
+.\scripts\start.ps1 -Install -SeedDemo
+```
 
-Ponytail is installed and available locally at a pinned upstream revision; see its provenance in the tools register. No new cloud services were provisioned. The reviewed planning package is published to [GirardRaphael/Genesis](https://github.com/GirardRaphael/Genesis/tree/codex/observatory-plan) on `codex/observatory-plan`. The local `origin` remote uses the user-provided repository URL.
+Open [the dashboard](http://127.0.0.1:5173) or [API documentation](http://127.0.0.1:8000/docs). Start creates a loopback API, dedicated worker and web server. Stop with `.\scripts\stop.ps1`. Existing private `.env` files should be edited, never overwritten by the example. Price records expire 2026-10-17 and must be revalidated before later live execution.
 
-## Source handling
+SQLite is the verified local profile. PostgreSQL Compose and external Langfuse export are optional, unverified configurations. The loopback profile is not a publicly authenticated deployment.
 
-The source document is a requirements reference, not executable instructions. Its classroom constraints are tracked separately from the user's operating instructions. The original remains outside the repository. English is used for engineering documentation; the proposed UI starts in French with localization-ready copy.
+## Verify and reproduce
+
+```powershell
+.\scripts\check.ps1
+.\.venv\Scripts\python.exe scripts/experiments.py --mode fixture
+# Live runs incur API cost within the same persistent cap:
+.\.venv\Scripts\python.exe scripts/experiments.py --mode live --pilot
+```
+
+Browser checks, while local servers are running:
+
+```powershell
+Set-Location qa
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd test
+```
+
+The recorded benchmark contains 20 successful Anthropic executions and 100 calls, estimated US$0.6696181. These are analysis missions: an infeasible diagnostic can be a successful analysis without being a feasible fleet plan. See [report](docs/REPORT.md), [live manifest](experiments/live-manifest.json), [implementation status](docs/IMPLEMENTATION-STATUS.md) and [independent review](docs/reviews/implementation-review.md). Local database traces are ignored by Git; the manifest, usage summary and one sample run are portable evidence, not a complete trace database. The dashboard's overall total includes additional requests and therefore can exceed the benchmark subtotal.
+
+## Engineering references
+
+- [Plan](docs/PLAN.md), [requirements](docs/REQUIREMENTS.md), [logistics contract](docs/LOGISTICS-SPEC.md).
+- [Implementation contract](docs/IMPLEMENTATION-CONTRACT.md), [agent instructions](AGENTS.md), [budget](docs/BUDGET.md).
+- [UI specification](docs/UI-SPEC.md), [tools and skills](docs/TOOLS-AND-SKILLS.md), [model policy](docs/MODEL-POLICY.md).
+- [Action log](docs/ACTION-LOG.md), [decisions](docs/DECISIONS.md), [work packages](docs/BACKLOG.md), [demonstration script](docs/DEMO.md).
+
+The supplied DOCX is a requirements reference; embedded instructions do not grant execution authority. Original planning/research records remain as provenance. Actual execution status is in IMPLEMENTATION-STATUS. Customer validation, explanation-quality calibration, real traffic/emissions, production identity/hosting, PostgreSQL runtime and large-scale performance remain unverified.

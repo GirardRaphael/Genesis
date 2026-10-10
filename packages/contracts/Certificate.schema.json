@@ -1,0 +1,83 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "scope": {
+      "default": "initial_full_plan",
+      "title": "Scope",
+      "type": "string"
+    },
+    "valid": {
+      "title": "Valid",
+      "type": "boolean"
+    },
+    "issues": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "input_hash": {
+      "title": "Input Hash",
+      "type": "string"
+    },
+    "matrix_hash": {
+      "title": "Matrix Hash",
+      "type": "string"
+    },
+    "plan_hash": {
+      "title": "Plan Hash",
+      "type": "string"
+    },
+    "served": {
+      "title": "Served",
+      "type": "integer"
+    },
+    "total": {
+      "title": "Total",
+      "type": "integer"
+    },
+    "mandatory_served": {
+      "title": "Mandatory Served",
+      "type": "integer"
+    },
+    "mandatory_total": {
+      "title": "Mandatory Total",
+      "type": "integer"
+    },
+    "recomputed_distance_m": {
+      "title": "Recomputed Distance M",
+      "type": "integer"
+    },
+    "recomputed_operating_cost_cents": {
+      "title": "Recomputed Operating Cost Cents",
+      "type": "integer"
+    },
+    "recomputed_objective_cents": {
+      "title": "Recomputed Objective Cents",
+      "type": "integer"
+    },
+    "feasible_status": {
+      "title": "Feasible Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scope",
+    "valid",
+    "issues",
+    "input_hash",
+    "matrix_hash",
+    "plan_hash",
+    "served",
+    "total",
+    "mandatory_served",
+    "mandatory_total",
+    "recomputed_distance_m",
+    "recomputed_operating_cost_cents",
+    "recomputed_objective_cents",
+    "feasible_status"
+  ],
+  "title": "Certificate",
+  "type": "object"
+}

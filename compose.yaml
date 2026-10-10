@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: genesis
+      POSTGRES_USER: genesis
+      POSTGRES_PASSWORD: ${GENESIS_DB_PASSWORD:?Set GENESIS_DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - genesis_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genesis -d genesis"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  genesis_postgres:

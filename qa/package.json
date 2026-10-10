@@ -1,0 +1,13 @@
+{
+  "name": "genesis-browser-verification",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@playwright/test": "1.59.1",
+    "json-schema-to-typescript": "^15.0.4"
+  }
+}
