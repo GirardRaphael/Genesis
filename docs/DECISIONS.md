@@ -26,6 +26,7 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | D20 | Cargo locked to carrier; no roadside rescue in MVP | Replanning indices cannot move physical parcels | Explicit depot/reload/transfer model extension |
 | D21 | Private future events; shared exogenous schedule, independent evolved states | Avoid oracle leakage and impossible equality of vehicle positions across policies | Explicit forecast-policy experiment |
 | D22 | Initial vs residual certificates; historical violations retained | A suffix begins at a checkpoint and cannot undo past lateness/missing cargo | New whole-day compliance contract |
+| D23 | GitHub destination resolved and initial push completed | User supplied GirardRaphael/Genesis; origin configured; reviewed branch published with ordinary push | User changes destination; future pushes use same authorized remote |
 
 ## Risks and controls
 
@@ -40,7 +41,7 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | Scope expands beyond team capacity | Missed complete deliverable | Walking slice first; defer SaaS/extra orchestration/infrastructure |
 | Source contains private data | Leakage through model/telemetry | Public/synthetic data only for initial product; redaction and export tests |
 | Version drift | Broken integrations | Compatibility spike and pinned conventions/dependencies |
-| No configured GitHub remote | Cannot publish | Preserve reviewed local files/commit; use actual destination once established |
+| GitHub destination previously missing, now resolved | Initial publication was blocked | User supplied GirardRaphael/Genesis; origin configured and normal push succeeded; preserve history |
 | Invalid route explained convincingly | Wrong dispatch proposal | Independent capacity/windows/visits/return/cargo certificate; model cannot override |
 | Cheaper by skipping deliveries | False savings | Required/optional coverage beside metrics; comparable service cohort; penalties excluded from money |
 | Simulated traffic or emissions claimed real | Misleading commercial/environmental evidence | Explicit simulated/estimated labels, factor/source coverage and separate clocks |
@@ -49,4 +50,4 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 
 ## Outstanding external inputs
 
-Actual API account/model access and spending limit are needed for paid live experiments. A GitHub destination is needed for pushing. Classroom approval is needed to claim the academic topic is approved. No guessed identities, budgets, URLs or fabricated approvals have been inserted. All other plan work can proceed from these defaults.
+Actual API account/model access and spending limit are needed for paid live experiments. Classroom approval is needed to claim the academic topic is approved. GitHub destination is established from the user's URL and the reviewed planning branch is published. No guessed identities, budgets, URLs or fabricated approvals have been inserted. All other plan work can proceed from these defaults.

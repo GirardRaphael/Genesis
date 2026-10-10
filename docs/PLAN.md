@@ -82,7 +82,7 @@ Proposed implementation folders, not yet created: `apps/web`, `services/api`, `s
 
 ## 7 Decisions required by implementation
 
-W01 must record provider availability and account limits, actual model IDs, pricing snapshots, dependency compatibility, license review and the local runtime baseline. These can be investigated without user interruption. The only externally supplied blockers are credentials/budget for live runs, a GitHub destination for publishing, and classroom topic approval before claiming an approved academic subject. UI prototypes and deterministic tests proceed without those values.
+W01 must record provider availability and account limits, actual model IDs, pricing snapshots, dependency compatibility, license review and the local runtime baseline. These can be investigated without user interruption. Remaining external inputs are credentials/budget for live runs and classroom topic approval before claiming an approved academic subject. GitHub destination is resolved as `GirardRaphael/Genesis`; `origin` is configured and the reviewed planning branch is published. UI prototypes and deterministic tests proceed without live-model credentials.
 
 ## 8 Release definition
 

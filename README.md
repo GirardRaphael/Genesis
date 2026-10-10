@@ -24,7 +24,7 @@ Selected topic: **A11 delivery and logistics optimization**. Five observable age
 
 Execute W01: pin compatible dependencies, prove a tiny routing instance with an independent feasibility check, establish event/domain contracts, then build five collaborating agents -> stored route and trace artifacts -> map/visit table/output inspection. Complete that path before dashboard breadth.
 
-Ponytail is installed and available locally at a pinned upstream revision; see its provenance in the tools register. No new cloud services were provisioned. GitHub publishing is authorized by the user, but this checkout has no configured remote; a destination must be established before a push can succeed.
+Ponytail is installed and available locally at a pinned upstream revision; see its provenance in the tools register. No new cloud services were provisioned. The reviewed planning package is published to [GirardRaphael/Genesis](https://github.com/GirardRaphael/Genesis/tree/codex/observatory-plan) on `codex/observatory-plan`. The local `origin` remote uses the user-provided repository URL.
 
 ## Source handling
 
