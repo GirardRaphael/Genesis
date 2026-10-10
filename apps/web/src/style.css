@@ -2391,6 +2391,24 @@ tr.selected {
   margin-top: 24px;
 }
 .overall-cost { margin-bottom: 24px; }
+.budget-alert {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  background: #f5f8f8;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #52606d;
+}
+.budget-alert-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.budget-alert h3 { margin: 0; font-size: 13px; color: #182026; }
+.budget-alert p { margin: 8px 0 0; }
+.budget-alert-warning { color: #9b3544; }
 .meter-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

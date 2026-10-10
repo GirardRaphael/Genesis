@@ -1425,6 +1425,22 @@
         }
       }
     },
+    "/api/v1/budget-alerts": {
+      "get": {
+        "summary": "Budget Alert Status",
+        "operationId": "budget_alert_status_api_v1_budget_alerts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/runs/{run_id}/simulation-events": {
       "get": {
         "summary": "Simulation Events",

@@ -43,3 +43,11 @@ The current integrated tree passes 100 Python tests, 21 web tests, Ruff and the 
 Three actual Photon/OSRM project-API previews connect west/central/east public locations and multiple deliveries, with different real geometry and no model calls. A separate current-road broker tour was simulated to completion, then an Anthropic-enabled repeat admitted a freshly validated tour with five explicit explanation omissions and no provider attempts under a micro-USD fallback-blocking budget. Both tours were completed so the available test van was left free. Portable evidence is in address-preview-smoke.json and route-memory-road-smoke.json.
 
 Independent review caught and closed reuse repositioning omission, sample depot replacement and silent vehicle-preference loss. Routine mode remains an explicit execution policy, with exact workload/policy/provider eligibility and current solver/certificate/admission checks; real performance learning, traffic/GPS and commercial launch remain outside this verified scope.
+
+## Budget email extension (U13)
+
+The final local budget-email candidate passes 148 Python tests, 39 web tests, Ruff and production build. Three isolated browser journeys pass for configuration/status/privacy/accessibility and mail-status independence from the global ledger. A real loopback SMTP capture received exactly one message; restarting did not resend or change the budget ledger. Portable results are in experiments/budget-email-verification.json.
+
+The persistent shared budget triggers one durable alert, sent outside budget transactions by a separate worker thread. Effective stored/configured CAD cushions are now consistent across admission/status/alerts; malformed configuration cannot roll back known charges. SMTP ambiguity stays visibly uncertain with no automatic resend, and a late fenced completion cannot claim a durable sent result. Safe delivery diagnostics are visible in the cost panel.
+
+External recipient/SMTP configuration is still pending. Fields were added to the ignored private .env without replacing existing values and that file was opened for operator entry. No external email, SMTP-provider login or model call was performed for U13. Terminal delivery states have no reset endpoint, and company-release gates remain open; BUDGET-EMAIL.md is the setup/operation contract.

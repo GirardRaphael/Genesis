@@ -106,6 +106,25 @@ budgets = Table(
     Column("freeze_reason", String),
 )
 
+# One logical alert belongs to the persistent budget, never to an individual run.
+budget_alerts = Table(
+    "budget_alerts",
+    metadata,
+    Column("project_id", String, primary_key=True),
+    Column("id", String, nullable=False, unique=True),
+    Column("reason", String, nullable=False),
+    Column("snapshot", JSON, nullable=False),
+    Column("delivery_state", String, nullable=False),
+    Column("attempt_count", Integer, nullable=False, default=0),
+    Column("next_retry_at", String),
+    Column("error_code", String),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+    Column("sent_at", String),
+    Column("lease_until", String),
+    Column("claim_id", String),
+)
+
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
@@ -168,6 +187,8 @@ class Store:
                         cad_per_usd=str(cushion),
                     )
                 )
+
+        self.check_budget_alert()
 
     @contextmanager
     def transaction(self):
@@ -550,56 +571,55 @@ class Store:
                 .mappings()
                 .one()
             )
-            if project_budget["frozen"]:
-                raise BudgetExceeded(
-                    "Project dispatch frozen after a known reservation overrun; reconcile before further calls"
-                )
             row = self._run(conn, run_id, fence)
-            existing = (
-                conn.execute(select(reservations).where(reservations.c.attempt_id == attempt_id))
-                .mappings()
-                .first()
-            )
-            if existing:
-                if existing["run_id"] != run_id or Decimal(existing["amount"]) != amount:
-                    raise Conflict("Conflicting reservation")
-                return
-            balance = sum(
-                (
-                    Decimal(r["settled"] if r["settled"] is not None else r["amount"])
-                    for r in conn.execute(
-                        select(reservations).where(reservations.c.run_id == run_id)
-                    ).mappings()
-                ),
-                Decimal(0),
-            )
-            if balance + amount > Decimal(row["request"]["budget_usd"]):
-                raise BudgetExceeded("Prospective charge exceeds available run budget")
-            global_balance = sum(
-                (
-                    Decimal(r["settled"] if r["settled"] is not None else r["amount"])
-                    for r in conn.execute(
-                        select(reservations)
-                        .join(runs, reservations.c.run_id == runs.c.id)
-                        .where(runs.c.project_id == PROJECT_ID)
-                    ).mappings()
-                ),
-                Decimal(0),
-            )
-            configured_cap = min(
-                Decimal(os.getenv("GENESIS_GLOBAL_BUDGET_CAD", "100")), Decimal("100")
-            ) / max(Decimal(os.getenv("GENESIS_CAD_PER_USD", "2")), Decimal("2"))
-            if global_balance + amount > min(Decimal(project_budget["limit_usd"]), configured_cap):
-                raise BudgetExceeded("Prospective charge exceeds global C$100 project ceiling")
-            conn.execute(
-                insert(reservations).values(
-                    attempt_id=attempt_id,
-                    run_id=run_id,
-                    amount=str(amount),
-                    settled=None,
-                    status="held",
+            denial = None
+            if project_budget["frozen"]:
+                self._queue_budget_alert(conn, project_budget)
+                denial = "Project dispatch frozen after a known reservation overrun; reconcile before further calls"
+            else:
+                existing = (
+                    conn.execute(
+                        select(reservations).where(reservations.c.attempt_id == attempt_id)
+                    )
+                    .mappings()
+                    .first()
                 )
-            )
+                if existing:
+                    if existing["run_id"] != run_id or Decimal(existing["amount"]) != amount:
+                        raise Conflict("Conflicting reservation")
+                    return
+                balance = sum(
+                    (
+                        Decimal(r["settled"] if r["settled"] is not None else r["amount"])
+                        for r in conn.execute(
+                            select(reservations).where(reservations.c.run_id == run_id)
+                        ).mappings()
+                    ),
+                    Decimal(0),
+                )
+                state = self._budget_state(conn, project_budget)
+                if balance + amount > Decimal(row["request"]["budget_usd"]):
+                    # A run-local denial is not a project-budget notification.
+                    raise BudgetExceeded("Prospective charge exceeds available run budget")
+                if Decimal(state["known_cost_usd"]) + Decimal(state["held_usd"]) + amount > Decimal(
+                    state["budget_limit_usd"]
+                ):
+                    self._queue_budget_alert(conn, project_budget, blocked_amount=amount)
+                    denial = "Prospective charge exceeds global project ceiling (at most C$100)"
+                else:
+                    conn.execute(
+                        insert(reservations).values(
+                            attempt_id=attempt_id,
+                            run_id=run_id,
+                            amount=str(amount),
+                            settled=None,
+                            status="held",
+                        )
+                    )
+                    self._queue_budget_alert(conn, project_budget)
+        # Commit the alert even when the caller receives a budget denial.
+        if denial:
+            raise BudgetExceeded(denial)
 
     def settle(self, run_id, attempt_id, amount, fence=None):
         amount = Decimal(str(amount))
@@ -649,6 +669,12 @@ class Store:
                         "project_frozen": True,
                     },
                 )
+            try:
+                self._queue_budget_alert(conn)
+            except (ValueError, ArithmeticError):
+                # Invalid runtime budget configuration must not erase known charges or freezes.
+                # The periodic scan backfills the alert after the configuration is repaired.
+                pass
         # Raise after commit: neither the known exposure nor the project freeze may roll back.
         if overrun:
             raise BudgetExceeded(
@@ -667,35 +693,45 @@ class Store:
 
     def budget_state(self):
         with self.engine.connect() as connection:
+            return self._budget_state(connection)
+
+    def _budget_state(self, connection, budget=None):
+        if budget is None:
             budget = (
                 connection.execute(select(budgets).where(budgets.c.project_id == PROJECT_ID))
                 .mappings()
                 .one()
             )
-            items = (
-                connection.execute(
-                    select(reservations)
-                    .join(runs, reservations.c.run_id == runs.c.id)
-                    .where(runs.c.project_id == PROJECT_ID)
-                )
-                .mappings()
-                .all()
+        items = (
+            connection.execute(
+                select(reservations)
+                .join(runs, reservations.c.run_id == runs.c.id)
+                .where(runs.c.project_id == PROJECT_ID)
             )
+            .mappings()
+            .all()
+        )
         known = sum(
             (Decimal(item["settled"]) for item in items if item["settled"] is not None), Decimal(0)
         )
         held = sum(
             (Decimal(item["amount"]) for item in items if item["settled"] is None), Decimal(0)
         )
-        cushion = max(
-            Decimal(budget["cad_per_usd"]),
-            Decimal(os.getenv("GENESIS_CAD_PER_USD", "2")),
-            Decimal("2"),
-        )
-        limit = min(
-            Decimal(budget["limit_usd"]),
-            min(Decimal(os.getenv("GENESIS_GLOBAL_BUDGET_CAD", "100")), Decimal("100")) / cushion,
-        )
+        configured_cad = Decimal(os.getenv("GENESIS_GLOBAL_BUDGET_CAD", "100"))
+        configured_cushion = Decimal(os.getenv("GENESIS_CAD_PER_USD", "2"))
+        stored_cushion, stored_limit = Decimal(budget["cad_per_usd"]), Decimal(budget["limit_usd"])
+        if any(
+            not value.is_finite() or value <= 0
+            for value in (
+                configured_cad,
+                configured_cushion,
+                stored_cushion,
+                stored_limit,
+            )
+        ):
+            raise ValueError("Invalid project budget configuration")
+        cushion = max(stored_cushion, configured_cushion, Decimal("2"))
+        limit = min(stored_limit, min(configured_cad, Decimal("100")) / cushion)
         return {
             "known_cost_usd": str(known),
             "held_usd": str(held),
@@ -709,3 +745,52 @@ class Store:
             "freeze_reason": budget["freeze_reason"],
             "cad_source": "conservative spending policy valuation, not an invoice or market FX quote",
         }
+
+    def _queue_budget_alert(self, conn, budget=None, blocked_amount=None):
+        if budget is None:
+            budget = (
+                conn.execute(
+                    select(budgets).where(budgets.c.project_id == PROJECT_ID).with_for_update()
+                )
+                .mappings()
+                .one()
+            )
+        state = self._budget_state(conn, budget)
+        reason = (
+            "project_frozen"
+            if state["frozen"]
+            else "budget_reached"
+            if Decimal(state["known_cost_usd"]) + Decimal(state["held_usd"])
+            >= Decimal(state["budget_limit_usd"])
+            else "global_dispatch_blocked"
+            if blocked_amount is not None
+            else None
+        )
+        if (
+            reason
+            and not conn.execute(
+                select(budget_alerts.c.id).where(budget_alerts.c.project_id == PROJECT_ID)
+            ).first()
+        ):
+            state.pop("freeze_reason")
+            state["blocked_amount_usd"] = (
+                str(blocked_amount) if blocked_amount is not None else None
+            )
+            timestamp = now()
+            conn.execute(
+                insert(budget_alerts).values(
+                    project_id=PROJECT_ID,
+                    id=str(uuid4()),
+                    reason=reason,
+                    snapshot=state,
+                    delivery_state="pending",
+                    attempt_count=0,
+                    created_at=timestamp,
+                    updated_at=timestamp,
+                )
+            )
+
+    def check_budget_alert(self):
+        """Backfill legacy exhaustion and detect a lowered configured cap under the same lock."""
+        with self.transaction() as conn:
+            self._queue_budget_alert(conn)

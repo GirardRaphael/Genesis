@@ -552,6 +552,13 @@ def create_app(store=None):
             **projection,
         }
 
+    @app.get("/api/v1/budget-alerts")
+    def budget_alert_status():
+        refresh_local_configuration()
+        from .notifications import notification_status
+
+        return notification_status(app.state.store)
+
     @app.get("/api/v1/runs/{run_id}/simulation-events")
     def simulation_events(
         run_id: UUID, as_of_s: int | None = Query(None, ge=0), limit: int = Query(200, ge=1, le=500)

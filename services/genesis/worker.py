@@ -12,6 +12,7 @@ from sqlalchemy import select, update
 
 from .db import BudgetExceeded, LostLease, Store, now, outbox
 from .llm import BillingUncertain, LiveUnavailable
+from .notifications import drain_budget_alerts
 from .workflow import Cancelled, RunTimedOut, Runtime
 
 load_dotenv()
@@ -177,7 +178,19 @@ def main():
     if args.once:
         run_once(store)
         export_outbox(store)
+        drain_budget_alerts(store)
         return
+
+    # Alerts progress even while a workflow is waiting on a provider or solver.
+    def notify_budget():
+        while True:
+            try:
+                drain_budget_alerts(store)
+            except Exception:
+                pass  # Durable state survives transport/storage outages; never expose exception text.
+            time.sleep(5)
+
+    threading.Thread(target=notify_budget, daemon=True).start()
     owner = str(uuid4())
     while True:
         load_dotenv(override=True)

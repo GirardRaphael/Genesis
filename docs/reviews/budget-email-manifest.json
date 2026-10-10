@@ -1,0 +1,105 @@
+{
+  "reviewed_base": "3737e6cf0f5412834a97a35578ce5a4d016a2b36",
+  "review_date": "2026-10-10",
+  "normalization": "UTF-8 text; CRLF and CR replaced by LF; fingerprint of sorted path + NUL + lowercase SHA256 + LF records",
+  "exclusions": [
+    "docs/reviews/*",
+    "docs/ACTION-LOG.md",
+    "docs/IMPLEMENTATION-STATUS.md"
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256_lf": "5346c315f6294db1a8d8cc45610353f491a52c9847f2e65836ea24479b3a79b2"
+    },
+    {
+      "path": "README.md",
+      "sha256_lf": "ad3d62ebc8af052bd8437c0bdb65bfcdb960b7404b0efe62028f83ee29261fa7"
+    },
+    {
+      "path": "apps/web/src/BudgetAlertStatus.test.tsx",
+      "sha256_lf": "8d337314db88ecd4d506e7abc3c7da2aabe9d2657f38159c93dd169cf10713d9"
+    },
+    {
+      "path": "apps/web/src/BudgetAlertStatus.tsx",
+      "sha256_lf": "4057747b0f95df1206f3f2f33c3bc16216619c0c46c0b811896bbda7bba513b9"
+    },
+    {
+      "path": "apps/web/src/OverallCost.tsx",
+      "sha256_lf": "ee50f7f551df665f4f64ba038d3002e55b46081f34c7f6b8390d6e7676db7604"
+    },
+    {
+      "path": "apps/web/src/style.css",
+      "sha256_lf": "6ef39942a247c46648243acd96b568ede2e4f521714594f9b713c9247eb0f229"
+    },
+    {
+      "path": "docs/BUDGET-EMAIL.md",
+      "sha256_lf": "fef027d5d32c2187eb85a3e6fe8188c33a884ff712f5e3626c7ba58900cbf8cb"
+    },
+    {
+      "path": "docs/BUDGET.md",
+      "sha256_lf": "b0616a985321d1ed57fa93516905ba990469029761a40fe6c02e550706066703"
+    },
+    {
+      "path": "docs/DATA-CONTRACT.md",
+      "sha256_lf": "5392f39484307f6be15c5c4e039f5540a59ac5948d42934eb19629fe2db33d33"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256_lf": "b17823db68d1c0691c4142a23bacd1adc96e67545e5b242a8e3e2e21f80ffbcb"
+    },
+    {
+      "path": "docs/PLAN.md",
+      "sha256_lf": "21dc691a0313015237289f2dc2076d0c81da45382427ba6abca3b8bacc11d794"
+    },
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "sha256_lf": "c964350a4791bd28f643b452b61e29c65697cb451bad41e0c157d8060ed22250"
+    },
+    {
+      "path": "experiments/budget-email-verification.json",
+      "sha256_lf": "63cacb44cb1ba82d3eaf4c22d339cea9bcc3f48e279853f0a506800be8384e69"
+    },
+    {
+      "path": "packages/contracts/openapi.json",
+      "sha256_lf": "d73ac2c77fc7ed7d389014c1833cabe075a23390cb9b6ceaf22fe11c6c4ec133"
+    },
+    {
+      "path": "qa/playwright.budget.config.ts",
+      "sha256_lf": "32170f194071fa859a174a85af32c4079bed140c62dabb9502e0d40028ae0ef0"
+    },
+    {
+      "path": "qa/route_memory_server.py",
+      "sha256_lf": "0d4b0ef6b90562bd3efba0a6a05c161f38b3fb9852cf721c91b621398b9ab6d5"
+    },
+    {
+      "path": "qa/tests/budget.browser.spec.ts",
+      "sha256_lf": "ff756420308ba86101bf6133a6617593925457771d5f24d293fcfda11b255316"
+    },
+    {
+      "path": "services/genesis/api.py",
+      "sha256_lf": "c2dd9c753cd80318b7ce506987b395752af28c74924b321ee1215a5d8484fe49"
+    },
+    {
+      "path": "services/genesis/db.py",
+      "sha256_lf": "2ed23ad64d81836ad5b77e20bc95f23eec22d226796e04c9983ea8af8c8d1051"
+    },
+    {
+      "path": "services/genesis/notifications.py",
+      "sha256_lf": "4c3e3a21f2145708e9b4e96fa4ed0527ec17348fc71630fa7c49b23fe0edd3a4"
+    },
+    {
+      "path": "services/genesis/worker.py",
+      "sha256_lf": "1a09900848ac66cdbbacf4691e590d36a1a26ca6536fcf3cd47969c4153b1c05"
+    },
+    {
+      "path": "tests/test_budget_alert_api.py",
+      "sha256_lf": "c41d0228726696f7475b4032b6a06b51daaf7fe7e18d4ad7f5283f368b2adb34"
+    },
+    {
+      "path": "tests/test_notifications.py",
+      "sha256_lf": "b1f930030d6634d144579414c6d9dbbf693f014643135bfbbee595d12f19ea69"
+    }
+  ],
+  "content_sha256": "fd9c4b1f082d82d3517b870240de345dd149ea773dba3e623d82e7a303047b27"
+}

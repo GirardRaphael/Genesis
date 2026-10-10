@@ -36,6 +36,13 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | D28 | Anthropic-only application execution | User explicitly removed OpenAI execution; historical failed attempts remain inspectable and budget stays shared | User explicitly selects another provider with verified rates |
 | D29 | Power BI-style analytics in the custom dashboard | User requested KPI/graph/donut exploration; reuse ECharts and common filtered API cohorts | Broader warehouse/reporting needs demonstrated |
 | D30 | Keyless Montréal dispatch with open road map/address/routing providers | User declined Google billing/API setup; OpenFreeMap/Photon/OSRM are replaceable and the local prototype separates real street geometry, declared worksites and simulated vehicles | Commercial deployment requires owned geocoding/routing, authentication, driver tracking and SLA evidence |
+| D31 | Implemented local one-per-budget email queue with a separate SMTP worker (U13) | Preserve transactional budget evidence and delivery state without blocking model work or adding a provider dependency | Verified external mail service, a new budget lifecycle, supported recovery/reset requirements or a measured need for another transport |
+
+## ADR D31 — budget email, 2026-10-10
+
+Store one immutable logical alert per persistent project budget in a dedicated database table. Capture it with the budget transition or global refusal, then send outside the transaction through an independent worker thread. Reuse Python's SMTP/EmailMessage standard library with verified TLS and private environment settings; no new mail account, dependency or trace-export coupling is required.
+
+Allow at most three known pre-DATA attempts. Ambiguous DATA, lost sending claims and crashes after acceptance become terminal uncertain with no automatic resend. SMTP acceptance is distinct from inbox receipt. Do not add a reset/resend operation in this release: a reviewed recovery transition is required before retrying terminal states. The cost panel reads status independently so transport/status failures cannot stall the budget display. See BUDGET-EMAIL.md for contracts, configuration and limitations.
 
 ## Risks and controls
 

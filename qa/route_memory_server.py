@@ -14,6 +14,8 @@ DIRECTORY = ROOT / "data" / ("qa-route-memory-" + uuid4().hex)
 DIRECTORY.mkdir(parents=True)
 os.environ["GENESIS_DATABASE_URL"] = "sqlite:///" + str(DIRECTORY / "runs.sqlite")
 os.environ["GENESIS_CHECKPOINT_PATH"] = str(DIRECTORY / "checkpoints.sqlite")
+os.environ["GENESIS_SMTP_HOST"] = ""
+os.environ["GENESIS_BUDGET_ALERT_TO"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import update  # noqa: E402

@@ -16,3 +16,9 @@ The broker live integration pilot added five actual Anthropic calls and US$0.033
 # U12 route-memory verification
 
 Address previews and route-history computations do not invoke model providers. A completed actual-OSRM fixture tour and an Anthropic-enabled repeat tested the omission path in the operator database; the repeat used a US$0.000001 request allowance to prevent unexpected paid fallback, recorded no provider attempts/reservations/charges, and omitted all five model explanations. Both simulated tours completed and left the van free. This is evidence of avoided calls in that request, not a measured counterfactual dollar/token saving or an executed Anthropic response. The persistent C$100 global ceiling remains unchanged.
+
+## U13 shared-budget email
+
+The shared effective budget now drives a durable one-per-project email alert. Known plus held exposure, a globally rejected prospective reservation, or a persistent overrun freeze can trigger it; per-run-only denials cannot. Snapshot amounts distinguish estimated charges from holds and do not imply C$100 was spent when a larger prospective call was refused. SMTP settings are private and currently need operator configuration. Email delivery never releases reservations, unfreezes spending or resets the C$100 ceiling. See BUDGET-EMAIL.md for setup and terminal-delivery limits.
+
+Reservation admission, status and alert snapshots now share the same maximum of stored/configured/minimum CAD cushions. This corrects a stored-cushion versus newly lowered CAD-cap inconsistency; malformed runtime settings still fail reservation admission closed while known settlements/freezes remain durable.

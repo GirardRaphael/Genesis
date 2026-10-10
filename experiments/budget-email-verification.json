@@ -1,0 +1,42 @@
+{
+  "evidence_date": "2026-10-10",
+  "scope": "Local prototype verification. No external email, mail-provider login, model-provider call or real budget mutation was used.",
+  "backend": {
+    "command": ".venv/Scripts/python.exe -m pytest tests -o addopts='' -q",
+    "passed": 148,
+    "duration_seconds": 124.19,
+    "warnings": "Three existing OR-Tools SWIG deprecation warnings",
+    "notification_cases": 45,
+    "api_and_wire_cases": 3
+  },
+  "frontend": {
+    "passed": 39,
+    "build": "tsc and Vite production build passed; existing large map/chart chunk warning retained"
+  },
+  "local_smtp_wire": {
+    "host": "127.0.0.1",
+    "transport": "Credential-free explicit loopback fixture",
+    "message_count": 1,
+    "smtp_data_accepted": true,
+    "resend_after_restart": false,
+    "ledger_unchanged_by_send": true,
+    "source_test": "tests/test_budget_alert_api.py::test_budget_alert_crosses_real_smtp_wire_once_and_survives_restart"
+  },
+  "browser": {
+    "command": "npx.cmd playwright test --config playwright.budget.config.ts",
+    "database": "Fresh isolated QA fleet; operator database excluded",
+    "passed": 3,
+    "duration_seconds": 11.4,
+    "cases": [
+      "Real read-only status endpoint reports configuration needed beside global costs",
+      "Fixture SMTP acceptance/uncertainty/stale status preserve privacy and mobile accessibility",
+      "Stalled notification response does not stall global ledger loading"
+    ]
+  },
+  "limitations": [
+    "External SMTP settings and recipient remain operator inputs",
+    "SMTP acceptance does not prove inbox delivery",
+    "Uncertain and terminal failed states require investigation; no resend/reset endpoint",
+    "PostgreSQL runtime, production deliverability and commercial dispatch remain unverified"
+  ]
+}

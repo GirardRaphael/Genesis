@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { money, num } from "./state";
+import { BudgetAlertStatus } from "./BudgetAlertStatus";
+import type { BudgetAlerts } from "./BudgetAlertStatus";
 type Overall = {
   total_requests: number;
   handled_requests: number;
@@ -28,17 +30,47 @@ type Overall = {
 export function OverallCost() {
   const [data, setData] = useState<Overall | null>(null),
     [error, setError] = useState("");
+  const [alerts, setAlerts] = useState<BudgetAlerts | null>(null);
+  const [alertError, setAlertError] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    const update = () =>
-      api<Overall>("/usage/overall", controller.signal)
-        .then((value) => {
-          setData(value);
-          setError("");
-        })
-        .catch((reason) => {
-          if (reason.name !== "AbortError") setError(reason.message);
-        });
+    let overallRefreshing = false;
+    let alertsRefreshing = false;
+    const update = () => {
+      if (!overallRefreshing) {
+        overallRefreshing = true;
+        void api<Overall>("/usage/overall", controller.signal)
+          .then((value) => {
+            if (controller.signal.aborted) return;
+            setData(value);
+            setError("");
+          })
+          .catch(() => {
+            if (!controller.signal.aborted)
+              setError(
+                "Total indisponible. Nouvelle vérification automatique en cours.",
+              );
+          })
+          .finally(() => {
+            overallRefreshing = false;
+          });
+      }
+      if (!alertsRefreshing) {
+        alertsRefreshing = true;
+        void api<BudgetAlerts>("/budget-alerts", controller.signal)
+          .then((value) => {
+            if (controller.signal.aborted) return;
+            setAlerts(value);
+            setAlertError(false);
+          })
+          .catch(() => {
+            if (!controller.signal.aborted) setAlertError(true);
+          })
+          .finally(() => {
+            alertsRefreshing = false;
+          });
+      }
+    };
     void update();
     const id = setInterval(update, 3000);
     return () => {
@@ -64,15 +96,16 @@ export function OverallCost() {
           </span>
         )}
       </div>
-      {error ? (
+      {error && (
         <p className="notice" role="alert">
-          {error}
+          {error} {data && "Dernier total connu affiché ; il peut être périmé."}
         </p>
-      ) : !data ? (
+      )}
+      {!data && !error ? (
         <p className="notice" role="status">
           Chargement du total…
         </p>
-      ) : (
+      ) : data ? (
         <>
           <div className="meter-summary">
             <span>
@@ -105,7 +138,8 @@ export function OverallCost() {
               " Les appels sont bloqués après un dépassement connu."}
           </p>
         </>
-      )}
+      ) : null}
+      <BudgetAlertStatus data={alerts} error={alertError} />
     </section>
   );
 }
