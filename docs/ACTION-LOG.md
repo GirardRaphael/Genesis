@@ -90,6 +90,8 @@ Date basis: America/Toronto, 2026-10-10. Records summarize actual actions; futur
 
 | A073 | Independent verifier, assigned gpt-6-astra/high; lead publication checks | Approved frozen U12 local prototype manifest34 files, normalized-LF SHA256 a6a55eed46d4b92624eec265d4ffa3a84356f312eaa6829010054ddf8ea6ab63 | Independent four-browser repeat and targeted safety/redaction/replay cases pass; three reproduced defects closed. Commercial operation and driver-efficiency claims remain unapproved. Lead verified finalbuild21web/Ruff; staging/credential/manifest checks and normal GitHub publication follow, with publication records excluded from source digest |
 
+| A074 | Lead | Matched all34 staged material files to independent normalized manifest, inspected38 staged paths/modes/known credential patterns/whitespace and actual remote, then committed and pushed normally | Commit6120778 pushed to origin/codex/logistics-implementation. Credential-pattern scan passed; `.env` ignored; no force push, PR or commercial deployment. Only this publication metadata follows the reviewed source. Application API/web remain available locally, and the worker uses the reviewed route-memory hooks |
+
 ## Verification and publishing records
 
 Records are appended after execution. Historical planning entries describe their state at the time; implementation and paid API evidence appears in A037 onwards.
