@@ -1,5 +1,7 @@
 # Architecture research and recommendation
 
+**Scope note after user selection of A11:** this note originated in the A1 planning phase. Shared event/telemetry findings remain useful; any A1 mission, role or experiment examples are historical. Current PLAN.md, LOGISTICS-SPEC.md and logistics-research.md govern the five logistics roles and paired route-policy scenarios.
+
 Research date: 2026-10-10. Status: planning evidence; no implementation or runtime verification claimed. Requirements supplied in the task brief: at least four distinct agents, two tools, twenty runs across five scenarios, and graph, timeline, Sankey, comparison, heatmap and KPI views.
 
 This research note supplies rationale, not a competing specification. [PLAN.md](../PLAN.md), [DATA-CONTRACT.md](../DATA-CONTRACT.md), [MODEL-POLICY.md](../MODEL-POLICY.md) and [VALIDATION.md](../VALIDATION.md) govern implementation where a research recommendation is broader or less specific.

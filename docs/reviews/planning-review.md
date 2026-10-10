@@ -1,5 +1,7 @@
 # Independent planning review
 
+**Historical review:** this approval covers the A1 planning package committed as `70cf808`, before the user selected A11. It does not approve the later logistics revisions. The current revision requires a separate logistics-plan-review.md record; original findings and evidence remain preserved below.
+
 **Current verdict: approved as a planning package after correction.** No open blocking planning findings remain. Independent rereview on 2026-10-10 covers substantive content in staged tree `bd704e3b7e08c894136ccf8a56c98a5b164df850`; final report and action-log closeout may change the tree without changing those specifications. This is not approval of an implemented application or completion of future discovery/experiment gates. No GitHub remote is configured.
 
 ## Assignment and scope

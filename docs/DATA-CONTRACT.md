@@ -2,6 +2,8 @@
 
 Status: implementation specification v0.1. These are proposed application contracts, not claims about vendor schemas. W01 converts them to executable schemas and migration tests. PLAN.md and this file override exploratory examples in research notes.
 
+Current mission is A11. [LOGISTICS-SPEC.md](LOGISTICS-SPEC.md) adds immutable fleet, stop, matrix, route-plan and simulation records; its domain constraints apply in addition to this shared trace contract. Route-policy IDs and model-policy IDs are distinct. Actual model latency and simulated delivery duration are distinct clocks; estimated fleet CAD cost and model API cost are distinct accounts.
+
 ## Identity and ordering
 
 Use UUID identities for project, run, invocation, model call, tool call, attempt, event, artifact and evaluation. One agent invocation may contain several model calls and tool calls. A retry is a new attempt under the same logical call. A revised analysis is a new invocation referencing the superseded artifact. Every stored row belongs to one project, including checkpoint and artifact metadata.
@@ -33,6 +35,10 @@ Events include `run.queued`, `run.started`, `agent.started`, `model.started`, `m
 
 Run state: queued -> running -> one of succeeded, failed, cancelled, timed_out, budget_exceeded. `run.completed` means succeeded only after required validation. A completed invocation can contain failed attempts followed by success. `cancel_requested` is not terminal; stop further work, cancel provider work where possible, reconcile in-flight usage and then close. Completed runs are immutable except separate append-only corrections/evaluations; terminal retries create a new linked run.
 
+A11 adds `matrix.created`, `route.proposed`, `route.validated`, `simulation.event`, `exception.assessed` and `route.replanned`, with dataset/plan/manifest IDs and typed payloads. Model explanations never substitute for independent route certificates. Store run outcome and fleet outcome separately: a verified infeasibility/no-candidate diagnostic can complete the analysis mission successfully without claiming a feasible route or on-time delivery. Require explicit artifact kind `accepted_plan` or `accepted_diagnostic` before finalization.
+
+Route certificates carry `scope` initial_full_plan/residual_suffix, source plan/matrix/state hashes, future-stop coverage and independent constraints. Historical simulated violations are separate immutable facts. The active simulator's private future-event manifest is not an agent-readable artifact; agent tool authorization restricts it even within the same project. Active simulation history includes revealed events only.
+
 ## Metric dictionary
 
 All metrics share a server-resolved cohort and snapshot. Default time filter is run creation time in `[from,to)`, with timezone explicit. Agent/model filters select runs containing matching invocations/calls; run metrics include entire matching runs. Agent charts then use matching invocations only, labeled as such. A selected run remains fully inspectable even when a chart-level filter narrows highlights. Never silently sum only visible table rows.
@@ -52,6 +58,8 @@ All metrics share a server-resolved cohort and snapshot. Default time filter is 
 | Tool error rate | Failed tool attempts / all completed tool attempts; canceled/in-flight attempts excluded explicitly |
 
 Example billing fixture: 1,000 input tokens including 200 cached, 300 output tokens including 50 reasoning. Total tokens = 1,300, not 1,550. If uncached input is $1/M, cached $0.50/M and output $2/M, estimated call cost = $0.0015. These prices are invented test rates, not vendor pricing. Decimal strings are serialized; round only presentation. Invalid categories or missing rate rules produce unavailable estimates. All retries with known usage count, including failures. Evaluation spend has a separate subtotal plus an all-in total.
+
+Fleet metrics are defined in LOGISTICS-SPEC.md and returned separately: distance, lateness/on-time with served coverage, parcel/shift utilization, estimated operating cost and optional emissions with factor coverage. Never convert a quality rubric score into route feasibility or use the observed-agent Sankey as a vehicle-route map.
 
 Run wall time includes waiting and concurrent work. Invocation durations can overlap; their sum is not end-to-end latency. Critical-path computation uses explicit dependency edges and well-defined intervals. Correlation between cost and quality does not prove causation.
 
@@ -80,6 +88,8 @@ Graph nodes show role aggregates or actual invocations, with a visible mode labe
 | `GET /api/v1/artifacts/{id}` | Authorization, MIME policy, bounded preview or download; immutable content hash |
 | `POST /api/v1/runs/{id}/cancel` | Idempotent request; does not claim instant cancellation |
 | `GET /api/v1/comparisons?left=...&right=...` | Two authorized runs; normalized metric and artifact comparison |
+
+A11 endpoints: `GET /api/v1/datasets`, `GET /api/v1/scenarios`, `GET /api/v1/route-plans/{id}`, `GET /api/v1/route-plans/{id}/geometry`, `GET /api/v1/runs/{id}/fleet-metrics`, and `GET /api/v1/runs/{id}/simulation-events`. All have project authorization, bounded responses and immutable version refs. Run creation validates dataset/scenario/logistics-policy/model-policy IDs. No input field may override hard constraints without creating a new recorded policy version. Route comparison displays input/event-manifest comparability and excludes invalid objective-only savings claims.
 
 Typed errors contain code, safe message, request ID and retryability. Validate IDs, query bounds, payload size and project scope at the boundary. All hosted deployments require authenticated API and artifact access. A localhost-only development profile may use a fixed synthetic project and no identity provider; it must bind to loopback and refuse nonlocal deployment in that mode.
 

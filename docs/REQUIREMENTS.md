@@ -4,8 +4,8 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 
 | ID | Source and requirement | Planned implementation | Acceptance evidence |
 |---|---|---|---|
-| R01 | Sections 3–4: complex mission, >=4 distinct interacting agents | Cost/quality analysis; coordinator, researcher, analyst, verifier | Live trace shows all four roles, versioned tasks, handoffs and outputs |
-| R02 | Section 4: >=2 tools | Dataset/document reader and typed metric calculator | Successful distinct invocations with inputs/outputs and duration |
+| R01 | Sections 3–4: complex mission, >=4 distinct interacting agents | A11 planning, simulated traffic, optimization, monitoring, exception; course-role mapping in LOGISTICS-SPEC | Live trace shows all five roles, meaningful handoffs/outputs and independent constraint validation |
+| R02 | Section 4: >=2 tools | Matrix/scenario builder, route solver and independent validator/simulator | Distinct typed successful invocations with inputs/outputs/duration; no arbitrary generated code |
 | R03 | Sections 5, 7: original dashboard | Advanced architecture; custom React views | Original interface; Langfuse used only as supplementary inspection |
 | R04 | Section 6: >=20 executions, >=5 scenarios | Balanced policy/scenario matrix | Experiment manifest links actual execution IDs; fixtures excluded |
 | R05 | Section 6: complete trace fields | Versioned event and attempt contracts | Schema validation plus completeness report, including null reasons |
@@ -22,12 +22,13 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 | R16 | 11.3: report and >=3 recommendations | Report based on M4 evidence | Problem, agents, architecture, data, chart rationale, findings, limits, recommendations, conclusion |
 | R17 | 11.4: 10–12 minute presentation; both members | Demonstration script and contribution ledger | Timed rehearsal and each member explains/modifies assigned code |
 | R18 | 13–14: explainability and confidentiality | Observable decisions, redaction, no hidden reasoning collection | Prompt/trace audit; data provenance and sensitive-data tests |
-| R19 | 3 and Annex B: approved topic and commercial validation | Proposed A1; DISCOVERY.md eight answers, three interviews and weighted 1–5 matrix | Evidence/hypotheses explicit; weighted scores 20/15/20/15/15/15; unknown scores not ranked; approval recorded when obtained |
+| R19 | 3 and Annex B: approved topic and commercial validation | User-selected A11; DISCOVERY.md eight answers, dispatcher interviews and weighted 1–5 matrix | Evidence/hypotheses explicit; weighted scores 20/15/20/15/15/15; unknown scores not ranked; approval recorded when obtained |
 | U01 | User: deep research, relevant tools and Ponytail | Research files and tools register; pinned local Ponytail install | URLs, adoption rationale, revision and install evidence |
 | U02 | User: document actions and code | Action log, ADRs, task handoff and review templates | Change includes documentation and evidence, no secrets |
 | U03 | User: clear AI handoff and model tiers | AGENTS.md, backlog, routing policy | Bounded tasks and independent verification role |
 | U04 | User: honest direct output; premium UI | Measurable visual criteria; concise status | Realistic data review; no simulated claims of completion |
 | U05 | User: review before authorized GitHub pushes | Independent review and release gates | Actual remote, branch, reviewed commit and push result recorded |
+| U06 | User selects A11 logistics | LOGISTICS-SPEC, OR-Tools, cached matrices and MapLibre; map/fleet metrics supplement required charts | Five roles, capacity/windows checked, delays/distance/cost/utilization/emissions coverage and paired scenarios; no invented savings |
 
 ## Rubric priority
 

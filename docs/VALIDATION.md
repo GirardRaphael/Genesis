@@ -4,6 +4,8 @@
 
 Check local links, requirement coverage, coherent roles/model policy, phase dependencies, actual tool-install evidence and honest implementation status. Independent reviewer must identify contradictions and missing acceptance criteria. Review results are recorded in docs/reviews. Planning review does not establish application correctness.
 
+The prior planning-review.md covers the historical A1 package. The current A11 revision requires a new independent logistics review. Source requirements remain, with logistics contract and U06 added.
+
 ## Test layers
 
 | Layer | Required cases | Evidence |
@@ -16,6 +18,9 @@ Check local links, requirement coverage, coherent roles/model policy, phase depe
 | Telemetry | Export outage/retry; redaction before export; trace correlation; no double-counted calls | Sanitized trace comparison and marker tests |
 | UI | Run/filter/compare/replay; output/citation inspection; consistent cohort; long/empty/failed states | Playwright flows, screenshots, keyboard review |
 | Delivery | Locked clean install; fixture profile without API key; backup restore; live configuration errors | Rehearsal record with environment and commands |
+| Routing | Capacity, service-start windows, waiting/return time, duplicate/mandatory stops, optional penalty disclosure, directed unreachable arcs, timeout/no-candidate vs infeasible | Tiny checked matrices and independent feasibility certificate; solver totals not trusted |
+| Logistics simulation | Equal exogenous schedule with independently evolved states, future-event reads denied, prefix/current-leg/cargo lock, depot loading, one-replan cap, stale-state result rejection, late history retained, zero simulated decision-delay assumption explicit | Stored sealed manifests, scoped certificates and independent cumulative distance/time/cost reconstruction |
+| Map/business metrics | Stored geometry ↔ route version, stop/table linkage, WebGL/tiles unavailable fallback, served denominator, baseline zero, partial emissions factors | Browser and exact metric fixtures; map screenshot plus table path |
 
 Use actual test results, not a model's assertion that code should work. Test behavior at boundaries; do not create snapshots of internal implementation just to increase coverage. Runtime error paths, money, reducers and privacy are meaningful test targets. A compile check alone does not verify the system.
 
@@ -23,15 +28,15 @@ Use actual test results, not a model's assertion that code should work. Test beh
 
 | ID | Scenario | Expected invariant |
 |---|---|---|
-| S01 | Clean complete cost/usage dataset | Evidence-backed correct recommendation; four agents and both tools used |
-| S02 | Missing/contradictory evidence | Coverage explicit; unsupported claims rejected; unknown metrics stay null |
-| S03 | Recoverable tool timeout | Bounded retry, attempt history retained, no duplicate logical result |
-| S04 | Analyst draft contains seeded numerical defect | Verifier detects it; at most one repair; original and corrected artifact retained |
-| S05 | Worker interrupted after checkpoint | Recovery preserves event history; no double-counted usage; uncertain external calls labeled |
+| S01 | Nominal depot/fleet day | Five agents used; baseline/candidate independently checked; complete service/constraints visible |
+| S02 | Clustered seeded congestion | Planning snapshot and simulated outcomes distinguished; same events per paired policy |
+| S03 | Tight/incompatible mandatory windows | No-candidate, proved infeasible if available, and feasible status distinguished; no silent relaxation |
+| S04 | Vehicle unavailable at stop-boundary | No cargo teleportation or phantom roadside transfer; explicit unserved onboard deliveries; one permitted replan |
+| S05 | New delivery at stop-boundary | Depot loading and vehicle availability enforced; completed prefix preserved; unserved reason if no admissible plan |
 
-Minimum dataset: five scenarios x two policies (baseline and tiered) x two repeats = 20 real executions. Target: five x two x five = 50 when budget permits. Record seed/input hash, scenario injection, routing policy, model IDs, prompt versions, tool versions, price version and actual outcomes. Fault injection is labeled; execution and model usage must still be real to count as a live run. Fixtures cannot substitute for R04. Calibration examples are separate from measured experiments.
+Minimum dataset: five scenarios x two logistics policies (`baseline_only`, `solver_with_one_replan`) x two paired seeds = 20 actual five-agent executions. Target 50 with five paired seeds when budget permits. Record source/matrix/geometry/manifest hashes, exogenous events, logistics/model-policy IDs, model/prompt/tool/solver versions, limits and rates. Keep model tiering fixed; later model-cost ablation is additional. Synthetic deliveries/traffic remain clearly simulated even when agents/models execute live. Fixture-only runs cannot substitute for R04. Calibration examples remain separate.
 
-Run sequential paired scenario inputs or randomize/interleave policy order to reduce time-of-day confounding. Keep data and rubric fixed. Report success, failure, cancellation, cost coverage, mean/p50/p95 duration, total cost, cost per accepted output and quality per scenario/policy. At small n, show raw points; p95 is descriptive and unstable. Do not infer general superiority or statistical certainty from 20 runs. Larger validation requires a power/precision target, not a marketing claim.
+Randomize/interleave paired policies with the same dataset/event manifest and constraint/rate definitions. Report every run's valid-plan/diagnostic outcome, mandatory service and optional omissions, on-time/served, distance, late minutes, utilization and estimated fleet costs; separate API spend and agent wall time. Show paired full-service feasible comparisons plus all-run coverage/failure summaries to avoid dropping inconvenient cases. Candidate adoption requires validation and no worse comparable declared objective when a valid baseline exists; simulation can still reveal worse real-world-like outcomes, which must remain visible. At small n, raw points and uncertainty are essential; 20 runs do not establish general commercial savings.
 
 ## Ten required analysis questions
 
@@ -41,14 +46,14 @@ Run sequential paired scenario inputs or randomize/interleave policy order to re
 | Longest execution time? | Mean invocation duration and contribution distribution, sample counts |
 | Most errors? | Failed attempts by agent and error class, normalized error rate |
 | Most retries? | Logical call retry counts by task/tool and scenario |
-| More agents vs duration? | MVP uses four fixed roles: cannot infer relationship. Add separately labeled controlled 4-vs-5-role ablation if budget allows; otherwise explicitly report not identifiable |
+| More agents vs duration? | MVP uses five fixed roles: relationship not identifiable. Optional controlled optional-role ablation requires additional runs and a justified valid workflow; otherwise report insufficient variation |
 | Higher cost vs better quality? | Paired scenario scatter/quality differences, coverage and confounders |
 | Bottlenecks? | Critical path, queue time and tool/model interval analysis |
 | Unnecessary communications? | Candidate redundant handoffs by content/evidence reuse, then controlled removal test; count alone is insufficient |
-| Reduce cost? | Tiered routing comparison including retries and evaluation cost |
+| Reduce cost? | Fleet route-policy cost/coverage comparison; separate later model-tier ablation includes retries and judge spend |
 | Improve reliability/quality? | Failure taxonomy plus validated interventions and tradeoffs |
 
-The report must contain at least three recommendations tied to measured findings. Candidate hypotheses: economical extraction routing; elimination of a measured redundant handoff; stricter evidence validation before analysis. Do not present these as supported results until experiments establish them. If an intervention fails, publish the failed result and revise the recommendation.
+Report at least three measured recommendations. Candidate hypotheses: route consolidation at preserved coverage; bounded replanning under specific congestion/outage scenarios; stricter feasibility/arrival checks before dispatch proposals. Report resource-cost recommendations separately. No supported recommendations exist until experiments run. Failed interventions and infeasibility are useful results, not outcomes to hide.
 
 ## Review and push gates
 
@@ -63,4 +68,4 @@ For hosted deployment, verify identity/project scoping, allowed data, provider l
 
 ## Demonstration outline
 
-0:00–1:00 problem and decision; 1:00–2:30 four agents/two tools; 2:30–5:00 execution/output/evidence; 5:00–7:00 graph/timeline/Sankey and replay; 7:00–9:00 comparison/heatmap/quality and costs; 9:00–10:30 three recommendations and limits; 10:30–12:00 questions or failure recovery. Assign both presenters meaningful sections and record contributions. Keep a locally replayable known run for provider outages; label replay clearly.
+0:00–1:00 logistics decision; 1:00–2:30 five agents/typed solver tools; 2:30–5:00 route map, feasibility and outputs; 5:00–7:00 congestion/exception, simulation and agent replay; 7:00–9:00 six observatory views, paired outcomes and distinct cost accounts; 9:00–10:30 three recommendations/limits; 10:30–12:00 questions or recovery. Both presenters contribute. Locally replayable trace and packaged map/table protect the demo from provider/tile outages; label simulation and replay.

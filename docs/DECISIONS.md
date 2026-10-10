@@ -4,10 +4,10 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 
 | ID | Decision | Reason | Revisit trigger |
 |---|---|---|---|
-| D01 | Select Annex A1 cost/quality analysis | Matches user's need to inspect many agents; measurable with public/synthetic data | Teacher/topic feedback or user change |
+| D01 | Historical A1 selection superseded by D14 | Initial lead proposal; user later selected A11 | Retained for provenance only |
 | D02 | Advanced LangGraph/Langfuse/React Flow/ECharts path | Original UI and complete graph/temporal analysis | Integration spike fails delivery envelope |
 | D03 | PostgreSQL events authoritative; Langfuse secondary | Replay correctness and independence from exporter outage | Measured throughput/fan-out exceeds tested limits |
-| D04 | Four roles: coordinator/researcher/analyst/verifier | Exact source roles with real handoffs; avoid gratuitous writer | Controlled experiment establishes fifth role value |
+| D04 | Historical four-role A1 proposal superseded by D15 | Current A11 maps course functions to five meaningful logistics roles | Retained for provenance only |
 | D05 | Separate durable worker; bounded tools and budgets | Recovery and predictable spending | Measured queue/worker requirements warrant maintained queue |
 | D06 | Output/evidence inspector central | Primary user need is understanding usable agent work | Usability evidence indicates different navigation |
 | D07 | Minimum 20, target 50 balanced runs | Meet brief and provide more informative comparison | Budget/precision analysis |
@@ -17,6 +17,15 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | D11 | Atomic reservation before every billable dispatch | Concurrent calls and uncertain retries must not spend the same remaining allowance | Provider pricing/billing model changes; reserve/settle adapter reevaluation |
 | D12 | Two-column sender/receiver Sankey | Message fan-out invalidates through-agent conservation; each observed handoff is counted once | A separately specified conserved quantity becomes useful |
 | D13 | Explicit eight-question discovery and weighted selection | Annex B evidence must not be replaced by assumed commercial demand | Interviews, topic approval and evidence-backed scoring completed |
+| D14 | User-selected A11 delivery/logistics observatory | User explicitly chose the domain; operational map and constraints provide meaningful visualization | User direction or approved course-scope change |
+| D15 | Five roles: planning/traffic/optimization/monitoring/exception | A11 roles map coordinator/researcher/analyst/verifier; exception has bounded replan/no-action output | Measured redundancy; retain course minimum functions |
+| D16 | OR-Tools routes; independent validator; OSRM matrices; MapLibre map | Models coordinate/explain, deterministic tools establish feasibility | Compatibility spike or measured solver limitation |
+| D17 | Single depot, 3–5 vans, 25–50 synthetic stops | Protect advanced project's two-person feasibility and privacy | W01 timing/resource evidence |
+| D18 | Traffic simulation and actual agent traces use separate clocks | Prevent simulated road time from being mistaken for agent latency or real traffic | Genuine live-data integration with a new contract |
+| D19 | Logistics policy comparison with fixed model tiering | Avoid confusing route gains with model-policy changes | Separate additional controlled model ablation |
+| D20 | Cargo locked to carrier; no roadside rescue in MVP | Replanning indices cannot move physical parcels | Explicit depot/reload/transfer model extension |
+| D21 | Private future events; shared exogenous schedule, independent evolved states | Avoid oracle leakage and impossible equality of vehicle positions across policies | Explicit forecast-policy experiment |
+| D22 | Initial vs residual certificates; historical violations retained | A suffix begins at a checkpoint and cannot undo past lateness/missing cargo | New whole-day compliance contract |
 
 ## Risks and controls
 
@@ -32,6 +41,11 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | Source contains private data | Leakage through model/telemetry | Public/synthetic data only for initial product; redaction and export tests |
 | Version drift | Broken integrations | Compatibility spike and pinned conventions/dependencies |
 | No configured GitHub remote | Cannot publish | Preserve reviewed local files/commit; use actual destination once established |
+| Invalid route explained convincingly | Wrong dispatch proposal | Independent capacity/windows/visits/return/cargo certificate; model cannot override |
+| Cheaper by skipping deliveries | False savings | Required/optional coverage beside metrics; comparable service cohort; penalties excluded from money |
+| Simulated traffic or emissions claimed real | Misleading commercial/environmental evidence | Explicit simulated/estimated labels, factor/source coverage and separate clocks |
+| External map/routing outages | Broken demo/reproducibility | Cached matrices/geometry, packaged background and route-table fallback |
+| Solver timeout presented as infeasible/optimal | Wrong conclusion | Separate actual search status and independent feasibility; no unsupported proof claims |
 
 ## Outstanding external inputs
 

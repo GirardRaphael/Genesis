@@ -1,5 +1,7 @@
 # UI tools research and visual quality gates
 
+**Scope note after user selection of A11:** this note originated in the A1 planning phase. Shared accessibility and component/tool findings remain useful; current UI-SPEC.md and LOGISTICS-SPEC.md add map/visit inspection, fleet metrics and dual-clock simulation. Use those current contracts for product-specific behavior.
+
 Research date: 2026-10-10. Status: planning recommendations; no application or UI has been implemented or tested. Evidence below comes from primary maintainers and W3C. Product decisions and numeric acceptance targets are research proposals, not vendor guarantees. Canonical PLAN.md, DATA-CONTRACT.md, UI-SPEC.md, and TOOLS-AND-SKILLS.md supersede these exploratory recommendations wherever they differ.
 
 ## Decision

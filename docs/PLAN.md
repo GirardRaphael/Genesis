@@ -2,25 +2,27 @@
 
 ## 1 Product decision
 
-Build a multiagent operations observatory for data teams. Its first mission is **evidence-backed analysis of LLM execution cost and quality**, derived from Annex A1 of the brief. An operator submits a question against a public or synthetic execution dataset; four agents coordinate research, analysis, and verification, producing a cited recommendation. The original observatory shows both the process and every agent's usable output.
+Build **Genesis Logistics Observatory**, selected from Annex A11 by the user. A dispatcher compares delivery plans, inspects delays/capacity/cost, simulates disruptions and understands the five agents' outputs. The route map and verified visit plan are the primary business views; the original multiagent observatory exposes the workflow, tool evidence, reliability, tokens and separate AI spend.
 
-The product decision is provisional for classroom topic approval, which has not been obtained. Planning and technical prototyping do not depend on that approval. Validate the business hypothesis through three data-team interviews before describing commercial demand as established. Ask what failure they last investigated, how long it took, what decision evidence was missing, and whether this workflow changes that decision. Record evidence rather than invented market scores or revenue estimates.
+The user has selected A11; teacher approval and commercial demand remain unverified. Validate the hypothesis through three dispatcher/fleet-operator interviews covering a recent planning problem, actual constraints, baseline process and purchase decision. Record evidence rather than invented market scores, revenue or savings. "Very high potential" in the brief is an idea rating, not validated demand. A useful product must improve dispatch decisions against an existing planner with comparable service coverage.
 
 [Commercial discovery](DISCOVERY.md) assigns Annex B's eight questions and exact weighted topic matrix to W00. Document hypotheses and lawful fixture provenance before implementation; retain unknown scores until supported. The product can remain an explicitly educational prototype while commercial validation is pending.
 
-Primary user: a data/AI operations lead investigating an expensive, slow, or unreliable run. Primary task: move from an anomalous metric to the responsible attempt, its evidence, its output, and a defensible corrective action. Secondary user: an evaluator comparing routing policies. The classroom assessor must be able to reproduce all required charts and conclusions locally.
+Primary user: dispatcher for a local delivery/distribution fleet. Primary task: identify an infeasible or delayed route, inspect the affected stops and constraint evidence, compare a bounded replan and understand its tradeoffs. Secondary user: AI/data lead diagnosing the agent execution. [LOGISTICS-SPEC.md](LOGISTICS-SPEC.md) defines routes, simulation, solver boundaries, costs and acceptance. The classroom assessor can reproduce all required charts and conclusions locally.
 
 ## 2 Boundaries
 
-MVP includes four functioning agents, two read-only tools, durable structured traces, six required visualizations, linked filters, run comparison, replay, output inspection, a minimum of 20 real executions across five scenarios, report, and demonstration. The first usable slice contains the entire path, even if only one scenario and one screen are present.
+MVP: one depot, 3–5 identical vans, 25–50 synthetic stops, outbound deliveries, parcel capacity, service-start windows, shift return and one bounded replan. Five functioning agents use typed matrix, optimization, validation and simulation tools. Include durable traces, six required observatory visualizations **plus route map**, linked filters, plan/run comparison, dual-clock replay, output inspection, at least 20 actual agent executions across five logistics scenarios, report and demonstration. First slice covers the full path on one scenario.
 
-Defer multi-tenant SaaS, billing, arbitrary remote code execution, multi-cloud provisioning, marketplace plugins inside the product, autonomous production changes, Kubernetes, and a bespoke orchestration framework. No open-ended agent loops. Do not add a fifth writer unless experiments justify the extra latency and expense. Add a scale backend only after measured bottlenecks.
+Defer multi-depot, pickups/returns, live GPS/traffic, driver-hours compliance, electric charging, actual dispatch, SaaS billing, Kubernetes and unrestricted execution. No open-ended agent loops. Route feasibility comes from deterministic tools; models supply coordination and explanations. Detailed exclusion and cargo/replanning rules are in LOGISTICS-SPEC.md.
 
 No fabricated live numbers. Fixtures are labeled fixtures. Provider usage can be missing; display unavailable. Estimated prices are not invoices. A verified result is not guaranteed truth. A successful transport request does not establish a successful mission.
 
 ## 3 Selected architecture
 
 Use the brief's advanced path: **Python LangGraph + Langfuse integration + React Flow + Apache ECharts**. React/TypeScript with Vite hosts the custom UI; FastAPI exposes typed read/query and mission endpoints; PostgreSQL stores authoritative application events, outputs, and experiment metadata. Use SQLAlchemy/Alembic for explicit migrations if the implementation spike confirms the integration; use Python decimal arithmetic for money.
+
+Add **OR-Tools** for bounded CVRPTW search, **OSRM adapter** for cached directional road matrices/geometries and **MapLibre GL JS** for the map. W01 verifies local setup, data permissions, solver compatibility and offline fixtures. Record road sources, versions and traffic-simulation assumptions. Route optimization, AI model routing and telemetry are separate responsibilities; see [logistics research](research/logistics-research.md).
 
 Run the graph in a dedicated worker process with durable LangGraph checkpoints. Keep a single worker and bounded concurrency initially. Persist run requests before acknowledging them; implement transactional claims, a lease/heartbeat, attempt fencing and recovery tests before allowing multiworker execution. Do not treat an HTTP request's in-memory background task as a durable job runner. Evaluate a maintained durable queue only if the PostgreSQL worker exceeds the tested recovery requirements.
 
@@ -33,7 +35,8 @@ flowchart LR
   UI[Original React dashboard] --> API[FastAPI]
   API --> DB[(PostgreSQL runs events outputs)]
   Worker[LangGraph worker] --> DB
-  Worker --> Tools[Dataset reader and metric calculator]
+  Worker --> Tools[Matrix solver validator simulator]
+  Tools --> Roads[Cached road data]
   Worker --> Models[Configured model provider]
   Worker --> Artifacts[Private artifacts]
   DB --> Stream[Ordered event stream]
@@ -42,33 +45,36 @@ flowchart LR
   Exporter --> LF[Langfuse]
 ```
 
-Separate mission data from observatory telemetry. If the analyst studies an input execution dataset, attach its immutable dataset ID; do not accidentally analyze the current run's incomplete traces as the business dataset. Provider calls, tool calls, handoffs, validation decisions and artifact versions must remain individually inspectable.
+Separate fleet business data from observatory telemetry. Immutable depot/fleet/stop inputs, route versions, road matrices and simulation events are linked artifacts. Actual model execution timestamps and simulated delivery times use separate clocks. Never mix estimated fleet operating cost with API spend or optimization penalties. Preserve every tool call, handoff, certificate and route artifact version.
 
 ## 4 Runtime agent responsibilities
 
 | Agent | Input and tools | Required output | Interaction and completion |
 |---|---|---|---|
-| Coordinator | Mission, allowed dataset manifest, budget policy | Structured task plan with IDs, constraints and assignments | Assign researcher; hand evidence to analyst; route verifier verdict; finalize only an accepted result |
-| Researcher | Assigned question; allowlisted dataset/document reader | Evidence bundle with source IDs, retrieval time, row/document references and missing-data notes | Send bundle to analyst; accept one bounded clarification request |
-| Analyst | Evidence bundle; deterministic metric calculator | Findings with exact calculation IDs, units, limitations, recommended policy | Send draft and evidence to verifier; revise if a specific correctable defect is returned |
-| Verifier | Original mission, evidence, draft, independent recalculation tool | Structured accept/revise/reject verdict with criterion results and evidence links | Return verdict to coordinator and analyst; one repair cycle maximum |
+| Planning | Mission, depot/stops/fleet and constraints | Versioned work order and assignments | Coordinator; finalize verified plan or diagnostic |
+| Simulated traffic | Frozen road matrix and permitted forecast descriptor | Static forecast and revealed-event refs; sealed evaluation schedule stays simulator-only | Researcher; send permitted evidence to optimization/monitoring |
+| Optimization | Work order and matrices; baseline/OR-Tools tool | Candidate, baseline, objective components and search status | Analyst; send routes to monitoring |
+| Monitoring | Routes and source inputs; independent validator/simulator | Feasibility certificate, simulated fleet KPIs and issues | Verifier; send verdict to planning and exception |
+| Exception | Monitoring report and bounded policy | No-action or one permitted residual replan request | Send to planning/optimization; preserve completed work and cargo constraints |
 
-Every role has versioned instructions, an explicit goal, schema, tool allowlist, maximum calls and output length. The reader and calculator are genuinely distinct tools with recorded invocations. The calculator accepts a typed operation vocabulary, never generated Python or shell code. The verifier uses an independent prompt and execution context, not the author's self-attestation.
+Every role has versioned instructions, objective, schema and tool allowlist. Course coordinator/researcher/analyst/verifier responsibilities map to the first four roles; exception is the meaningful fifth role proposed in A11. Monitoring recomputes constraints independently of solver totals. A model cannot approve a certificate with overload, duplicate stops or broken time windows. Typed tools expose no generated Python, arbitrary SQL or shell.
 
-Default proposed limits for the spike: maximum 12 model calls per run, 20 total tool calls, one analyst revision, two retries of a retryable provider/tool request, five-minute wall timeout, and concurrency two. These are starting engineering limits to tune from measured traces. Dollar caps require a configured pricing table and explicit run budget; if either is missing, live execution stays disabled while fixture replay remains available.
+Simulation retains private future events. Agents receive only forecasts/current revealed events. Initial full-plan and residual-suffix certificates have different scope; a recovered future route cannot erase prior realized lateness or missing mandatory cargo. Paired policies share initial data/exogenous schedules while their positions and reaction times evolve independently under the same safe-boundary rule.
+
+Initial proposed limits: 15 model calls, 24 tool calls, one replan, two transient-request retries, five-minute run wall timeout, 20 seconds per solver search and concurrency two. Tune from measured traces. Dollar caps require pricing and explicit run budget; if either is missing, live model execution remains disabled. Solver-only/offline fixture work proceeds. Atomic reservations remain mandatory for concurrent billable calls.
 
 ## 5 Ordered milestones
 
 | Milestone | Outputs | Exit evidence | Dependency |
 |---|---|---|---|
 | M0 Requirements and design | This package, source mapping, skill provenance, screen specification | Independent planning review; unresolved items classified | None |
-| M1 Contract and walking slice | Locked dependencies; schema; migration; four-agent run; two tools; stored events; simple output UI | One reproducible live run with complete trace and clean schema roundtrip | M0 |
+| M1 Contract and walking slice | Locked dependencies; domain/event schemas; tiny solver/validator fixture; five-agent run; stored events; route/output UI | Independently valid small route, one actual agent run and schema roundtrip | M0 |
 | M2 Reliable execution | Checkpoints, cancellation, bounded retries, idempotency, artifact lineage, exporter | Crash/resume, duplicate and disconnect tests; no double-counted costs | M1 |
-| M3 Visual observatory | Six charts, filters, output drawer, comparison, replay, URL state | Required user journeys, visual and keyboard review with realistic fixtures | M1; live reliability relies on M2 |
-| M4 Experiments and interpretation | 20-run minimum; stronger 50-run target; policy comparison; evidence-backed findings | Reproducible analysis, evaluator calibration, uncertainty and missingness disclosed | M2 + M3 |
+| M3 Visual observatory | Map, six charts, fleet/AI metrics, output drawer, comparison, dual-clock replay, URL state | Route/certificate linkage, accessible table alternative and visual review | M1; live reliability relies on M2 |
+| M4 Experiments and interpretation | 20 minimum/50 target, baseline vs solver/replan under paired logistics scenarios | Same exogenous events, coverage/feasibility reported, no simulated-to-real savings claims | M2 + M3 |
 | M5 Delivery | Install guide, report, 10–12 minute demo, tested local profile, optional hosted preview | Clean-machine rehearsal; independent release review; source-to-evidence matrix complete | M4 |
 
-Planning estimate: 18–25 focused person-days for M1–M5, with a 25% contingency for provider integration and visual QA. This is a capacity assumption, not a delivery promise. Two contributors may overlap contract-conforming frontend and backend work after M1 contracts are stable. Do not parallelize shared schema ownership. Prioritize the rubric's 65 points for visualization, interaction and interpretation without sacrificing trace integrity.
+Revised planning estimate: 25–35 focused person-days for M1–M5, plus 25% contingency for solver/maps/replanning integration and visual QA. This capacity assumption needs W01 calibration. Protect the single-depot scope for a two-person course project. Frontend/backend may overlap only after contracts are stable. Prioritize the rubric's 65 points for visualization, interaction and interpretation while preserving trustworthy route data.
 
 ## 6 Delivery structure
 

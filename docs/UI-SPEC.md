@@ -2,7 +2,7 @@
 
 ## Product character
 
-Create a precise analytical workbench. Use strong typography, consistent alignment and selective color; avoid giant empty cards, decorative gradients, excessive rounded containers, stock landing-page sections and animated network wallpaper. Distinctiveness comes from an integrated **execution evidence rail** that links a selected task to its timeline, output version, evidence and verification verdict.
+Create a precise logistics dispatch workbench. A route map, visit schedule and exception queue show operational decisions; an integrated **execution evidence rail** links each plan version to its producing agent, solver/tool results, independent certificate and simulation outcome. Use strong typography, alignment and selective color; avoid giant empty cards, decorative gradients and animated network wallpaper.
 
 The first screen should show usable outputs and exceptions within one glance. Every agent output has its producer, status, timestamp, version, citations, validation result and a clear final/draft/superseded label. A graph alone does not satisfy the need to see agent work.
 
@@ -10,11 +10,12 @@ The first screen should show usable outputs and exceptions within one glance. Ev
 
 | Route | Main content | Primary decision |
 |---|---|---|
-| Overview | Compact eight-metric strip; trend/comparison; recent runs table; exceptions | Which run needs investigation? |
+| Overview | Fleet distance/delay/coverage/cost summary, recent plan exceptions and separate eight-metric AI-observability group | Which route or agent execution needs investigation? |
+| Fleet workspace | Map, vehicle/stop selection, visit schedule and frozen plan version | Is the proposed plan feasible, and which deliveries are affected? |
 | Runs | Filter toolbar and high-density sortable inventory | Which comparable cohort should I inspect? |
-| Run workspace | Summary header; timeline and graph tabs; synchronized output/evidence inspector | What happened, what was produced, and why did validation pass/fail? |
-| Compare | Two pinned runs; aligned metrics; artifact diff; policy/scenario metadata | What changed and is it a credible improvement? |
-| Experiments | Scenario matrix, latency/error heatmap, quality/cost comparison, recommendations | Which policy earns a measured advantage? |
+| Run workspace | Five-role timeline/graph, route artifact and evidence inspector | Which agent produced this route or diagnostic and why did validation pass/fail? |
+| Compare | Baseline/candidate map and route table; paired outcomes; separate AI spend | Were distance/cost/delay changes achieved at comparable service coverage? |
+| Experiments | Five logistics scenarios, feasibility/coverage matrix, latency/error heatmap and policy outcomes | Which logistics policy helps under which disruption, with what limitations? |
 
 At 1440px: navigation rail about 200px, central workspace flexible, inspector 360–440px when open. These are prototype values, not hardcoded minimums. At tablet width collapse navigation and move inspector below or into a route. At narrow widths prioritize run status, result and evidence; let inherently two-dimensional charts/table regions scroll with labels. Never shrink all labels until unreadable.
 
@@ -28,7 +29,8 @@ Give related metrics one shared visual group rather than eight equally dominant 
 
 ```text
 Navigation | Mission / Run ID         verified status     timestamp / freshness
-           | Cost + coverage   Duration   Tokens   Policy   [Compare] [Replay]
+           | Fleet cost   Served/Total   Delays   Plan version   [Compare]
+           | AI cost/coverage   Runtime   Tokens   [Agent replay] [Simulation]
            | ---------------------------------------------------------------
            | Timeline / Agent graph / Task flow | Output / Evidence / Verdict
            | Selected task and attempt rows    | Agent, model, artifact version
@@ -48,6 +50,12 @@ Output is readable without opening every graph node. Default to the accepted fin
 5. Heatmap: scenario by agent, latency in milliseconds or error rate with explicit mode. Missingness uses a distinct pattern; keyboard details have a table equivalent.
 6. KPI group: all eight mandatory values, denominators and coverage. Estimated cost is labeled estimated or partial. Active runs are excluded from finished-duration calculations per the metric contract.
 
+The route map is an additional seventh visualization. Use MapLibre road layers with explicit depot, numbered visits, arrow direction, selected vehicle, late/unserved stop symbols, plan version and planned/simulated state. Assign a stable vehicle palette separate from status colors. Selecting a stop highlights its schedule row and opens constraint/evidence details; selecting an agent output opens its exact plan version. Baseline/candidate have a synchronized split-map or toggle with identical extent and comparable cohort labels, not confusing unlabeled overlaid paths. Map/geometry/tiles unavailable state exposes the complete route table. Display attribution and keep controls/legend readable.
+
+Fleet KPIs: km, served/total and mandatory coverage, on-time/serviced, late minutes, estimated operating CAD cost, parcel capacity utilization and duty utilization. Emissions is optional until factor coverage is established and always labeled estimated. A dedicated observatory view retains all eight mandatory agent metrics; cost cards never combine fleet and API currencies/accounts silently. An infeasible diagnostic is visibly different from a valid plan and from a solver timeout.
+
+Certificate labels distinguish initial full plan from future residual suffix. A valid suffix after a disruption does not turn already late deliveries or unreachable mandatory cargo green. Cumulative fleet outcomes preserve the full day's history.
+
 Every chart has a short computed description stating the strongest measured observation and scope, e.g. which agent has the highest measured latency and how many observations support it. Do not generate confident causal prose from a chart. A no-data view states why a claim cannot be made.
 
 ## Interaction contract
@@ -55,7 +63,7 @@ Every chart has a short computed description stating the strongest measured obse
 - URL parameters preserve scenario, agent, model, status, date range, selected run and comparison IDs. Browser back/forward and reload reproduce the same view.
 - Shared filters update affected views against one snapshot. Debounce free-text queries, cancel stale requests, and reject late responses from old filters.
 - A selected run is stable while live data arrives. Reordering requires explicit sort or refresh; highlight new rows without stealing focus.
-- Replay supports pause/play, previous/next event, speed, scrub and reset. It reconstructs as-of state, including which artifacts existed then. It never shows future results early or calls providers.
+- Agent replay supports pause/play, previous/next event, speed, scrub and reset; it reconstructs artifacts available at that actual event. Simulation playback has a separate labeled delivery clock and stored vehicle/stop events. Selecting an associated event links views without merging clocks, exposing future disruptions or calling providers.
 - Hover details have focus/click equivalents. All primary tasks work without drag, hover, graph animation or color perception.
 - Include loading, empty, no-match, stale, reconnecting, partial, forbidden, failed, cancelled and retrying states. Never display an empty chart as a successful zero result.
 
@@ -67,4 +75,4 @@ Visual fixtures cover long multilingual labels, zero/missing data, 1 MB artifact
 
 Initial performance profile: 100,000 synthetic server-side runs; API pages at most 200 rows; event/output lists up to 1,000 loaded entries with bounded rendering; focused graph up to 200 nodes/400 edges. Profile larger traces with collapse/drilldown, not unlimited canvases. Proposed p95 local selection/filter rendering <200ms after data arrival, p95 metrics API <500ms on the documented baseline, initial usable route <2.5s on that baseline. Report network and compute separately. Measure memory over 30 minutes and set a numeric regression budget in M1.
 
-Usability acceptance: five representative testers can find the latest accepted output, identify the most expensive agent and explain one failed run. Target >=4/5 completing each task unaided within two minutes; document failures and iterate. These are planned tests, not collected results. Formal stakeholder approval is not required for routine visual corrections.
+Usability acceptance: five representative testers can locate an unserved/late stop and its reason, compare baseline/candidate service coverage and estimated fleet cost, inspect the latest independently validated plan, and identify the responsible agent/tool for one failed run. Target >=4/5 per task unaided within two minutes; record failures and iterate. These are planned tests, not collected results. Formal stakeholder approval is not required for routine visual corrections.

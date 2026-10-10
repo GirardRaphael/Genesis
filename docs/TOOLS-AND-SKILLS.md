@@ -2,6 +2,8 @@
 
 Research date 2026-10-10. This register distinguishes installed agent capabilities, proposed application dependencies, and optional services. More tools do not automatically produce better work. Adopt only tools with a concrete work package and remove duplicated responsibilities.
 
+Current scope is user-selected A11. [Logistics research](research/logistics-research.md) adds routing/maps evidence. Ponytail is installed and available in this session; its initial next-turn status below is historical installation provenance.
+
 ## Ponytail installation evidence
 
 Required tool identified as [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail), a coding instruction skill. Reviewed `skills/ponytail/SKILL.md` at commit `9b58c1ffb790c075ca32e70a89cf1d80588f4abf`; upstream declares MIT licensing. Installed using the system skill-installer helper with `--repo DietrichGebert/ponytail --path skills/ponytail --ref 9b58c1ffb790c075ca32e70a89cf1d80588f4abf`.
@@ -14,7 +16,12 @@ Post-install verification found one file, `SKILL.md` (3,492 bytes), SHA256 `BA68
 
 | Tool | Status / owner | Purpose and rationale | Evidence or adoption gate |
 |---|---|---|---|
-| LangGraph Python | Selected, W01/W02 | Four-role bounded stateful workflow and checkpoints | [Persistence docs](https://docs.langchain.com/oss/python/langgraph/persistence); recovery spike |
+| OR-Tools Python | Selected, W01/W02 | Capacitated time-window routing with bounded search | [Capacity](https://developers.google.com/optimization/routing/cvrp), [time windows](https://developers.google.com/optimization/routing/vrptw), [penalties](https://developers.google.com/optimization/routing/penalties); independent validator mandatory |
+| OSRM adapter/cache | Selected interface, W01 | Directional travel matrices and stored route geometry | [API](https://project-osrm.org/docs/v26.5.0/http); choose/pin supported provider/local profile; no live traffic or CVRPTW from Trip |
+| MapLibre GL JS | Selected, W03/W05 | Route/stop/vehicle map with table fallback | [API](https://maplibre.org/maplibre-gl-js/docs/API/); offline fixtures, attribution and WebGL-unavailable tests |
+| Basemap/road dataset | Provider unresolved, W01 | Reproducible driveable network and optional background tiles | [OSM attribution](https://www.openstreetmap.org/copyright), [tile policy](https://operations.osmfoundation.org/policies/tiles/); source/license/rate limits recorded; no public tile dependency in offline demo |
+| Seeded scenario simulator | Project-owned typed functions, W01/W02 | Frozen congestion snapshots, stop-boundary disruptions and replay | LOGISTICS-SPEC; simple deterministic simulation first, no mandatory new simulation framework |
+| LangGraph Python | Selected, W01/W02 | Five-role logistics workflow and checkpoints | [Persistence docs](https://docs.langchain.com/oss/python/langgraph/persistence); recovery spike |
 | Langfuse | Selected integration, W04 | Secondary correlated traces and evaluation inspection | [Official docs](https://langfuse.com/docs); verify current deployment and SDK compatibility |
 | OpenTelemetry | Selected, W04 | Portable telemetry mapping | [GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai); pin revision |
 | PostgreSQL | Selected, W01 | Authoritative events, queryable metrics and checkpoints | [Official docs](https://www.postgresql.org/docs/); ordering/recovery tests |
@@ -37,6 +44,7 @@ Post-install verification found one file, `SKILL.md` (3,492 bytes), SHA256 `BA68
 | CrewAI + AgentOps + Streamlit + Plotly | Alternative, not installed | Source brief's simpler Python path | [CrewAI](https://docs.crewai.com), [AgentOps](https://docs.agentops.ai), [Streamlit](https://docs.streamlit.io), [Plotly](https://plotly.com/python); choose instead only if advanced path misses delivery gates |
 | Grafana/Prometheus, Sentry | Deferred | Infrastructure metrics/error diagnostics at hosted scale | Add only after an operational requirement; do not duplicate product trace storage |
 | Kafka, Kubernetes, vector database | Deferred | No MVP requirement justifies them | Revisit against measured throughput, deployment or retrieval needs |
+| SUMO, SimPy, PostGIS, H3, deck.gl | Deferred | Rich transport/geospatial/simulation scale beyond the bounded MVP | Add only for demonstrated need; stored matrices, typed simulator and MapLibre cover initial delivery |
 | Vercel / managed hosting | Optional after local delivery | Frontend preview if appropriate | Worker/database lifecycle requires a separate deployment decision; no automatic hosting assumption |
 
 Proposed dependencies with no in-session feature verification are explicitly labeled proposed. Pinning and installation belong to W01; this planning task installs only Ponytail. No claim that every item has been interoperability-tested.

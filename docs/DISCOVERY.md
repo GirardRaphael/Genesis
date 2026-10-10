@@ -1,25 +1,25 @@
 # Commercial discovery and topic selection
 
-Owner: lead/product researcher under W00. Status: hypotheses documented; interviews, market validation and teacher approval not yet completed. This record covers Annex B before product development. Technical compatibility experiments may proceed, but no statement of validated demand or approved academic topic is permitted without evidence.
+Owner: lead/product researcher under W00. Status: A11 selected by user; commercial hypotheses documented; interviews and teacher approval pending. This record covers Annex B before development. Compatibility experiments may proceed; user selection does not establish validated demand or academic approval.
 
 ## Eight validation questions
 
 | Question | Current hypothesis / decision | Required evidence and validation method |
 |---|---|---|
-| Customer: who pays? | AI operations lead or engineering manager at a data company operating several agent workflows | Interview three qualified users; record role, purchasing involvement and workflow scale without personal identifiers |
-| Problem: what costs time or money? | Investigating failed outputs and finding avoidable model/tool spend requires disconnected logs | Obtain a recent specific incident, actual investigation steps, time estimate and missing evidence; do not invent baseline savings |
-| Decision: what does dashboard change? | Keep/change model policy, retry strategy or communication step based on accepted-output cost and failures | Have users identify a concrete decision using prototype evidence; document whether it changes their action |
-| Data: lawful and reproducible? | Initial dataset is generated synthetic operational data and deliberately authorized public examples | Manifest records origin, license/permission, immutable hash, generation procedure and permitted external-model use; private company data excluded |
-| Measure: what proves value? | Diagnosis time and cost per accepted output at a maintained quality threshold | Capture baseline task times and compare equivalent tasks; route-policy experiments follow VALIDATION.md; no causal savings claim from unpaired cohorts |
-| Differentiation: why not report/chatbot? | Linked artifact versions, observable handoffs, replay and exact metric provenance may reduce investigation effort | Compare the same task against a static report and Langfuse's existing inspection flow; retain negative findings |
-| Price: monthly, usage or project? | A one-off diagnostic pilot is the simplest initial commercial hypothesis; subscription is unvalidated | Ask buyer preference and actual budget process; record price quotes only if supplied, not fabricated market rates |
-| Risk: errors, rules or data? | Misleading costs/quality, secret exposure, unreliable replay and overconfident recommendations | Data review, failure taxonomy, redaction tests, billing coverage and independent review; jurisdiction-specific review only if deployment/data scope requires it |
+| Customer: who pays? | Dispatcher/fleet manager of a local delivery service, distributor or small fleet; budget owner may be operations director | Interview three qualified operators; record workflow/fleet size and purchasing involvement without personal identifiers |
+| Problem: what costs time or money? | Manual route planning, missed service windows and disruption recovery may cause excess km, duty time or incomplete deliveries | Obtain recent concrete incidents, current planning tools and comparable task times; no invented baseline savings |
+| Decision: what does dashboard change? | Accept/reject a feasible plan, identify unserved orders and compare a bounded replan with visible constraints | Observe prototype tasks using certificate/visit/coverage evidence; record whether users change decisions |
+| Data: lawful and reproducible? | Synthetic depot/stops/fleet and labeled simulated traffic; permitted cached road data; no real names, tracking or customer addresses | Manifest records source/license/permission, hashes, seed/profile/version and allowed external processing |
+| Measure: what proves value? | Distance, service coverage/on-time outcomes, estimated operating cost and dispatcher task time | Paired logistics-policy scenarios with same constraints/events; actual customer pilot needed before real savings claims |
+| Differentiation: why not report/chatbot? | Inspectable agent handoffs, independent constraint certificate and disruption replay may improve understanding beyond static routes | Compare same tasks against existing route planner and static report; record where mature tools already perform better |
+| Price: monthly, usage or project? | Subscription per vehicle or fee per tour are A11 hypotheses; no prices validated | Ask actual buyer preferences, pilot requirements and budget process; record only supplied evidence |
+| Risk: errors, rules or data? | Invalid routes/cargo transfers, misleading coverage/savings, private location exposure and confusing simulation with reality | Independent constraint validation, cargo policy, map/rate provenance, redaction and separate clocks; real dispatch excluded from MVP |
 
 ## Weighted topic-selection matrix
 
 Score candidate topics from 1 (weak evidence) to 5 (strong evidence) only with a linked rationale. Unknown is `U`, not zero, and prevents a numeric ranking. Weighted score = sum(weight × score / 5), on a 0–100 scale. Record author, date and confidence for each score. Separate proposed judgment from user/interview evidence. Do not fill scores merely to justify the already preferred topic.
 
-| Criterion | Weight | A1 cost optimizer | A2 service control | A8 content observatory |
+| Criterion | Weight | A11 logistics | A1 cost optimizer | A2 service control |
 |---|---:|---|---|---|
 | Real frequent problem | 20% | U | U | U |
 | Clearly identifiable customer | 15% | U | U | U |
@@ -29,7 +29,7 @@ Score candidate topics from 1 (weak evidence) to 5 (strong evidence) only with a
 | Feasibility within session | 15% | U | U | U |
 | Total | 100% | Not ranked | Not ranked | Not ranked |
 
-A1 is the current scope choice because it directly matches the user's requested agent-output observatory, not because an unperformed matrix proves commercial superiority. W00 completes evidence-backed scoring before committing to a commercially validated positioning. If demand is unproven, the project may proceed as an explicitly educational prototype with that limitation retained in the report.
+A11 is selected by the user. The unknown matrix does not establish commercial superiority. W00 completes evidence-backed scoring before commercial positioning is called validated. A useful product must compete with mature routing tools through a measured dispatch/inspection benefit, not merely by adding agents. If demand remains unproven, proceed as an explicitly educational prototype and retain that limit in the report.
 
 ## Discovery exit record
 
