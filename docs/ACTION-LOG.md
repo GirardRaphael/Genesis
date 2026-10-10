@@ -25,6 +25,7 @@ Date basis: America/Toronto, 2026-10-10. Records summarize actual actions; futur
 | A019 | Lead | Repeated local-link assertions on 18 Markdown files and limited private-key/API-key pattern check | Zero broken local links and zero pattern hits; limited scan, not full Gitleaks audit |
 | A020 | Lead | Requested PLAN.md opening in Codex; reviewed staged file inventory and repeated whitespace check after corrections | UI open request queued; staged check passed; only planning files and .gitignore staged |
 | A021 | Independent verifier, gpt-6-astra high | Rechecked F01–F05 and finalized docs/reviews/planning-review.md | Planning package approved; zero remaining review blockers; 20 local link targets valid; Ponytail hash and monetary fixture independently verified; no app/runtime test claims |
+| A022 | Lead | Staged final review and ledger; reran staged whitespace check; committed reviewed package | Local commit `70cf808` on `codex/observatory-plan`, 19 files. Commit succeeded. No remote configured; no push attempted or claimed. This closeout changes only audit metadata |
 
 ## Verification and publishing records
 
