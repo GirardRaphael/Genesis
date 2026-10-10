@@ -34,6 +34,9 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 
 | U09 | User: Montréal address-based multiple deliveries, directions/traffic, company use; keyless alternative accepted | Persistent pickup/drop dispatch, OpenFreeMap/Photon/OSRM, timestamped municipal worksites, simulated vehicle tracking and company release gates | API/road/sample/browser flow, safe search/state races, no fabricated GPS/live speeds; public-provider and hosting limits explicit |
 
+| U10 | User: agent-coordinated broker allocation, shared driver vs split vehicles, real-time fleet availability | Five-role Anthropic workflow over frozen free-fleet/road data, pickup/delivery OR-Tools strategies, independent certificate, atomic trip admission | Shared/split/deadline/capacity/objective/hash tests, geometry/service/cancellation guards, live five-call pilot; bounded candidate search and simulated positions explicit |
+| U11 | User: brutally honest senior audit, faults/fixes and company upgrade checklist | TRANSPORT-CHECKLIST.md plus independent broker and transport audit reviews | Reproduced findings distinguished from unverified readiness gates; test evidence, release verdict and prioritized acceptance checks |
+
 ## Rubric priority
 
 Multiagent functioning 15; data collection/quality 10; visualization accuracy 25; interactivity/usability 15; interpretation 20; technical organization 5; report/documentation 5; presentation 5. These are the brief's proposed points, not earned scores.

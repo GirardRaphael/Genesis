@@ -152,7 +152,23 @@ def test_vehicle_cannot_start_two_active_trips(store, monkeypatch):
     )
     waiting = second if running == first else first
     api.post(f"/api/v1/dispatch/trips/{running}/cancel")
-    assert api.post(f"/api/v1/dispatch/trips/{waiting}/start").status_code == 200
+    blocked = api.post(f"/api/v1/dispatch/trips/{waiting}/start")
+    assert (
+        blocked.status_code == 409 and blocked.json()["detail"]["code"] == "cargo_recovery_required"
+    )
+    fleet = dispatch.fleet_snapshot(store.engine, ["van1"], PICKUP)["vehicles"][0]
+    assert not fleet["available"] and fleet["unresolved_cargo_parcels"] == 40
+
+
+def test_cancelling_before_pickup_does_not_create_phantom_cargo(store, monkeypatch):
+    monkeypatch.setattr(dispatch, "_provider_json", road_response)
+    api = client(store)
+    first = api.post("/api/v1/dispatch/trips", json=request()).json()["id"]
+    api.post(f"/api/v1/dispatch/trips/{first}/cancel")
+    fleet = dispatch.fleet_snapshot(store.engine, ["van1"], PICKUP)["vehicles"][0]
+    assert fleet["available"] and fleet["unresolved_cargo_parcels"] == 0
+    second = api.post("/api/v1/dispatch/trips", json=request()).json()["id"]
+    assert api.post(f"/api/v1/dispatch/trips/{second}/start").status_code == 200
 
 
 def test_bounds_and_provider_failure_do_not_save_false_road_route(store, monkeypatch):

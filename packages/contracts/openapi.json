@@ -38,6 +38,22 @@
         }
       }
     },
+    "/api/v1/dispatch/fleet": {
+      "get": {
+        "summary": "Dispatch Fleet",
+        "operationId": "dispatch_fleet_api_v1_dispatch_fleet_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dispatch/geocode": {
       "get": {
         "summary": "Geocode",
@@ -260,6 +276,138 @@
               "type": "string",
               "format": "uuid",
               "title": "Trip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dispatch/plans": {
+      "post": {
+        "summary": "Create Plan",
+        "operationId": "create_plan_api_v1_dispatch_plans_post",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrokerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Plans",
+        "operationId": "list_plans_api_v1_dispatch_plans_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dispatch/plans/{run_id}": {
+      "get": {
+        "summary": "Plan Detail",
+        "operationId": "plan_detail_api_v1_dispatch_plans__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
             }
           }
         ],
@@ -1341,6 +1489,187 @@
   },
   "components": {
     "schemas": {
+      "BrokerDelivery": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "pickup": {
+            "$ref": "#/components/schemas/Place"
+          },
+          "dropoff": {
+            "$ref": "#/components/schemas/Place"
+          },
+          "parcels": {
+            "type": "integer",
+            "maximum": 40.0,
+            "minimum": 1.0,
+            "title": "Parcels"
+          },
+          "deadline_minutes": {
+            "type": "integer",
+            "maximum": 480.0,
+            "minimum": 1.0,
+            "title": "Deadline Minutes",
+            "default": 120
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pickup",
+          "dropoff",
+          "parcels"
+        ],
+        "title": "BrokerDelivery"
+      },
+      "BrokerRequest": {
+        "properties": {
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/BrokerDelivery"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Deliveries"
+          },
+          "depot": {
+            "$ref": "#/components/schemas/Place"
+          },
+          "vehicle_ids": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "van1",
+                "van2",
+                "van3",
+                "van4"
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Vehicle Ids"
+          },
+          "objective": {
+            "type": "string",
+            "enum": [
+              "cost",
+              "fastest",
+              "balanced"
+            ],
+            "title": "Objective",
+            "default": "balanced"
+          },
+          "activation_cost_cad": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Activation Cost Cad",
+            "default": "18"
+          },
+          "cost_per_km_cad": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Cost Per Km Cad",
+            "default": "0.95"
+          },
+          "driver_cost_per_hour_cad": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Driver Cost Per Hour Cad",
+            "default": "28"
+          },
+          "service_minutes": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Service Minutes",
+            "default": 2
+          },
+          "balance_value_cad_per_minute": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Balance Value Cad Per Minute",
+            "default": "0.50"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "fixture"
+            ],
+            "title": "Mode",
+            "default": "live"
+          },
+          "budget_usd": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 50.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Usd",
+            "default": "1"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "deliveries",
+          "depot"
+        ],
+        "title": "BrokerRequest"
+      },
       "Delivery": {
         "properties": {
           "id": {

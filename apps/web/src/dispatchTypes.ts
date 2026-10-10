@@ -11,6 +11,66 @@ export type Delivery = {
   parcels: number;
 };
 
+export type BrokerDelivery = Delivery & { deadline_minutes?: number };
+
+export type BrokerCandidate = {
+  strategy: string;
+  status: string;
+  reason: string | null;
+  solution: {
+    assignments: { delivery_id: string; vehicle_id: string }[];
+    vehicle_routes: {
+      vehicle_id: string;
+      node_order: number[];
+      duration_seconds: number;
+      distance_meters: number;
+      load_peak: number;
+      operating_cost_cents: number;
+    }[];
+    fleet_cost_cents: number;
+    makespan_seconds: number;
+    solver_status: string;
+  } | null;
+  certificate: { valid: boolean; issues: string[] } | null;
+};
+
+export type BrokerPlan = {
+  id: string;
+  status: string;
+  workflow_kind?: "broker";
+  final_kind?: "accepted_plan" | "accepted_diagnostic" | null;
+  request?: { mode?: "live" | "fixture" };
+  created_at?: string;
+  agents?: {
+    role: string;
+    status: string;
+    model: string | null;
+    requested_model?: string | null;
+    duration_ms: number;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    cost: string | null;
+  }[];
+  broker_solution?: {
+    selected_strategy: string | null;
+    selected: BrokerCandidate["solution"];
+  } | null;
+  candidates?: BrokerCandidate[];
+  certificate?: BrokerCandidate["certificate"];
+  created_trip_ids?: string[];
+  fleet_snapshot?: {
+    vehicles: {
+      id: string;
+      available: boolean;
+      origin?: Coordinates;
+      origin_assumed?: boolean;
+    }[];
+    captured_at?: string;
+  };
+  error?: { code?: string; message?: string } | null;
+  final_output?: { reason?: string | null; summary?: string };
+};
+
 export type DispatchStop = Place & {
   id: string;
   delivery_id: string;

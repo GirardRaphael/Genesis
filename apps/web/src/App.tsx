@@ -762,20 +762,73 @@ export default function App() {
                       <h2>
                         {replayIndex != null
                           ? "État historique des agents"
-                          : statusLabel(detail.status)}
+                          : detail.workflow_kind === "broker" &&
+                              detail.final_kind
+                            ? detail.final_output?.feasible
+                              ? "Plan courtier préparé"
+                              : "Diagnostic courtier"
+                            : statusLabel(detail.status)}
                       </h2>
                       <p>
                         {replayIndex != null
                           ? "Le plan et son certificat ne sont pas encore disponibles à cet événement."
-                          : ["queued", "running"].includes(detail.status)
-                            ? "Les agents préparent le plan. Les résultats apparaîtront lorsqu’ils seront enregistrés."
-                            : "Cette exécution est terminée sans plan validé. Les preuves disponibles restent consultables."}
+                          : detail.workflow_kind === "broker" &&
+                              detail.final_kind
+                            ? String(
+                                detail.final_output?.summary ||
+                                  "Analyse des affectations terminée.",
+                              )
+                            : ["queued", "running"].includes(detail.status)
+                              ? "Les agents préparent le plan. Les résultats apparaîtront lorsqu’ils seront enregistrés."
+                              : "Cette exécution est terminée sans plan validé. Les preuves disponibles restent consultables."}
                       </p>
                       {detail.error && (
                         <p role="alert">
                           {detail.error.code} · {detail.error.message}
                         </p>
                       )}
+                      {detail.workflow_kind === "broker" &&
+                        replayIndex == null &&
+                        detail.final_kind && (
+                          <div
+                            className="panel"
+                            style={{ textAlign: "left", width: "100%" }}
+                          >
+                            <div className="panel-heading">
+                              <h2>Affectations et preuves du courtier</h2>
+                              <button
+                                className="button secondary"
+                                onClick={() => update({ view: "dispatch" })}
+                              >
+                                Voir les trajets à Montréal
+                              </button>
+                            </div>
+                            <p>
+                              {detail.created_trip_ids?.length || 0} trajet(s)
+                              préparé(s). Géométrie routière réelle, positions
+                              simulées. Les modèles expliquent les résultats des
+                              outils et du solveur.
+                            </p>
+                            <details className="data-alternative">
+                              <summary>
+                                Solution, alternatives et certificat
+                              </summary>
+                              <pre className="json-output">
+                                {JSON.stringify(
+                                  {
+                                    solution: detail.broker_solution,
+                                    alternatives: detail.candidates,
+                                    certificate: detail.certificate,
+                                    trip_ids: detail.created_trip_ids,
+                                    final: detail.final_output,
+                                  },
+                                  null,
+                                  2,
+                                )}
+                              </pre>
+                            </details>
+                          </div>
+                        )}
                       {!["queued", "running"].includes(
                         rawDetail?.status || "",
                       ) &&
@@ -1145,14 +1198,20 @@ export default function App() {
                 Scénario
                 <select
                   name="scenario"
-                  defaultValue={selection.scenario || "S01"}
+                  defaultValue={
+                    selection.scenario === "BROKER"
+                      ? "S01"
+                      : selection.scenario || "S01"
+                  }
                   required
                 >
-                  {scenarios.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.id} · {s.label}
-                    </option>
-                  ))}
+                  {scenarios
+                    .filter((s) => s.id !== "BROKER")
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.id} · {s.label}
+                      </option>
+                    ))}
                 </select>
               </label>
               <label>

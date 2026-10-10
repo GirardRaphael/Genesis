@@ -482,6 +482,10 @@ class Store:
                 return
             if row["cancel_requested"]:
                 status = "cancelled"
+            if status != "succeeded" and row["request"].get("workflow_kind") == "broker":
+                from .dispatch import retire_broker_trips
+
+                retire_broker_trips(conn, run_id)
             detail = {**row["detail"], **changes}
             conn.execute(
                 update(runs)

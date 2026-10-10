@@ -12,7 +12,7 @@ No API key, DATABASE_URL or Langfuse credentials were present initially. User su
 
 ## Evidence register
 
-Evidence to date: 59 Python tests, 12 frontend tests and seven local browser journeys covering residual/replay/failure/focus/mobile/analytics/dispatch passed; Python lint and production build passed. Full overview axe check found no violations; browser regression now includes contrast. Native one-line browser test entry handles Windows projected symlinks; canonical test cases remain in observatory.spec.ts. Corrected domain/hash/outage/budget/replay/filter/residual/failure-state findings are retained in implementation-review.md. Final independent rereview and publication are tracked in implementation-review.md and ACTION-LOG.md.
+Published initial release: 59 Python tests, 12 frontend tests and seven local browser journeys covering residual/replay/failure/focus/mobile/analytics/dispatch passed; Python lint and production build passed. Full overview axe check found no violations; browser regression now includes contrast. Native one-line browser test entry handles Windows projected symlinks; canonical test cases remain in observatory.spec.ts. Corrected domain/hash/outage/budget/replay/filter/residual/failure-state findings are retained in implementation-review.md. Final independent rereview and publication are tracked in implementation-review.md and ACTION-LOG.md.
 
 Twenty accepted live Anthropic runs across S01–S05, paired logistics policies and seeds 17/29 are exported in experiments/live-manifest.json, with exact stored IDs, input/manifest hashes and usage metadata. Total benchmark API estimate US$0.6696181; 100 model calls. Fixture workflows are separately exported and never counted as live. REPORT.md and sample-live-run.json derive from stored evidence. Prices expire 2026-10-17; provider calls must revalidate rates afterwards.
 
@@ -27,3 +27,11 @@ Do not mark R04 complete with fixture mode. Do not claim road-verified geometry 
 ## Montréal operator extension
 
 Keyless dispatch adds real street-map/address/routing sources, persistent multiple pickup/drop pairs and simulated vehicle motion. Municipal worksite permit data is timestamped and distinct from live speed/GPS. DISPATCH.md records verified API/provider behavior and company-release gates. Read projections now load only relevant metric events, preserving original sequence IDs; a local timing sample fell from about4.8s to0.4s for /metrics after eliminating repeated full artifact/event reads. This is a local observation, not a scale benchmark. Analytics and trip polling skip overlapping requests so slower responses cannot be discarded indefinitely.
+
+## Broker and audit extension
+
+Current verified broker source has 78 Python tests,13 frontend tests, Ruff and production build passing. The five-role actual Anthropic public-location pilot completed all roles with8,338 tokens and US$0.0335999 estimated API cost; portable evidence includes per-role outputs, tool names and handoffs. Synthetic benchmark evidence remains the original20-run cohort, not this one example.
+
+The independent reviewer reproduced and drove fixes for output hash admission, wasted zero-fleet calls, matrix-to-geometry mismatch, service omission, cancellation/commit races, balanced objective scaling and cancelled cargo reuse. Known undelivered cargo now blocks vehicle reuse; return/unload/transfer recovery is an unimplemented operational gate. API malformed length/origin/stream-size defects were also reproduced and fixed. Company go/no-go and upgrade acceptance are in TRANSPORT-CHECKLIST.md. Final integrated browser results and publication are recorded in ACTION-LOG and broker-review, not assumed here.
+
+Final scoped broker review approved in reviews/broker-review.md. Browser evidence: lead targeted8/8; independent repeat6/8 on exhausted persistent demo fleet. Test isolation remains an explicit P2 follow-up in the transport checklist. Approval applies to the local prototype only; P0 company gates are open.

@@ -9,6 +9,7 @@ import json
 import os
 from typing import Literal
 from uuid import UUID, uuid4
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Query, Request
@@ -20,9 +21,10 @@ from .db import Conflict, Store, TERMINAL, digest, now
 from .llm import LiveUnavailable, live_configuration
 from .traffic import router as traffic_router
 from .dispatch import register_dispatch
+from .broker_api import register_broker
 
 load_dotenv()
-POLICIES = ["baseline_only", "solver_with_one_replan"]
+POLICIES = ["baseline_only", "solver_with_one_replan", "broker_dispatch"]
 
 
 class RunRequest(BaseModel):
@@ -54,9 +56,12 @@ def summary(row):
     return {
         "id": row["id"],
         "scenario_id": request["scenario_id"],
+        "workflow_kind": request.get("workflow_kind", "logistics"),
         "scenario_label": next(
             (s["label"] for s in SCENARIOS if s["id"] == request["scenario_id"]),
-            request["scenario_id"],
+            "Livraisons personnalisées"
+            if request["scenario_id"] == "BROKER"
+            else request["scenario_id"],
         ),
         "policy": request["policy"],
         "seed": request["seed"],
@@ -97,6 +102,7 @@ def create_app(store=None):
     app.state.store = store or Store()
     register_dispatch(app)
     app.state.reload_local_env = store is None
+    register_broker(app)
 
     def refresh_local_configuration():
         if app.state.reload_local_env:
@@ -109,10 +115,17 @@ def create_app(store=None):
     @app.middleware("http")
     async def boundary(request, call_next):
         request_id = str(uuid4())
-        host = request.headers.get("host", "").split(":")[0]
+        try:
+            authority = urlsplit("http://" + request.headers.get("host", ""))
+            host = authority.hostname
+            valid_authority = (
+                not authority.username and not authority.password and not authority.path
+            )
+        except ValueError:
+            host, valid_authority = None, False
         client = request.client.host if request.client else ""
         local_client = client in {"testclient", "127.0.0.1", "::1"}
-        local_host = host in {"localhost", "127.0.0.1", "testserver", "["}
+        local_host = valid_authority and host in {"localhost", "127.0.0.1", "testserver", "::1"}
         if not local_client or not local_host:
             return JSONResponse(
                 status_code=403,
@@ -126,10 +139,12 @@ def create_app(store=None):
                 },
             )
         origin = request.headers.get("origin")
-        if origin and not any(
-            origin.startswith(prefix)
-            for prefix in ["http://localhost:", "http://127.0.0.1:", "http://[::1]:"]
-        ):
+        allowed_origins = {
+            f"http://{hostname}:{port}"
+            for hostname in ("localhost", "127.0.0.1", "[::1]")
+            for port in (5173, 8000)
+        }
+        if origin and origin not in allowed_origins:
             return JSONResponse(
                 status_code=403,
                 content={
@@ -141,7 +156,35 @@ def create_app(store=None):
                     }
                 },
             )
-        if request.headers.get("content-length") and int(request.headers["content-length"]) > 16384:
+        try:
+            length = int(request.headers.get("content-length", "0"))
+            if length < 0:
+                raise ValueError("Negative content length")
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "invalid_content_length",
+                        "message": "Invalid content length",
+                        "request_id": request_id,
+                        "retryable": False,
+                    }
+                },
+            )
+        too_large = length > 16384
+        if not too_large and request.method in {"POST", "PUT", "PATCH"}:
+            chunks, size = [], 0
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > 16384:
+                    too_large = True
+                    break
+                chunks.append(chunk)
+            if not too_large:
+                # Starlette's cached middleware request replays this bounded body downstream.
+                request._body = b"".join(chunks)
+        if too_large:
             return JSONResponse(
                 status_code=413,
                 content={
@@ -197,7 +240,7 @@ def create_app(store=None):
     def filters(scenario_id, status, policy, provenance, agent=None, model=None):
         from .scenarios import SCENARIOS
 
-        if scenario_id and scenario_id not in {s["id"] for s in SCENARIOS}:
+        if scenario_id and scenario_id not in {s["id"] for s in SCENARIOS} | {"BROKER"}:
             raise HTTPException(422, "Unknown scenario")
         if status and status not in TERMINAL | {"queued", "running"}:
             raise HTTPException(422, "Unknown status")
@@ -246,7 +289,16 @@ def create_app(store=None):
     def scenarios():
         from .scenarios import SCENARIOS
 
-        return {"items": SCENARIOS}
+        return {
+            "items": [
+                *SCENARIOS,
+                {
+                    "id": "BROKER",
+                    "label": "Livraisons personnalisées",
+                    "description": "Planification multi-véhicules sur des adresses choisies",
+                },
+            ]
+        }
 
     @app.get("/api/v1/datasets")
     def datasets():
@@ -522,7 +574,9 @@ def create_app(store=None):
     @app.get("/api/v1/comparisons")
     def comparison(left: UUID, right: UUID):
         a, b = get(left), get(right)
-        comparable = all(
+        comparable = not any(
+            row["request"].get("workflow_kind") == "broker" for row in (a, b)
+        ) and all(
             a["request"].get(k) == b["request"].get(k) for k in ["scenario_id", "seed", "mode"]
         )
         return {
@@ -574,7 +628,7 @@ def create_app(store=None):
                     else None,
                 }
             )
-            for sid in ["S01", "S02", "S03", "S04", "S05"]:
+            for sid in ["S01", "S02", "S03", "S04", "S05", "BROKER"]:
                 group = [
                     a
                     for r in rows

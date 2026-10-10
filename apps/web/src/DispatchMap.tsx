@@ -11,7 +11,7 @@ const ISLAND_BOUNDS = new maplibregl.LngLatBounds(
   [-74.05, 45.38],
   [-73.42, 45.74],
 );
-const COLORS = ["#147c88", "#7d62b4", "#d2843b", "#3f8966"];
+const COLORS = ["#167887", "#65649a", "#925e27", "#366a4d"];
 const LON_SCALE = Math.cos((45.5 * Math.PI) / 180);
 const segmentLength = (a: Coordinates, b: Coordinates) =>
   Math.hypot((b[0] - a[0]) * LON_SCALE, b[1] - a[1]);

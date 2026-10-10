@@ -59,6 +59,7 @@ export type Handoff = {
   actual: boolean;
 };
 export type Run = {
+  workflow_kind?: "logistics" | "broker";
   id: string;
   scenario_id: string;
   scenario_label: string;
@@ -102,12 +103,18 @@ export type RunDetail = Run &
       | "baseline"
       | "candidate"
       | "selected_plan"
-      | "certificate"
       | "simulation"
       | "final_output"
       | "error"
     >
-  > & { agents: Agent[]; handoffs: Handoff[] };
+  > & {
+    agents: Agent[];
+    handoffs: Handoff[];
+    certificate?: Certificate | { valid: boolean; issues: string[] } | null;
+  } & Pick<
+    import("./dispatchTypes").BrokerPlan,
+    "broker_solution" | "candidates" | "created_trip_ids" | "fleet_snapshot"
+  >;
 export function hasArtifacts(detail: RunDetail): detail is Detail {
   return !!(
     detail.dataset &&

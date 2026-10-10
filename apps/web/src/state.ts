@@ -70,6 +70,8 @@ export function mergeEvents(current: TraceEvent[], incoming: TraceEvent[]) {
 }
 export function comparable(a: Run, b: Run) {
   return (
+    a.workflow_kind !== "broker" &&
+    b.workflow_kind !== "broker" &&
     a.scenario_id === b.scenario_id &&
     a.seed === b.seed &&
     a.provenance === b.provenance

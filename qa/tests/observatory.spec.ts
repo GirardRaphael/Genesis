@@ -53,14 +53,20 @@ test('agent replay hides future outputs and individual usage', async ({page,requ
 });
 
 test('individual failed model attempts are inspectable without fictional tokens',async({page,request})=>{
-  const rows=(await (await request.get('http://127.0.0.1:8000/api/v1/runs?provenance=live&status=failed&limit=1')).json()).items;
-  test.skip(!rows.length,'No recorded live failure in this environment');
-  await page.goto(`/?view=observatory&run=${rows[0].id}`);
+  const rows=(await (await request.get('http://127.0.0.1:8000/api/v1/runs?provenance=live&status=failed&limit=200')).json()).items;
+  let failure,failedCall;
+  for(const row of rows){
+    const usage=await (await request.get(`http://127.0.0.1:8000/api/v1/runs/${row.id}/usage`)).json();
+    const attempt=usage.attempts.find(call=>call.status==='failed'&&call.input_tokens==null);
+    if(attempt){failure=row;failedCall=attempt;break;}
+  }
+  test.skip(!failure,'No recorded failed attempt with unavailable usage in this environment');
+  await page.goto(`/?view=observatory&run=${failure.id}`);
   await expect(page.getByText('Cette exécution est terminée sans plan validé.',{exact:false})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Coûts, tokens et appels individuels'})).toBeVisible();
   await page.getByRole('button',{name:'Par modèle',exact:true}).click();
-  await expect(page.locator('.metering tbody').first().getByText('gpt-6.1-sol',{exact:true})).toBeVisible();
-  await page.locator('.metering').getByRole('button',{name:/Planification · tentative 1/}).click();
+  await expect(page.locator('.metering tbody').first().getByText(failedCall.model,{exact:true})).toBeVisible();
+  await page.locator('.metering tbody tr').filter({hasText:failedCall.attempt_id.slice(0,8)}).getByRole('button').click();
   await expect(page.getByText('Erreur du fournisseur',{exact:true})).toBeVisible();
   await page.screenshot({path:'screenshots/failed-metering.png',fullPage:true});
 });
@@ -130,9 +136,9 @@ test('analytics donuts, model filters and accessible responsive charts',async({p
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBeTruthy();
 });
 
-test('Montreal street map and persisted multiple-delivery dispatch',async({page})=>{
+test('Montreal street map and persisted multiple-delivery dispatch',async({page,request})=>{
   test.skip(process.env.CI==='true','Public OSRM/tiles integration is verified locally; Python CI mocks external providers');
-  test.setTimeout(45000);
+  test.setTimeout(65000);
   await page.goto('/?view=dispatch');
   await expect(page.getByRole('heading',{name:'Livraisons sur l’île de Montréal',exact:true})).toBeVisible();
   await expect(page.locator('.dispatch-map-canvas .maplibregl-canvas')).toBeVisible({timeout:15000});
@@ -142,9 +148,13 @@ test('Montreal street map and persisted multiple-delivery dispatch',async({page}
   })).toBeLessThan(3);
   await page.getByRole('button',{name:'Charger un exemple montréalais',exact:true}).click();
   await expect(page.locator('.dispatch-draft li')).toHaveCount(2);
-  await page.getByRole('combobox',{name:'Véhicule',exact:true}).selectOption('van4');
+  await page.getByText('Créer manuellement un trajet routier',{exact:true}).click();
+  const fleet=(await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles;
+  const free=fleet.find(van=>van.available);
+  expect(free).toBeTruthy();
+  await page.getByRole('combobox',{name:'Véhicule',exact:true}).selectOption(free.id);
   const creation=page.waitForResponse(response=>response.url().endsWith('/api/v1/dispatch/trips')&&response.request().method()==='POST');
-  await page.getByRole('button',{name:'Créer le trajet routier',exact:false}).click();
+  await page.getByRole('button',{name:'Créer sans courtier',exact:false}).click();
   const created=await creation;
   expect(created.status()).toBe(201);
   const trip=await created.json();
@@ -171,8 +181,43 @@ test('Montreal street map and persisted multiple-delivery dispatch',async({page}
   })).toBeTruthy();
   await page.screenshot({path:'screenshots/dispatch-mobile.png',fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBeTruthy();
-  const cancel=page.waitForResponse(response=>response.url().endsWith(`/dispatch/trips/${trip.id}/cancel`));
-  await page.getByRole('button',{name:'Annuler',exact:false}).click();
-  expect((await cancel).status()).toBe(200);
-  await expect(page.locator('.dispatch-trip-card.selected .dispatch-status')).toHaveText('Annulé');
+  await expect(page.locator('.dispatch-trip-card.selected .dispatch-status')).toHaveText('Terminé',{timeout:45000});
+});
+
+test('broker fixture allocation and live observatory replay evidence',async({page,request})=>{
+  test.skip(process.env.CI==='true','Public road provider integration is verified locally; Python mocks run in CI');
+  test.setTimeout(90000);
+  await page.goto('/?view=dispatch');
+  await page.getByRole('button',{name:'Charger un exemple montréalais',exact:true}).click();
+  await page.getByRole('radio',{name:'Démonstration sans appel IA',exact:true}).check();
+  await expect.poll(async()=> (await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles.some(van=>van.available),{timeout:45000}).toBeTruthy();
+  const fleet=(await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/fleet')).json()).vehicles;
+  for(const van of fleet.filter(van=>van.available)){
+    await page.getByRole('checkbox',{name:new RegExp(`^${van.id.replace('van','V')}\\b`)}).check({timeout:15000});
+  }
+  const creating=page.waitForResponse(response=>response.url().endsWith('/api/v1/dispatch/plans')&&response.request().method()==='POST');
+  await page.getByRole('button',{name:'Planifier avec les agents',exact:false}).click();
+  const created=await creating;
+  expect(created.status()).toBe(202);
+  const id=(await created.json()).id;
+  await expect.poll(async()=> (await (await request.get(`http://127.0.0.1:8000/api/v1/dispatch/plans/${id}`)).json()).status,{timeout:65000}).toBe('succeeded');
+  const plan=await (await request.get(`http://127.0.0.1:8000/api/v1/dispatch/plans/${id}`)).json();
+  expect(plan.certificate.valid).toBeTruthy();
+  expect(plan.created_trip_ids.length).toBeGreaterThan(0);
+  expect(plan.agents.filter(agent=>agent.status==='succeeded')).toHaveLength(5);
+  await expect(page.locator('.broker-candidates')).toBeVisible({timeout:10000});
+  await page.screenshot({path:'screenshots/broker.png',fullPage:true});
+  const results=await new AxeBuilder({page}).analyze();
+  expect(results.violations.filter(v=>['critical','serious'].includes(v.impact||''))).toEqual([]);
+  for(const tripId of plan.created_trip_ids){
+    expect((await request.post(`http://127.0.0.1:8000/api/v1/dispatch/trips/${tripId}/cancel`)).status()).toBe(200);
+  }
+  const live=(await (await request.get('http://127.0.0.1:8000/api/v1/dispatch/plans')).json()).items.find(row=>row.provenance==='live'&&row.status==='succeeded');
+  if(live){
+    await page.goto(`/?view=observatory&run=${live.id}`);
+    await expect(page.getByRole('heading',{name:'Affectations et preuves du courtier'})).toBeVisible();
+    await page.getByLabel('Position Horloge réelle des agents').fill('0');
+    await expect(page.getByRole('heading',{name:'Affectations et preuves du courtier'})).toHaveCount(0);
+    await expect(page.locator('.overall-cost')).toHaveCount(0);
+  }
 });

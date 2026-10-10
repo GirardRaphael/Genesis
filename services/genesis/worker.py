@@ -83,7 +83,12 @@ def run_once(store, owner=None):
     row = store.claim(owner or str(uuid4()))
     if row is None:
         return False
-    runtime = Runtime(store, row)
+    if row["request"].get("workflow_kind") == "broker":
+        from .broker_runtime import BrokerRuntime
+
+        runtime = BrokerRuntime(store, row)
+    else:
+        runtime = Runtime(store, row)
     stop = threading.Event()
 
     def renew():

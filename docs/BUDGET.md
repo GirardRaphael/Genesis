@@ -11,3 +11,5 @@ The application reserves before each billable dispatch, includes retries/verifie
 OpenAI execution and SDK dependency have been removed by user instruction. Its price snapshot is historical provenance only and cannot activate a run. New live requests require Anthropic configuration and a matching current Anthropic price record; stale or unknown billing configuration fails closed. Default per-run budget is US$1; the 20-run harness stops on any provider, schema or budget failure.
 
 Bank of Canada latest daily observation retrieved during implementation: 2026-10-09 USD/CAD 1.4271 ([Valet series endpoint](https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=1)). The 2.0 policy cushion remains deliberately separate from that historical observed rate. Runtime price snapshots expire 2026-10-17 and must be revalidated before further live calls after expiry.
+
+The broker live integration pilot added five actual Anthropic calls and US$0.0335999 estimated spend within the same persistent project allowance. Its portable evidence is in experiments/broker-live-pilot.json. Neither a new workflow nor provider switch resets the global cap.

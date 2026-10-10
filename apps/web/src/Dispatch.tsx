@@ -14,9 +14,10 @@ import {
   X,
 } from "lucide-react";
 import { api } from "./api";
+import { BrokerPlanning } from "./BrokerPlanning";
 import { DispatchMap, dispatchColor } from "./DispatchMap";
 import type {
-  Delivery,
+  BrokerDelivery,
   DispatchTrip,
   GeocodeResult,
   Place,
@@ -24,7 +25,7 @@ import type {
 } from "./dispatchTypes";
 import "./Dispatch.css";
 
-const EXAMPLE: Delivery[] = [
+const EXAMPLE: BrokerDelivery[] = [
   {
     pickup: {
       label: "Gare Centrale de Montréal",
@@ -32,11 +33,13 @@ const EXAMPLE: Delivery[] = [
     },
     dropoff: { label: "Marché Jean-Talon", coordinates: [-73.6145, 45.5362] },
     parcels: 1,
+    deadline_minutes: 120,
   },
   {
     pickup: { label: "Marché Jean-Talon", coordinates: [-73.6145, 45.5362] },
     dropoff: { label: "Stade olympique", coordinates: [-73.5515, 45.5579] },
     parcels: 1,
+    deadline_minutes: 120,
   },
 ];
 const fmtTime = (value?: string | null) =>
@@ -105,8 +108,10 @@ export function Dispatch() {
   const [vehicle, setVehicle] = useState("van1");
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
+  const [depot, setDepot] = useState<Place | null>(EXAMPLE[0].pickup);
   const [parcels, setParcels] = useState(1);
-  const [draft, setDraft] = useState<Delivery[]>([]);
+  const [deadline, setDeadline] = useState(120);
+  const [draft, setDraft] = useState<BrokerDelivery[]>([]);
   const [traffic, setTraffic] = useState<Traffic | null>(null);
   const [trafficError, setTrafficError] = useState("");
   const [showRoadworks, setShowRoadworks] = useState(false);
@@ -190,7 +195,16 @@ export function Dispatch() {
       setFormError("Chaque livraison peut contenir entre 1 et 40 colis.");
       return;
     }
-    setDraft((current) => [...current, { pickup, dropoff, parcels }]);
+    if (!Number.isInteger(deadline) || deadline < 1 || deadline > 480) {
+      setFormError(
+        "Le délai de livraison doit être compris entre 1 et 480 minutes.",
+      );
+      return;
+    }
+    setDraft((current) => [
+      ...current,
+      { pickup, dropoff, parcels, deadline_minutes: deadline },
+    ]);
     setPickup(null);
     setDropoff(null);
     setParcels(1);
@@ -203,7 +217,14 @@ export function Dispatch() {
       setFormError("Ajoutez au moins une livraison avant de créer le trajet.");
       return;
     }
-    const payload = { vehicle_id: vehicle, deliveries: draft };
+    const payload = {
+      vehicle_id: vehicle,
+      deliveries: draft.map(({ pickup, dropoff, parcels }) => ({
+        pickup,
+        dropoff,
+        parcels,
+      })),
+    };
     const body = JSON.stringify(payload);
     if (createIntent.current?.body !== body)
       createIntent.current = { body, key: crypto.randomUUID() };
@@ -291,8 +312,8 @@ export function Dispatch() {
               <Plus size={19} />
             </span>
             <div>
-              <span className="dispatch-kicker">NOUVEAU TRAJET</span>
-              <h2 id="dispatch-create-title">Préparer une livraison</h2>
+              <span className="dispatch-kicker">NOUVELLE MISSION</span>
+              <h2 id="dispatch-create-title">Préparer les livraisons</h2>
             </div>
           </div>
           <p className="dispatch-helper">
@@ -322,17 +343,15 @@ export function Dispatch() {
               />
             </label>
             <label>
-              Véhicule
-              <select
-                value={vehicle}
-                onChange={(event) => setVehicle(event.target.value)}
-              >
-                {[1, 2, 3, 4].map((n) => (
-                  <option key={n} value={`van${n}`}>
-                    Véhicule {n}
-                  </option>
-                ))}
-              </select>
+              Échéance après départ · min
+              <input
+                type="number"
+                min={1}
+                max={480}
+                step={1}
+                value={deadline}
+                onChange={(event) => setDeadline(Number(event.target.value))}
+              />
             </label>
           </div>
           <button
@@ -358,7 +377,10 @@ export function Dispatch() {
                     <strong>{item.pickup.label}</strong>
                     <ArrowRight size={13} />
                     <strong>{item.dropoff.label}</strong>
-                    <small>{item.parcels} colis</small>
+                    <small>
+                      {item.parcels} colis · livraison sous{" "}
+                      {item.deadline_minutes ?? 120} min
+                    </small>
                   </div>
                   <button
                     type="button"
@@ -392,19 +414,59 @@ export function Dispatch() {
               {formError}
             </p>
           )}
-          <button
-            type="button"
-            className="dispatch-create"
-            disabled={busy === "create" || !draft.length}
-            onClick={() => void createTrip()}
-          >
-            {busy === "create" ? (
-              <LoaderCircle size={16} className="spin" />
-            ) : (
-              <Route size={16} />
-            )}{" "}
-            Créer le trajet routier <ArrowRight size={16} />
-          </button>
+          <div className="dispatch-depot">
+            <PlaceSearch
+              label="Dépôt de départ présumé"
+              place={depot}
+              onChange={setDepot}
+            />
+            <p>
+              Gare Centrale est une hypothèse d’exemple. Choisissez votre vrai
+              point de départ avant une mission personnalisée.
+            </p>
+          </div>
+          <BrokerPlanning
+            deliveries={draft}
+            depot={depot}
+            trips={trips}
+            onTripsCreated={(ids) => {
+              setRefresh((n) => n + 1);
+              if (ids[0]) selectTrip(ids[0]);
+            }}
+          />
+          <details className="dispatch-manual">
+            <summary>Créer manuellement un trajet routier</summary>
+            <p>
+              Option avancée : conserve l’ordre des livraisons saisies, sans
+              courtier ni comparaison d’affectation.
+            </p>
+            <label>
+              Véhicule
+              <select
+                value={vehicle}
+                onChange={(event) => setVehicle(event.target.value)}
+              >
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={`van${n}`}>
+                    Véhicule {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="dispatch-create"
+              disabled={busy === "create" || !draft.length}
+              onClick={() => void createTrip()}
+            >
+              {busy === "create" ? (
+                <LoaderCircle size={16} className="spin" />
+              ) : (
+                <Route size={16} />
+              )}{" "}
+              Créer sans courtier <ArrowRight size={16} />
+            </button>
+          </details>
         </section>
 
         <section

@@ -218,7 +218,7 @@ def _geometry(value: object) -> list[list[float]]:
     return result
 
 
-def _road_route(stops: list[dict]) -> dict:
+def _road_route(stops: list[dict], *, continue_straight: bool | None = None) -> dict:
     global _last_route_request
     base = _provider_base("GENESIS_ROUTER_URL", OSRM)
     coordinates = ";".join(f"{s['coordinates'][0]:.6f},{s['coordinates'][1]:.6f}" for s in stops)
@@ -228,9 +228,10 @@ def _road_route(stops: list[dict]) -> dict:
         if delay:
             time.sleep(delay)
         _last_route_request = time.monotonic()
-        data = _provider_json(
-            source_url, {"overview": "full", "geometries": "geojson", "steps": "true"}
-        )
+        params = {"overview": "full", "geometries": "geojson", "steps": "true"}
+        if continue_straight is not None:
+            params["continue_straight"] = "true" if continue_straight else "false"
+        data = _provider_json(source_url, params)
     if data.get("code") == "NoRoute":
         raise _error(422, "road_route_unavailable", "No drivable road route connects these stops")
     try:
@@ -279,6 +280,318 @@ def _road_route(stops: list[dict]) -> dict:
     }
 
 
+def road_matrix(nodes: list[dict]) -> dict:
+    """One directional OSRM table for the frozen broker problem."""
+    global _last_route_request
+    if not 2 <= len(nodes) <= 24 or any(not _inside(n["coordinates"]) for n in nodes):
+        raise _error(
+            422, "invalid_matrix_nodes", "Road matrix nodes are outside the supported area"
+        )
+    base = _provider_base("GENESIS_ROUTER_URL", OSRM)
+    coordinates = ";".join(f"{n['coordinates'][0]:.6f},{n['coordinates'][1]:.6f}" for n in nodes)
+    source_url = f"{base}/table/v1/driving/{coordinates}"
+    with _provider_lock:
+        delay = max(0, _last_route_request + 1 - time.monotonic())
+        if delay:
+            time.sleep(delay)
+        _last_route_request = time.monotonic()
+        data = _provider_json(source_url, {"annotations": "duration,distance"})
+    try:
+        if (
+            data["code"] != "Ok"
+            or len(data["sources"]) != len(nodes)
+            or len(data["destinations"]) != len(nodes)
+        ):
+            raise ValueError("Missing road nodes")
+        if any(
+            not math.isfinite(float(w["distance"])) or float(w["distance"]) > 250
+            for w in [*data["sources"], *data["destinations"]]
+        ):
+            raise ValueError("Stop snapped too far from a road")
+        durations, distances = data["durations"], data["distances"]
+        if any(
+            len(matrix) != len(nodes) or any(len(row) != len(nodes) for row in matrix)
+            for matrix in (durations, distances)
+        ):
+            raise ValueError("Road matrix dimensions are invalid")
+        for i in range(len(nodes)):
+            for j in range(len(nodes)):
+                pair = (durations[i][j], distances[i][j])
+                if (pair[0] is None) != (pair[1] is None):
+                    raise ValueError("Road matrix reachability differs")
+                if pair[0] is not None and any(
+                    not math.isfinite(float(v)) or float(v) < 0 for v in pair
+                ):
+                    raise ValueError("Invalid road matrix cell")
+        return {
+            "durations": [
+                [None if v is None else math.ceil(float(v)) for v in row] for row in durations
+            ],
+            "distances": [
+                [None if v is None else math.ceil(float(v)) for v in row] for row in distances
+            ],
+            "source": "OSRM driving static estimate",
+            "computed_at": _stamp(),
+            "source_url": source_url,
+        }
+    except (KeyError, TypeError, ValueError, IndexError, OverflowError) as exc:
+        raise _error(
+            502, "invalid_provider_response", "Road matrix response was incomplete", True
+        ) from exc
+
+
+def _held_cargo(row) -> int:
+    if row["status"] != "cancelled" or not row["started_at"]:
+        return 0
+    trip = _project(row)
+    picked = {
+        stop["delivery_id"]
+        for stop in trip["stops"]
+        if stop["kind"] == "pickup" and stop["status"] == "completed"
+    }
+    dropped = {
+        stop["delivery_id"]
+        for stop in trip["stops"]
+        if stop["kind"] == "dropoff" and stop["status"] == "completed"
+    }
+    return sum(
+        delivery["parcels"] for delivery in trip["deliveries"] if delivery["id"] in picked - dropped
+    )
+
+
+def _fleet_state(conn, vehicle_ids: list[str], depot: dict) -> dict:
+    rows = conn.execute(select(_trips).where(_trips.c.vehicle_id.in_(vehicle_ids))).mappings().all()
+    vehicles = []
+    for vehicle_id in vehicle_ids:
+        history = [dict(row) for row in rows if row["vehicle_id"] == vehicle_id]
+        held_cargo = sum(_held_cargo(row) for row in history)
+        busy = any(_project(row)["status"] in {"ready", "running"} for row in history)
+        latest = max(history, key=lambda row: (row["created_at"], row["id"])) if history else None
+        known = [row for row in history if row["started_at"]]
+        position_source = (
+            max(known, key=lambda row: (row["started_at"], row["id"])) if known else None
+        )
+        origin = depot["coordinates"]
+        assumed = True
+        if position_source:
+            projected = _project(position_source)
+            origin = projected["progress"]["coordinate"]
+            assumed = False
+        vehicles.append(
+            {
+                "id": vehicle_id,
+                "available": not busy and not held_cargo,
+                "unresolved_cargo_parcels": held_cargo,
+                "origin": origin,
+                "origin_assumed": assumed,
+                "latest_trip_id": latest["id"] if latest else None,
+                "latest_trip_status": _project(latest)["status"] if latest else None,
+            }
+        )
+    return {"vehicles": vehicles}
+
+
+def fleet_snapshot(engine, vehicle_ids: list[str], depot: dict) -> dict:
+    _trips.create(engine, checkfirst=True)
+    with engine.connect() as conn:
+        return _fleet_state(conn, vehicle_ids, depot)
+
+
+def materialize_broker_trips(
+    store,
+    run_id: str,
+    fence: tuple,
+    snapshot: dict,
+    request: dict,
+    solution: dict,
+    problem: dict,
+    certificate_artifact_id: str,
+) -> list[str]:
+    """Commit every selected ready trip together after the last model call."""
+    routes = sorted(
+        (route for route in solution["vehicle_routes"] if route["node_order"]),
+        key=lambda route: route["vehicle_id"],
+    )
+    with store.engine.connect() as conn:
+        existing = (
+            conn.execute(
+                select(_trips)
+                .where(_trips.c.idempotency_key.like(f"broker:{run_id}:%"))
+                .order_by(_trips.c.vehicle_id)
+            )
+            .mappings()
+            .all()
+        )
+    if existing:
+        if len(existing) != len(routes):
+            raise _error(409, "materialization_conflict", "Broker trip creation was incomplete")
+        return [row["id"] for row in existing]
+    prepared = []
+    for route in routes:
+        vehicle_id = route["vehicle_id"]
+        origin = next(v["origin"] for v in snapshot["vehicles"] if v["id"] == vehicle_id)
+        order = route["node_order"]
+        nodes = problem["nodes"]
+        stops = [{"coordinates": origin}] + [
+            {"coordinates": nodes[index]["coordinates"]} for index in order
+        ]
+        road = _road_route(stops, continue_straight=False)
+        service_seconds = request["service_minutes"] * 60
+        elapsed_route = 0.0
+        deadlines = {d["id"]: d["deadline_minutes"] * 60 for d in request["deliveries"]}
+        previous = next(v["start_index"] for v in problem["vehicles"] if v["id"] == vehicle_id)
+        for stop_index, node_index in enumerate(order):
+            leg = road["legs"][stop_index]
+            duration_bound = problem["durations"][previous][node_index]
+            distance_bound = problem["distances"][previous][node_index]
+            if (
+                duration_bound is None
+                or distance_bound is None
+                or math.ceil(leg["duration_seconds"]) > duration_bound
+                or math.ceil(leg["distance_meters"]) > distance_bound
+            ):
+                raise _error(
+                    409,
+                    "road_route_changed",
+                    "Road geometry differs from the certified matrix; replan",
+                )
+            elapsed_route += leg["duration_seconds"] + service_seconds
+            node = nodes[node_index]
+            if node["kind"] == "dropoff" and elapsed_route > deadlines[node["delivery_id"]]:
+                raise _error(
+                    409,
+                    "road_route_changed",
+                    "Road route no longer meets a delivery deadline; replan",
+                )
+            previous = node_index
+        if elapsed_route > 28800:
+            raise _error(
+                409, "road_route_changed", "Road route exceeds the supported duty period; replan"
+            )
+        road["driving_duration_seconds"] = road["duration_seconds"]
+        road["duration_seconds"] += service_seconds * len(order)
+        road["duration_minutes"] = round(road["duration_seconds"] / 60, 1)
+        road["planned_duration_seconds"] = route["duration_seconds"]
+        road["planned_distance_meters"] = route["distance_meters"]
+        road["planned_operating_cost_cents"] = route["operating_cost_cents"]
+        delivery_ids = list(dict.fromkeys(nodes[index]["delivery_id"] for index in order))
+        deliveries = [d for d in request["deliveries"] if d["id"] in delivery_ids]
+        stop_order = [f"{nodes[index]['delivery_id']}:{nodes[index]['kind']}" for index in order]
+        if len(stop_order) != 2 * len(deliveries) or len(set(stop_order)) != len(stop_order):
+            raise _error(
+                422, "invalid_broker_route", "Selected route has duplicate or missing stops"
+            )
+        trip_request = {
+            "name": "Plan courtier Montréal",
+            "vehicle_id": vehicle_id,
+            "deliveries": deliveries,
+            "stop_order": stop_order,
+            "service_seconds": service_seconds,
+            "owner_run_id": run_id,
+            "broker_plan": {
+                "input_hash": problem["input_hash"],
+                "solution_hash": solution["solution_hash"],
+                "certificate_artifact_id": certificate_artifact_id,
+            },
+        }
+        prepared.append((vehicle_id, trip_request, road))
+    with store.transaction() as conn:
+        run = store._run(conn, run_id, fence)
+        if store.engine.dialect.name == "postgresql":
+            conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+        if run["cancel_requested"]:
+            raise _error(409, "plan_cancelled", "Planning run was cancelled")
+        existing = (
+            conn.execute(
+                select(_trips)
+                .where(_trips.c.idempotency_key.like(f"broker:{run_id}:%"))
+                .order_by(_trips.c.vehicle_id)
+            )
+            .mappings()
+            .all()
+        )
+        if existing:
+            if len(existing) != len(prepared):
+                raise _error(409, "materialization_conflict", "Broker trip creation was incomplete")
+            return [row["id"] for row in existing]
+        current = _fleet_state(conn, [v["id"] for v in snapshot["vehicles"]], request["depot"])
+        frozen = {v["id"]: v for v in snapshot["vehicles"]}
+        for vehicle_id, _, _ in prepared:
+            previous = frozen[vehicle_id]
+            latest = next(v for v in current["vehicles"] if v["id"] == vehicle_id)
+            if (
+                not latest["available"]
+                or latest["latest_trip_id"] != previous["latest_trip_id"]
+                or latest["latest_trip_status"] != previous["latest_trip_status"]
+            ):
+                raise _error(
+                    409, "fleet_changed", "A selected van changed; replan with the current fleet"
+                )
+        ids = []
+        for vehicle_id, trip_request, road in prepared:
+            trip_id = str(uuid4())
+            ids.append(trip_id)
+            conn.execute(
+                insert(_trips).values(
+                    id=trip_id,
+                    name=trip_request["name"],
+                    vehicle_id=vehicle_id,
+                    status="ready",
+                    request_json=json.dumps(trip_request),
+                    route_json=json.dumps(road),
+                    request_hash=hashlib.sha256(
+                        json.dumps(trip_request, sort_keys=True).encode()
+                    ).hexdigest(),
+                    idempotency_key=f"broker:{run_id}:{vehicle_id}",
+                    created_at=_stamp(),
+                    started_at=None,
+                    cancelled_at=None,
+                )
+            )
+        return ids
+
+
+def retire_broker_trips(conn, run_id: str) -> None:
+    """Retire this run's unstarted reservations inside the caller's transaction."""
+    _trips.create(conn, checkfirst=True)
+    conn.execute(
+        update(_trips)
+        .where(_trips.c.idempotency_key.like(f"broker:{run_id}:%"), _trips.c.status == "ready")
+        .values(status="cancelled", cancelled_at=_stamp())
+    )
+
+
+def cancel_broker_ready_trips(store, run_id: str) -> None:
+    with store.transaction() as conn:
+        if store.engine.dialect.name == "postgresql":
+            conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+        retire_broker_trips(conn, run_id)
+
+
+def reconcile_broker_ready_trips(store) -> None:
+    """Release reservations left by a process crash after a terminal failed run."""
+    with store.engine.connect() as conn:
+        rows = (
+            conn.execute(
+                select(_trips).where(
+                    _trips.c.status == "ready", _trips.c.idempotency_key.like("broker:%")
+                )
+            )
+            .mappings()
+            .all()
+        )
+    for row in rows:
+        run_id = json.loads(row["request_json"]).get("owner_run_id")
+        if not run_id:
+            continue
+        try:
+            status = store.get_run(run_id)["status"]
+        except KeyError:
+            status = "failed"
+        if status in {"failed", "cancelled", "timed_out", "budget_exceeded"}:
+            cancel_broker_ready_trips(store, run_id)
+
+
 def _interpolate(points: list[list[float]], fraction: float) -> list[float]:
     if fraction <= 0:
         return points[0]
@@ -306,26 +619,39 @@ def _project(row: dict) -> dict:
     status = "completed" if row["status"] == "running" and elapsed >= total else row["status"]
     stops = []
     offset = 0.0
-    for index, delivery in enumerate(request["deliveries"]):
-        for kind in ("pickup", "dropoff"):
-            stop_index = index * 2 + (kind == "dropoff")
-            if stop_index:
-                offset += route["legs"][stop_index - 1]["duration_seconds"]
-            place = delivery[kind]
-            stops.append(
-                {
-                    "id": f"{delivery['id']}:{kind}",
-                    "delivery_id": delivery["id"],
-                    "kind": kind,
-                    "label": place["label"],
-                    "coordinates": place["coordinates"],
-                    "eta_seconds": round(offset, 1),
-                    "eta_at": (started + timedelta(seconds=offset / SPEEDUP)).isoformat()
-                    if started
-                    else None,
-                    "status": "completed" if started and elapsed >= offset else "pending",
-                }
-            )
+    ordered = request.get("stop_order") or [
+        f"{delivery['id']}:{kind}"
+        for delivery in request["deliveries"]
+        for kind in ("pickup", "dropoff")
+    ]
+    by_id = {delivery["id"]: delivery for delivery in request["deliveries"]}
+    service_seconds = request.get("service_seconds", 0)
+    for stop_index, stop_id in enumerate(ordered):
+        delivery_id, kind = stop_id.rsplit(":", 1)
+        delivery = by_id[delivery_id]
+        if request.get("owner_run_id"):
+            offset += (service_seconds if stop_index else 0) + route["legs"][stop_index][
+                "duration_seconds"
+            ]
+        elif stop_index:
+            offset += route["legs"][stop_index - 1]["duration_seconds"]
+        place = delivery[kind]
+        stops.append(
+            {
+                "id": stop_id,
+                "delivery_id": delivery["id"],
+                "kind": kind,
+                "label": place["label"],
+                "coordinates": place["coordinates"],
+                "eta_seconds": round(offset, 1),
+                "eta_at": (started + timedelta(seconds=offset / SPEEDUP)).isoformat()
+                if started
+                else None,
+                "status": "completed"
+                if started and elapsed >= offset + service_seconds
+                else "pending",
+            }
+        )
     remaining = elapsed
     position = route["coordinates"][0]
     for leg in route["legs"]:
@@ -336,6 +662,11 @@ def _project(row: dict) -> dict:
             )
             break
         remaining -= leg["duration_seconds"]
+        if service_seconds:
+            if remaining <= service_seconds:
+                position = leg["coordinates"][-1]
+                break
+            remaining -= service_seconds
     else:
         position = route["coordinates"][-1]
     completed_at = (
@@ -370,6 +701,7 @@ def _project(row: dict) -> dict:
 def register_dispatch(app: FastAPI) -> None:
     """Attach dispatch endpoints to an app whose state.store is already configured."""
     _trips.create(app.state.store.engine, checkfirst=True)
+    reconcile_broker_ready_trips(app.state.store)
 
     def get_row(trip_id: UUID) -> dict:
         with app.state.store.engine.connect() as conn:
@@ -389,6 +721,14 @@ def register_dispatch(app: FastAPI) -> None:
             "capacity_parcels": 40,
             "limits": "Public demo geocoding/routing has no production SLA; configure GENESIS_GEOCODER_URL and GENESIS_ROUTER_URL for owned services. No live GPS, live traffic, vehicle restrictions, or route optimization.",
         }
+
+    @app.get("/api/v1/dispatch/fleet")
+    def dispatch_fleet():
+        return fleet_snapshot(
+            app.state.store.engine,
+            [f"van{i}" for i in range(1, 5)],
+            {"coordinates": [-73.5673, 45.5019]},
+        )
 
     @app.get("/api/v1/dispatch/geocode")
     def geocode(q: str = Query(min_length=3, max_length=120)):
@@ -461,7 +801,20 @@ def register_dispatch(app: FastAPI) -> None:
             "cancelled_at": None,
         }
         try:
-            with engine.begin() as conn:
+            with app.state.store.transaction() as conn:
+                if engine.dialect.name == "postgresql":
+                    conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+                reservations = (
+                    conn.execute(select(_trips).where(_trips.c.vehicle_id == request["vehicle_id"]))
+                    .mappings()
+                    .all()
+                )
+                if any(
+                    json.loads(row["request_json"]).get("owner_run_id")
+                    and _project(dict(row))["status"] in {"ready", "running"}
+                    for row in reservations
+                ):
+                    raise _error(409, "vehicle_busy", "Van is reserved by a broker plan")
                 conn.execute(insert(_trips).values(**values))
         except IntegrityError as exc:
             if not idempotency_key:
@@ -484,6 +837,14 @@ def register_dispatch(app: FastAPI) -> None:
     @app.post("/api/v1/dispatch/trips/{trip_id}/start")
     def start_trip(trip_id: UUID):
         with app.state.store.transaction() as conn:
+            initial = (
+                conn.execute(select(_trips).where(_trips.c.id == str(trip_id))).mappings().first()
+            )
+            if initial is None:
+                raise _error(404, "trip_not_found", "Dispatch trip not found")
+            owner_run_id = json.loads(initial["request_json"]).get("owner_run_id")
+            if owner_run_id and app.state.store._run(conn, owner_run_id)["status"] != "succeeded":
+                raise _error(409, "plan_pending", "Broker plan has not completed successfully")
             if app.state.store.engine.dialect.name == "postgresql":
                 conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
             row = conn.execute(select(_trips).where(_trips.c.id == str(trip_id))).mappings().first()
@@ -492,6 +853,21 @@ def register_dispatch(app: FastAPI) -> None:
             if row["status"] == "cancelled" or _project(row)["status"] == "completed":
                 raise _error(409, "trip_not_startable", "Trip cannot be started")
             if row["status"] == "ready":
+                cancelled = (
+                    conn.execute(
+                        select(_trips).where(
+                            _trips.c.vehicle_id == row["vehicle_id"], _trips.c.status == "cancelled"
+                        )
+                    )
+                    .mappings()
+                    .all()
+                )
+                if any(_held_cargo(item) for item in cancelled):
+                    raise _error(
+                        409,
+                        "cargo_recovery_required",
+                        "Cancelled pickup cargo remains onboard; recovery is required before another trip",
+                    )
                 active = (
                     conn.execute(
                         select(_trips).where(

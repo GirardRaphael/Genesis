@@ -12,11 +12,12 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import type { Agent, Cohort, RunDetail, TraceEvent } from "./types";
+import { hasArtifacts } from "./types";
 import { Chart, palette } from "./Chart";
 import { num, money, statusLabel } from "./state";
 const roleLabels: Record<string, string> = {
   planning: "Planification",
-  traffic: "Trafic simulé",
+  traffic: "Trafic et réseau",
   optimization: "Optimisation",
   monitoring: "Contrôle",
   exception: "Exceptions",
@@ -277,7 +278,7 @@ export function OutputInspector({
               <p>Aucun appel d’outil pour cette étape.</p>
             )}
           </div>
-          {detail.certificate && detail.selected_plan && (
+          {hasArtifacts(detail) && (
             <div className="inspector-section">
               <h4>
                 <ShieldCheck size={14} /> Validation du plan
@@ -356,7 +357,12 @@ export function AgentGraph({
         },
         style: {
           borderColor: active === a.id ? "#167887" : "#dce2e5",
-          background: a.status === "running" ? "#fff3df" : active === a.id ? "#edf7f6" : "white",
+          background:
+            a.status === "running"
+              ? "#fff3df"
+              : active === a.id
+                ? "#edf7f6"
+                : "white",
           width: 160,
           borderRadius: 8,
         },

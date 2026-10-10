@@ -91,3 +91,5 @@ The product is releasable when every mandatory source requirement has evidence, 
 ## Accepted execution extensions — 2026-10-10
 
 User authorized implementation and then added Anthropic-only execution, live agent/model/individual/overall metering, Power BI-style analytics, and an address-based Montréal delivery workflow. Google Maps was replaced with a keyless stack at the user's direction. IMPLEMENTATION-STATUS tracks achieved evidence; DISPATCH.md specifies the new local operator workflow and company release gates. Original synthetic benchmarks remain separate from operator-entered trips, municipal worksite permits and simulated positions. No external-provider fallback may silently change costs, physical constraints or provenance.
+
+U10 adds automatic broker consolidation/split allocation and U11 adds the candid engineering/business audit. The implemented scope and current blockers are in DISPATCH.md and TRANSPORT-CHECKLIST.md; independent admission findings and their verified corrections are in reviews/broker-review.md. Commercial launch remains blocked by the listed P0 gates.

@@ -1,0 +1,737 @@
+{
+  "verified_at": "2026-10-10",
+  "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+  "status": "succeeded",
+  "provenance": "live",
+  "workflow_kind": "broker",
+  "provider": "anthropic",
+  "request": {
+    "deliveries": [
+      {
+        "id": "d-77b7e6295841a58c",
+        "pickup": {
+          "label": "Gare Centrale de Montréal",
+          "coordinates": [
+            -73.5673,
+            45.5003
+          ]
+        },
+        "dropoff": {
+          "label": "Marché Jean-Talon",
+          "coordinates": [
+            -73.6145,
+            45.5362
+          ]
+        },
+        "parcels": 1,
+        "deadline_minutes": 120
+      },
+      {
+        "id": "d-9a3080d2e8662fa4",
+        "pickup": {
+          "label": "Marché Jean-Talon",
+          "coordinates": [
+            -73.6145,
+            45.5362
+          ]
+        },
+        "dropoff": {
+          "label": "Stade olympique",
+          "coordinates": [
+            -73.5515,
+            45.5579
+          ]
+        },
+        "parcels": 1,
+        "deadline_minutes": 120
+      }
+    ],
+    "depot": {
+      "label": "Gare Centrale de Montréal",
+      "coordinates": [
+        -73.5673,
+        45.5003
+      ]
+    },
+    "vehicle_ids": [
+      "van2",
+      "van3"
+    ],
+    "objective": "cost",
+    "activation_cost_cad": "18",
+    "cost_per_km_cad": "0.95",
+    "driver_cost_per_hour_cad": "28",
+    "service_minutes": 2,
+    "balance_value_cad_per_minute": "0.50",
+    "mode": "live",
+    "budget_usd": "1",
+    "scenario_id": "BROKER",
+    "policy": "broker_dispatch",
+    "seed": 0,
+    "workflow_kind": "broker",
+    "provider": "anthropic",
+    "model_policy": {
+      "planning": "claude-sonnet-5-5",
+      "traffic": "claude-haiku-5-5",
+      "optimization": "claude-sonnet-5-5",
+      "monitoring": "claude-opus-5-5",
+      "exception": "claude-haiku-5-5"
+    }
+  },
+  "final_output": {
+    "kind": "accepted_plan",
+    "summary": "Broker plan certified and ready trips created.",
+    "feasible": true,
+    "reason": null,
+    "created_trip_ids": [
+      "1f2d90dd-de0b-4937-a7b2-e36b7f07777e"
+    ],
+    "comparison_artifact_id": "9dd48096-0984-429e-971d-43c986cd800a",
+    "certificate_artifact_id": "121edbbb-4290-4b6a-a2c1-82688c32dd69"
+  },
+  "broker_solution": {
+    "selected_strategy": "hybrid",
+    "selected": {
+      "vehicle_routes": [
+        {
+          "vehicle_id": "van2",
+          "node_order": [
+            2,
+            4,
+            3,
+            5
+          ],
+          "duration_seconds": 2497,
+          "distance_meters": 15310,
+          "load_peak": 2,
+          "operating_cost_cents": 5199
+        }
+      ],
+      "assignments": [
+        {
+          "delivery_id": "d-77b7e6295841a58c",
+          "vehicle_id": "van2"
+        },
+        {
+          "delivery_id": "d-9a3080d2e8662fa4",
+          "vehicle_id": "van2"
+        }
+      ],
+      "fleet_cost_cents": 5199,
+      "makespan_seconds": 2497,
+      "objective_value": 5199,
+      "solver_status": "feasible_candidate",
+      "input_hash": "9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926",
+      "solution_hash": "aa07cdd1b8648e7b8382b053fafbb2408f9eb5e9a0b871adc71f746f1fb61f1e"
+    }
+  },
+  "certificate": {
+    "valid": true,
+    "issues": [],
+    "input_hash": "9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926",
+    "solution_hash": "aa07cdd1b8648e7b8382b053fafbb2408f9eb5e9a0b871adc71f746f1fb61f1e",
+    "recomputed_fleet_cost_cents": 5199,
+    "recomputed_makespan_seconds": 2497,
+    "recomputed_objective_value": 5199,
+    "served_deliveries": 2
+  },
+  "candidates": [
+    {
+      "strategy": "hybrid",
+      "status": "feasible_candidate",
+      "cost_cents": 5199,
+      "makespan_seconds": 2497
+    },
+    {
+      "strategy": "one_truck:van2",
+      "status": "feasible_candidate",
+      "cost_cents": 5199,
+      "makespan_seconds": 2497
+    },
+    {
+      "strategy": "one_truck:van3",
+      "status": "feasible_candidate",
+      "cost_cents": 5199,
+      "makespan_seconds": 2497
+    },
+    {
+      "strategy": "separated",
+      "status": "feasible_candidate",
+      "cost_cents": 8363,
+      "makespan_seconds": 2257
+    }
+  ],
+  "created_trip_ids": [
+    "1f2d90dd-de0b-4937-a7b2-e36b7f07777e"
+  ],
+  "usage": {
+    "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+    "totals": {
+      "calls": 5,
+      "completed": 5,
+      "running": 0,
+      "errors": 0,
+      "retries": 0,
+      "input_tokens": 5803,
+      "output_tokens": 2535,
+      "total_tokens": 8338,
+      "cost_usd": "0.0335999",
+      "usage_coverage": 1.0,
+      "cost_coverage": 1.0,
+      "mean_latency_ms": 4622.8,
+      "latency_samples": 5
+    },
+    "attempts": [
+      {
+        "attempt_id": "d6d01da8-e2a7-42bf-9194-a893bc9e2033",
+        "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+        "agent_id": "e5090f67-84f5-5cda-9a1a-246e31dafb8d",
+        "role": "planning",
+        "model": "claude-sonnet-5-5",
+        "requested_model": "claude-sonnet-5-5",
+        "status": "completed",
+        "input_tokens": 713,
+        "output_tokens": 394,
+        "cached_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "uncached_input_tokens": 713,
+        "reasoning_output_tokens": null,
+        "cost_usd": "0.005366",
+        "duration_ms": 3769,
+        "started_at": "2026-10-10T18:56:40.486+00:00",
+        "finished_at": "2026-10-10T18:56:44.290+00:00",
+        "attempt": 1,
+        "reserved_usd": "0.042008",
+        "price_version": "anthropic-standard-2026-10-10:claude-sonnet-5-5",
+        "error_code": null,
+        "usage_source": "provider",
+        "cost_source": "price_estimate",
+        "provider_response_id": "msg_011Cfu4qoF7SL8PpXncYfAt3",
+        "retryable": false
+      },
+      {
+        "attempt_id": "f493769e-c114-4291-bd7f-5809531746c4",
+        "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+        "agent_id": "ca7575bd-7062-579b-ba9a-12afa6801a09",
+        "role": "traffic",
+        "model": "claude-haiku-5-5",
+        "requested_model": "claude-haiku-5-5",
+        "status": "completed",
+        "input_tokens": 1141,
+        "output_tokens": 365,
+        "cached_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "uncached_input_tokens": 1141,
+        "reasoning_output_tokens": null,
+        "cost_usd": "0.0002966",
+        "duration_ms": 3020,
+        "started_at": "2026-10-10T18:56:45.169+00:00",
+        "finished_at": "2026-10-10T18:56:48.198+00:00",
+        "attempt": 1,
+        "reserved_usd": "0.0023376",
+        "price_version": "anthropic-standard-2026-10-10:claude-haiku-5-5",
+        "error_code": null,
+        "usage_source": "provider",
+        "cost_source": "price_estimate",
+        "provider_response_id": "msg_011Cfu4r8zVvwidaY6rTcsBj",
+        "retryable": false
+      },
+      {
+        "attempt_id": "82a4e047-140d-47d0-80bd-800a31eff8e0",
+        "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+        "agent_id": "14b91d81-f6df-5276-9d03-9e8788525a03",
+        "role": "optimization",
+        "model": "claude-sonnet-5-5",
+        "requested_model": "claude-sonnet-5-5",
+        "status": "completed",
+        "input_tokens": 1318,
+        "output_tokens": 595,
+        "cached_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "uncached_input_tokens": 1318,
+        "reasoning_output_tokens": null,
+        "cost_usd": "0.008586",
+        "duration_ms": 5386,
+        "started_at": "2026-10-10T18:56:53.282+00:00",
+        "finished_at": "2026-10-10T18:56:58.679+00:00",
+        "attempt": 1,
+        "reserved_usd": "0.048108",
+        "price_version": "anthropic-standard-2026-10-10:claude-sonnet-5-5",
+        "error_code": null,
+        "usage_source": "provider",
+        "cost_source": "price_estimate",
+        "provider_response_id": "msg_011Cfu4rjcbk65Np1rAibqEq",
+        "retryable": false
+      },
+      {
+        "attempt_id": "f057c600-ff67-4987-b0db-2234299fe61e",
+        "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+        "agent_id": "0d62b581-c67f-52f5-8d67-2664357c80f2",
+        "role": "monitoring",
+        "model": "claude-opus-5-5",
+        "requested_model": "claude-opus-5-5",
+        "status": "completed",
+        "input_tokens": 1258,
+        "output_tokens": 697,
+        "cached_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "uncached_input_tokens": 1258,
+        "reasoning_output_tokens": null,
+        "cost_usd": "0.018972",
+        "duration_ms": 7638,
+        "started_at": "2026-10-10T18:56:58.738+00:00",
+        "finished_at": "2026-10-10T18:57:06.385+00:00",
+        "attempt": 1,
+        "reserved_usd": "0.096064",
+        "price_version": "anthropic-standard-2026-10-10:claude-opus-5-5",
+        "error_code": null,
+        "usage_source": "provider",
+        "cost_source": "price_estimate",
+        "provider_response_id": "msg_011Cfu4s92WuMuRgAw2NNdMX",
+        "retryable": false
+      },
+      {
+        "attempt_id": "16a83b0f-5076-44db-b3f4-2f1995a2b44c",
+        "run_id": "8f3da1d6-7fdc-45f7-968a-044117d5e873",
+        "agent_id": "cb285058-9442-5ae4-b139-03e51bdf5998",
+        "role": "exception",
+        "model": "claude-haiku-5-5",
+        "requested_model": "claude-haiku-5-5",
+        "status": "completed",
+        "input_tokens": 1373,
+        "output_tokens": 484,
+        "cached_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "uncached_input_tokens": 1373,
+        "reasoning_output_tokens": null,
+        "cost_usd": "0.0003793",
+        "duration_ms": 3301,
+        "started_at": "2026-10-10T18:57:06.430+00:00",
+        "finished_at": "2026-10-10T18:57:09.739+00:00",
+        "attempt": 1,
+        "reserved_usd": "0.002487",
+        "price_version": "anthropic-standard-2026-10-10:claude-haiku-5-5",
+        "error_code": null,
+        "usage_source": "provider",
+        "cost_source": "price_estimate",
+        "provider_response_id": "msg_011Cfu4siJFqsaHhkWcreTgK",
+        "retryable": false
+      }
+    ],
+    "agents": [
+      {
+        "role": "planning",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 713,
+        "output_tokens": 394,
+        "total_tokens": 1107,
+        "cost_usd": "0.005366",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 3769.0,
+        "latency_samples": 1
+      },
+      {
+        "role": "traffic",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 1141,
+        "output_tokens": 365,
+        "total_tokens": 1506,
+        "cost_usd": "0.0002966",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 3020.0,
+        "latency_samples": 1
+      },
+      {
+        "role": "optimization",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 1318,
+        "output_tokens": 595,
+        "total_tokens": 1913,
+        "cost_usd": "0.008586",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 5386.0,
+        "latency_samples": 1
+      },
+      {
+        "role": "monitoring",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 1258,
+        "output_tokens": 697,
+        "total_tokens": 1955,
+        "cost_usd": "0.018972",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 7638.0,
+        "latency_samples": 1
+      },
+      {
+        "role": "exception",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 1373,
+        "output_tokens": 484,
+        "total_tokens": 1857,
+        "cost_usd": "0.0003793",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 3301.0,
+        "latency_samples": 1
+      }
+    ],
+    "models": [
+      {
+        "model": "claude-haiku-5-5",
+        "calls": 2,
+        "completed": 2,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 2514,
+        "output_tokens": 849,
+        "total_tokens": 3363,
+        "cost_usd": "0.0006759",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 3160.5,
+        "latency_samples": 2
+      },
+      {
+        "model": "claude-opus-5-5",
+        "calls": 1,
+        "completed": 1,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 1258,
+        "output_tokens": 697,
+        "total_tokens": 1955,
+        "cost_usd": "0.018972",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 7638.0,
+        "latency_samples": 1
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "calls": 2,
+        "completed": 2,
+        "running": 0,
+        "errors": 0,
+        "retries": 0,
+        "input_tokens": 2031,
+        "output_tokens": 989,
+        "total_tokens": 3020,
+        "cost_usd": "0.013952",
+        "usage_coverage": 1.0,
+        "cost_coverage": 1.0,
+        "mean_latency_ms": 4577.5,
+        "latency_samples": 2
+      }
+    ],
+    "units": {
+      "cost": "USD estimated API cost",
+      "latency": "actual milliseconds",
+      "tokens": "provider reported"
+    },
+    "fixture_calls": 0
+  },
+  "evidence_scope": "Public Montreal location example; static road estimates and simulated van fleet. One live run is integration evidence, not calibrated route quality or production validation.",
+  "agents": [
+    {
+      "id": "e5090f67-84f5-5cda-9a1a-246e31dafb8d",
+      "role": "planning",
+      "name": "Planning",
+      "status": "succeeded",
+      "model": "claude-sonnet-5-5",
+      "duration_ms": 5479,
+      "input_tokens": 713,
+      "output_tokens": 394,
+      "cost": "0.005366",
+      "output": {
+        "summary": "2 free vans for 2 deliveries; fleet snapshot frozen.",
+        "free_vehicle_ids": [
+          "van2",
+          "van3"
+        ],
+        "delivery_ids": [
+          "d-77b7e6295841a58c",
+          "d-9a3080d2e8662fa4"
+        ],
+        "evidence_refs": [
+          "5577bf3b-cd18-4cfb-a620-0fb803712c58"
+        ],
+        "explanation": {
+          "summary": "Work order established from the frozen fleet snapshot: 2 selected deliveries (d-77b7e6295841a58c, d-9a3080d2e8662fa4) and 2 free vans (van2, van3), which are the only eligible vehicles. Any vans reserved or holding existing jobs are not in the free set, so their jobs remain locked and are excluded from this plan. The supplied evidence does not state depot origins, so they must be explicitly assumed and labeled as assumptions before routing; no GPS positions, live traffic, truck restrictions, fees or optimality are asserted. This is only the planning input, not a feasible dispatched plan. Route admission depends on deterministic tools and the independent certificate. A new plan is required if the delivery selection changes, the free/reserved fleet snapshot changes (a van becomes reserved, freed or unavailable), or depot origin assumptions change. Costs would be supplied CAD estimates; model API spend is tracked separately in USD. Passing delivery IDs, free van IDs and the snapshot reference to routing.",
+          "evidence_refs": [
+            "5577bf3b-cd18-4cfb-a620-0fb803712c58"
+          ]
+        }
+      },
+      "tools": [
+        {
+          "name": "freeze_free_fleet",
+          "status": "succeeded",
+          "duration_ms": 7,
+          "input": {
+            "vehicle_ids": [
+              "van2",
+              "van3"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ca7575bd-7062-579b-ba9a-12afa6801a09",
+      "role": "traffic",
+      "name": "Simulated traffic",
+      "status": "succeeded",
+      "model": "claude-haiku-5-5",
+      "duration_ms": 3887,
+      "input_tokens": 1141,
+      "output_tokens": 365,
+      "cost": "0.0002966",
+      "output": {
+        "summary": "Static directional road table captured for 6 nodes; no live traffic claim.",
+        "input_hash": "9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926",
+        "road_source": "OSRM driving static estimate",
+        "evidence_refs": [
+          "ab6ea691-6ade-4523-b440-36d7ec23b535",
+          "5577bf3b-cd18-4cfb-a620-0fb803712c58"
+        ],
+        "explanation": {
+          "summary": "Traffic role reviewed the frozen static directional OSRM driving road matrix for 6 nodes (input hash 9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926). Times are static OSRM estimates, not live traffic, and do not establish heavy-truck suitability or account for municipal worksite delays. Limits: any unreachable pairs or snapped-location offsets must be taken from the matrix itself and are not asserted here. Only evidenced routing constraints (the 6-node directional matrix and the 2 selected deliveries with free vans van2 and van3 from the prior work order) are passed to optimization; depot origins are not evidenced and must be labeled as assumptions. This is a completed analysis input only, not a feasible dispatched plan; route admission depends on deterministic tools and the independent certificate.",
+          "evidence_refs": [
+            "ab6ea691-6ade-4523-b440-36d7ec23b535",
+            "5577bf3b-cd18-4cfb-a620-0fb803712c58"
+          ]
+        }
+      },
+      "tools": [
+        {
+          "name": "osrm_static_table",
+          "status": "succeeded",
+          "duration_ms": 813,
+          "input": {
+            "node_count": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "14b91d81-f6df-5276-9d03-9e8788525a03",
+      "role": "optimization",
+      "name": "Optimization",
+      "status": "succeeded",
+      "model": "claude-sonnet-5-5",
+      "duration_ms": 10460,
+      "input_tokens": 1318,
+      "output_tokens": 595,
+      "cost": "0.008586",
+      "output": {
+        "summary": "Compared 4 consolidation choices; selected hybrid.",
+        "selected_strategy": "hybrid",
+        "candidate_summaries": [
+          {
+            "strategy": "hybrid",
+            "status": "feasible_candidate",
+            "fleet_cost_cents": 5199,
+            "makespan_seconds": 2497,
+            "certificate_valid": true
+          },
+          {
+            "strategy": "one_truck:van2",
+            "status": "feasible_candidate",
+            "fleet_cost_cents": 5199,
+            "makespan_seconds": 2497,
+            "certificate_valid": true
+          },
+          {
+            "strategy": "one_truck:van3",
+            "status": "feasible_candidate",
+            "fleet_cost_cents": 5199,
+            "makespan_seconds": 2497,
+            "certificate_valid": true
+          },
+          {
+            "strategy": "separated",
+            "status": "feasible_candidate",
+            "fleet_cost_cents": 8363,
+            "makespan_seconds": 2257,
+            "certificate_valid": true
+          }
+        ],
+        "evidence_refs": [
+          "9dd48096-0984-429e-971d-43c986cd800a",
+          "ab6ea691-6ade-4523-b440-36d7ec23b535"
+        ],
+        "explanation": {
+          "summary": "Bounded comparison of 4 candidates (hybrid, one_truck:van2, one_truck:van3, separated); all 4 are feasible with valid independent certificates. The supplied evidence does not itemize per-candidate mandatory coverage, capacity, pickup-before-dropoff or deadline checks, so those are covered only by the certificate_valid flag and are not restated individually. The hybrid, one_truck:van2 and one_truck:van3 candidates tie at an estimated fleet cost of 5199 cents (CAD 51.99) and a makespan of 2497 s (about 41.6 min). The separated candidate costs 8363 cents (CAD 83.63), about CAD 31.64 more, and finishes sooner at 2257 s (about 37.6 min), a saving of 240 s. The selected best certified candidate in this bounded comparison is hybrid: it is the lowest-cost certified option, tied with the two single-truck options, and the evidence gives no tie-break rationale. The separated option is the faster alternative but at higher cost. Costs are supplied estimates, and the comparison does not claim global optimality. Times come from a static OSRM matrix, not live traffic, with no heavy-truck suitability or worksite delay modelling. Depot origins are not evidenced and remain assumptions. This is a completed analysis, not a feasible dispatched plan; route admission rests on the deterministic tools and the independent certificate. No delivery was omitted to reduce cost, since all candidates are certified feasible.",
+          "evidence_refs": [
+            "9dd48096-0984-429e-971d-43c986cd800a",
+            "ab6ea691-6ade-4523-b440-36d7ec23b535",
+            "5577bf3b-cd18-4cfb-a620-0fb803712c58"
+          ]
+        }
+      },
+      "tools": [
+        {
+          "name": "compare_fleet_strategies",
+          "status": "succeeded",
+          "duration_ms": 5020,
+          "input": {
+            "input_hash": "9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926"
+          }
+        }
+      ]
+    },
+    {
+      "id": "0d62b581-c67f-52f5-8d67-2664357c80f2",
+      "role": "monitoring",
+      "name": "Monitoring",
+      "status": "succeeded",
+      "model": "claude-opus-5-5",
+      "duration_ms": 7686,
+      "input_tokens": 1258,
+      "output_tokens": 697,
+      "cost": "0.018972",
+      "output": {
+        "summary": "Independent route certificate valid.",
+        "certificate_valid": true,
+        "issues": [],
+        "evidence_refs": [
+          "121edbbb-4290-4b6a-a2c1-82688c32dd69",
+          "9dd48096-0984-429e-971d-43c986cd800a"
+        ],
+        "explanation": {
+          "summary": "Monitoring review: the supplied independent route certificate is reported valid (certificate_valid: true) with no listed issues, so deterministic validation does not block admission of the selected hybrid candidate. That conclusion rests on the certificate itself, not on any agent message. The supplied evidence states only the validity flag and an empty issues list. It does not expose the certificate's hash values. It therefore does not independently show how the certificate binds to the frozen problem or the selected solution. That binding is treated as asserted by the certificate tool and is not re-verified here. It also does not itemize per-constraint results: mandatory stop coverage, vehicle capacity, pickup-before-dropoff and deadline checks are covered only by the aggregate flag. No invalid constraints are reported. The prior agent message is consistent with the certificate. It describes a bounded comparison of 4 candidates. Hybrid, one_truck:van2 and one_truck:van3 tie at an estimated CAD 51.99 with a 2497 s makespan. Separated costs an estimated CAD 83.63 and finishes in 2257 s. Hybrid was chosen without a stated tie-break. That message is a model-generated explanation and cannot replace or alter deterministic validation. Its evidence refs ab6ea691-6ade-4523-b440-36d7ec23b535 and 5577bf3b-cd18-4cfb-a620-0fb803712c58 were not supplied to this role and are not cited here. Remaining gaps: no hash values or explicit problem/solution binding are visible, and no per-constraint breakdown is given. Times come from a static matrix with no live traffic or truck-restriction modelling. Depot origins are unevidenced assumptions. No global optimality is claimed. Costs are supplied CAD estimates; no model API spend in USD is reported. This is a completed, certified analysis, not a dispatched plan or completed delivery.",
+          "evidence_refs": [
+            "121edbbb-4290-4b6a-a2c1-82688c32dd69",
+            "9dd48096-0984-429e-971d-43c986cd800a"
+          ]
+        }
+      },
+      "tools": [
+        {
+          "name": "independent_broker_certificate",
+          "status": "succeeded",
+          "duration_ms": 5,
+          "input": {
+            "input_hash": "9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926",
+            "solution_hash": "aa07cdd1b8648e7b8382b053fafbb2408f9eb5e9a0b871adc71f746f1fb61f1e"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cb285058-9442-5ae4-b139-03e51bdf5998",
+      "role": "exception",
+      "name": "Exception",
+      "status": "succeeded",
+      "model": "claude-haiku-5-5",
+      "duration_ms": 3341,
+      "input_tokens": 1373,
+      "output_tokens": 484,
+      "cost": "0.0003793",
+      "output": {
+        "summary": "Certified plan can be prepared for dispatch.",
+        "decision": "materialize_after_handoffs",
+        "replan_needed": false,
+        "evidence_refs": [
+          "121edbbb-4290-4b6a-a2c1-82688c32dd69"
+        ],
+        "explanation": {
+          "summary": "The supplied exception evidence reports a certified analysis (certificate_valid: true, empty issues list) with decision materialize_after_handoffs and replan_needed false, so dispatch admission is permitted only after all role handoffs complete and the fleet snapshot is rechecked; this is a completed certified analysis, not a dispatched plan or completed delivery. Existing running or reserved jobs and onboard cargo remain locked, and no trips exist and no deliveries are completed until materialization commits. The certificate's validity flag is aggregate only: hash values, explicit problem/solution binding and per-constraint results (stop coverage, capacity, pickup-before-dropoff, deadlines) are not visible here and are not re-verified by this role. The prior monitoring message's comparison of four candidates (hybrid and two one_truck variants tied at an estimated CAD 51.99 with 2497 s makespan; separated at an estimated CAD 83.63 with 2257 s) is model-generated explanation only, its tie-break is unstated, and it cannot alter deterministic validation. Times come from a static matrix without live traffic or truck-restriction modelling, depot origins are unevidenced assumptions, no global optimality is claimed, and no model API spend in USD is reported.",
+          "evidence_refs": [
+            "121edbbb-4290-4b6a-a2c1-82688c32dd69",
+            "9dd48096-0984-429e-971d-43c986cd800a"
+          ]
+        }
+      },
+      "tools": [
+        {
+          "name": "dispatch_admissibility",
+          "status": "succeeded",
+          "duration_ms": 5,
+          "input": {
+            "certificate_valid": true
+          }
+        }
+      ]
+    }
+  ],
+  "handoffs": [
+    {
+      "id": "f219cc4a-ccb6-5ab6-bb2f-ac9309752a33",
+      "sender_id": "e5090f67-84f5-5cda-9a1a-246e31dafb8d",
+      "receiver_id": "ca7575bd-7062-579b-ba9a-12afa6801a09",
+      "sender_role": "planning",
+      "receiver_role": "traffic",
+      "summary": "Work order established from the frozen fleet snapshot: 2 selected deliveries (d-77b7e6295841a58c, d-9a3080d2e8662fa4) and 2 free vans (van2, van3), which are the only eligible vehicles. Any vans reserved or holding existing jobs are not in the free set, so their jobs remain locked and are excluded from this plan. The supplied evidence does not state depot origins, so they must be explicitly assumed and labeled as assumptions before routing; no GPS positions, live traffic, truck restrictions, fees or optimality are asserted. This is only the planning input, not a feasible dispatched plan. Route admission depends on deterministic tools and the independent certificate. A new plan is required if the delivery selection changes, the free/reserved fleet snapshot changes (a van becomes reserved, freed or unavailable), or depot origin assumptions change. Costs would be supplied CAD estimates; model API spend is tracked separately in USD. Passing delivery IDs, free van IDs and the snapshot reference to routing.",
+      "actual": true,
+      "run_seq": 11
+    },
+    {
+      "id": "b0aa6469-11c5-528c-a88b-47cf25ae6b3b",
+      "sender_id": "ca7575bd-7062-579b-ba9a-12afa6801a09",
+      "receiver_id": "14b91d81-f6df-5276-9d03-9e8788525a03",
+      "sender_role": "traffic",
+      "receiver_role": "optimization",
+      "summary": "Traffic role reviewed the frozen static directional OSRM driving road matrix for 6 nodes (input hash 9223a5516fa2f05e1cf45927afd11d0bd9c15dd08dc4e3e5b50db484c0cc3926). Times are static OSRM estimates, not live traffic, and do not establish heavy-truck suitability or account for municipal worksite delays. Limits: any unreachable pairs or snapped-location offsets must be taken from the matrix itself and are not asserted here. Only evidenced routing constraints (the 6-node directional matrix and the 2 selected deliveries with free vans van2 and van3 from the prior work order) are passed to optimization; depot origins are not evidenced and must be labeled as assumptions. This is a completed analysis input only, not a feasible dispatched plan; route admission depends on deterministic tools and the independent certificate.",
+      "actual": true,
+      "run_seq": 20
+    },
+    {
+      "id": "293c0a54-e10e-5665-92c9-73102c9b1d10",
+      "sender_id": "14b91d81-f6df-5276-9d03-9e8788525a03",
+      "receiver_id": "0d62b581-c67f-52f5-8d67-2664357c80f2",
+      "sender_role": "optimization",
+      "receiver_role": "monitoring",
+      "summary": "Bounded comparison of 4 candidates (hybrid, one_truck:van2, one_truck:van3, separated); all 4 are feasible with valid independent certificates. The supplied evidence does not itemize per-candidate mandatory coverage, capacity, pickup-before-dropoff or deadline checks, so those are covered only by the certificate_valid flag and are not restated individually. The hybrid, one_truck:van2 and one_truck:van3 candidates tie at an estimated fleet cost of 5199 cents (CAD 51.99) and a makespan of 2497 s (about 41.6 min). The separated candidate costs 8363 cents (CAD 83.63), about CAD 31.64 more, and finishes sooner at 2257 s (about 37.6 min), a saving of 240 s. The selected best certified candidate in this bounded comparison is hybrid: it is the lowest-cost certified option, tied with the two single-truck options, and the evidence gives no tie-break rationale. The separated option is the faster alternative but at higher cost. Costs are supplied estimates, and the comparison does not claim global optimality. Times come from a static OSRM matrix, not live traffic, with no heavy-truck suitability or worksite delay modelling. Depot origins are not evidenced and remain assumptions. This is a completed analysis, not a feasible dispatched plan; route admission rests on the deterministic tools and the independent certificate. No delivery was omitted to reduce cost, since all candidates are certified feasible.",
+      "actual": true,
+      "run_seq": 29
+    },
+    {
+      "id": "a07b2ead-8395-5877-ab5c-ffd013f3f80a",
+      "sender_id": "0d62b581-c67f-52f5-8d67-2664357c80f2",
+      "receiver_id": "cb285058-9442-5ae4-b139-03e51bdf5998",
+      "sender_role": "monitoring",
+      "receiver_role": "exception",
+      "summary": "Monitoring review: the supplied independent route certificate is reported valid (certificate_valid: true) with no listed issues, so deterministic validation does not block admission of the selected hybrid candidate. That conclusion rests on the certificate itself, not on any agent message. The supplied evidence states only the validity flag and an empty issues list. It does not expose the certificate's hash values. It therefore does not independently show how the certificate binds to the frozen problem or the selected solution. That binding is treated as asserted by the certificate tool and is not re-verified here. It also does not itemize per-constraint results: mandatory stop coverage, vehicle capacity, pickup-before-dropoff and deadline checks are covered only by the aggregate flag. No invalid constraints are reported. The prior agent message is consistent with the certificate. It describes a bounded comparison of 4 candidates. Hybrid, one_truck:van2 and one_truck:van3 tie at an estimated CAD 51.99 with a 2497 s makespan. Separated costs an estimated CAD 83.63 and finishes in 2257 s. Hybrid was chosen without a stated tie-break. That message is a model-generated explanation and cannot replace or alter deterministic validation. Its evidence refs ab6ea691-6ade-4523-b440-36d7ec23b535 and 5577bf3b-cd18-4cfb-a620-0fb803712c58 were not supplied to this role and are not cited here. Remaining gaps: no hash values or explicit problem/solution binding are visible, and no per-constraint breakdown is given. Times come from a static matrix with no live traffic or truck-restriction modelling. Depot origins are unevidenced assumptions. No global optimality is claimed. Costs are supplied CAD estimates; no model API spend in USD is reported. This is a completed, certified analysis, not a dispatched plan or completed delivery.",
+      "actual": true,
+      "run_seq": 38
+    },
+    {
+      "id": "c00d1be0-f646-54ef-af01-4bf63ebc383b",
+      "sender_id": "cb285058-9442-5ae4-b139-03e51bdf5998",
+      "receiver_id": "e5090f67-84f5-5cda-9a1a-246e31dafb8d",
+      "sender_role": "exception",
+      "receiver_role": "planning",
+      "summary": "The supplied exception evidence reports a certified analysis (certificate_valid: true, empty issues list) with decision materialize_after_handoffs and replan_needed false, so dispatch admission is permitted only after all role handoffs complete and the fleet snapshot is rechecked; this is a completed certified analysis, not a dispatched plan or completed delivery. Existing running or reserved jobs and onboard cargo remain locked, and no trips exist and no deliveries are completed until materialization commits. The certificate's validity flag is aggregate only: hash values, explicit problem/solution binding and per-constraint results (stop coverage, capacity, pickup-before-dropoff, deadlines) are not visible here and are not re-verified by this role. The prior monitoring message's comparison of four candidates (hybrid and two one_truck variants tied at an estimated CAD 51.99 with 2497 s makespan; separated at an estimated CAD 83.63 with 2257 s) is model-generated explanation only, its tie-break is unstated, and it cannot alter deterministic validation. Times come from a static matrix without live traffic or truck-restriction modelling, depot origins are unevidenced assumptions, no global optimality is claimed, and no model API spend in USD is reported.",
+      "actual": true,
+      "run_seq": 46
+    }
+  ]
+}

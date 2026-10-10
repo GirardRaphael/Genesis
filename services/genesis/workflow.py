@@ -53,6 +53,16 @@ def dump(value):
 
 
 class Runtime:
+    def agent_name(self, role):
+        return (
+            "Road network"
+            if role == "traffic" and self.request.get("workflow_kind") == "broker"
+            else NAMES[role]
+        )
+
+    def prompt_path(self, role):
+        return PROMPT_ROOT / f"{role}-v1.txt"
+
     def __init__(self, store, row):
         self.store, self.run_id, self.request = store, row["id"], row["request"]
         self.fence = (row["owner"], row["generation"])
@@ -197,7 +207,9 @@ class Runtime:
                     role,
                     next_role,
                     (agent["output"].get("explanation") or {}).get("summary")
-                    or agent["output"].get("summary", f"{NAMES[role]} evidence is available"),
+                    or agent["output"].get(
+                        "summary", f"{self.agent_name(role)} evidence is available"
+                    ),
                 )
                 return {role: cached}
             if self.request["mode"] == "live" and self.store.held(self.run_id):
@@ -222,7 +234,7 @@ class Runtime:
                 "agent.started",
                 {
                     "role": role,
-                    "name": NAMES[role],
+                    "name": self.agent_name(role),
                     "prompt_version": "v1",
                     "provenance": self.request["mode"],
                 },
@@ -232,7 +244,7 @@ class Runtime:
             active_agent = {
                 "id": invocation_id,
                 "role": role,
-                "name": NAMES[role],
+                "name": self.agent_name(role),
                 "status": "running",
                 "model": None,
                 "requested_model": self.request.get("model_policy", {}).get(role),
@@ -260,7 +272,7 @@ class Runtime:
                 usage = None
                 explanation = None
                 if self.request["mode"] == "live":
-                    prompt = (PROMPT_ROOT / f"{role}-v1.txt").read_text(encoding="utf-8")
+                    prompt = self.prompt_path(role).read_text(encoding="utf-8")
                     index = ROLES.index(role)
                     prior_message = (
                         state.get(ROLES[index - 1], {}).get("agent_message") if index else None
@@ -281,7 +293,7 @@ class Runtime:
                 agent = {
                     "id": invocation_id,
                     "role": role,
-                    "name": NAMES[role],
+                    "name": self.agent_name(role),
                     "status": "succeeded",
                     "model": usage["resolved_model"] if usage else None,
                     "requested_model": usage["requested_model"] if usage else None,
@@ -304,14 +316,14 @@ class Runtime:
                     next_role,
                     explanation["summary"]
                     if explanation
-                    else output.get("summary", f"{NAMES[role]} evidence is available"),
+                    else output.get("summary", f"{self.agent_name(role)} evidence is available"),
                 )
                 return {role: result}
             except Exception as exc:
                 agent = {
                     "id": invocation_id,
                     "role": role,
-                    "name": NAMES[role],
+                    "name": self.agent_name(role),
                     "status": "cancelled" if isinstance(exc, Cancelled) else "failed",
                     "model": None,
                     "requested_model": self.request.get("model_policy", {}).get(role)

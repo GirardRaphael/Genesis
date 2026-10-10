@@ -166,4 +166,21 @@ describe("as-of replay boundaries", () => {
     expect(agentSnapshot(detail, events, null)).toBe(detail);
     expect(simulationSnapshot(detail, null)).toBe(detail);
   });
+  it("withholds future broker allocations and fleet data before completion", () => {
+    const broker = {
+      ...detail,
+      workflow_kind: "broker" as const,
+      broker_solution: { selected_strategy: "hybrid", selected: null },
+      created_trip_ids: ["future-trip"],
+      candidates: [],
+      fleet_snapshot: { vehicles: [{ id: "van1", available: true }] },
+    };
+    const early = agentSnapshot(broker, events, 0);
+    expect(early.broker_solution).toBeUndefined();
+    expect(early.created_trip_ids).toBeUndefined();
+    expect(early.fleet_snapshot).toBeUndefined();
+    expect(agentSnapshot(broker, events, 6).created_trip_ids).toEqual([
+      "future-trip",
+    ]);
+  });
 });

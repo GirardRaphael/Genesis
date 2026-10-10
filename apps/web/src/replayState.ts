@@ -90,11 +90,18 @@ export function agentSnapshot(
     finished_at: finished ? detail.finished_at : null,
     final_kind: finished ? detail.final_kind : null,
     final_output: finished ? detail.final_output : undefined,
+    broker_solution: finished ? detail.broker_solution : undefined,
+    candidates: finished ? detail.candidates : undefined,
+    created_trip_ids: finished ? detail.created_trip_ids : undefined,
+    fleet_snapshot: finished ? detail.fleet_snapshot : undefined,
     metrics: finished ? detail.metrics : null,
     baseline: validated ? detail.baseline : undefined,
     candidate: validated ? detail.candidate : undefined,
     selected_plan: validated ? detail.selected_plan : undefined,
-    certificate: validated ? detail.certificate : undefined,
+    certificate:
+      validated || (finished && detail.workflow_kind === "broker")
+        ? detail.certificate
+        : undefined,
     simulation:
       validated && detail.simulation
         ? {

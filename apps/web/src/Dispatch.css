@@ -59,7 +59,7 @@
       290px
     );
   gap: 14px;
-  align-items: stretch;
+  align-items: start;
   min-height: 650px;
 }
 .dispatch-composer,
@@ -73,6 +73,49 @@
 }
 .dispatch-composer {
   padding: 20px;
+}
+.dispatch-depot {
+  margin-top: 19px;
+  padding-top: 17px;
+  border-top: 1px solid #e2e9e9;
+}
+.dispatch-depot > p {
+  color: #5d7177;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.dispatch-manual {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e9e9;
+}
+.dispatch-manual summary {
+  color: #245f68;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dispatch-manual p {
+  margin: 10px 0;
+  color: #596e73;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.dispatch-manual label {
+  display: grid;
+  gap: 6px;
+  color: #344d54;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dispatch-manual select {
+  width: 100%;
+  margin-top: 2px;
+  padding: 10px;
+  border: 1px solid #d7e1e2;
+  border-radius: 6px;
+  background: #fbfdfd;
+  color: #253b40;
 }
 .dispatch-section-head {
   display: flex;
@@ -308,7 +351,7 @@
   color: #66858a;
 }
 .dispatch-draft small {
-  color: #697b80;
+  color: #53676d;
   font-size: 10px;
 }
 .dispatch-draft li > button {
@@ -355,6 +398,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 650px;
+  position: sticky;
+  top: 16px;
 }
 .dispatch-map-toolbar {
   display: flex;
@@ -517,6 +563,9 @@
   display: flex;
   flex-direction: column;
   padding: 17px 0 0;
+  min-height: 650px;
+  position: sticky;
+  top: 16px;
 }
 .dispatch-trips-head {
   display: flex;
@@ -526,7 +575,7 @@
   padding: 0 16px 14px;
 }
 .dispatch-trips-head h2 span {
-  color: #6c8388;
+  color: #53676d;
   font-size: 12px;
   font-weight: 500;
 }
@@ -755,6 +804,8 @@
     grid-template-columns: 280px minmax(0, 1fr);
     align-content: start;
     padding-top: 0;
+    min-height: 0;
+    position: static;
   }
   .dispatch-trips-head {
     grid-column: 1 / -1;
@@ -780,6 +831,7 @@
   }
   .dispatch-map-panel {
     grid-row: 1;
+    position: static;
   }
   .dispatch-map-shell {
     min-height: 470px;

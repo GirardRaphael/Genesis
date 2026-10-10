@@ -187,6 +187,48 @@ def test_api_boundaries_and_cursors(store):
     assert client.get(f"/api/v1/runs/{run_id}/events?after_seq=100").status_code == 409
 
 
+def test_body_limit_and_origin_cannot_be_bypassed(store):
+    import json
+
+    client = TestClient(create_app(store), raise_server_exceptions=False)
+    for malformed in ("invalid", "-1"):
+        assert (
+            client.post(
+                "/api/v1/runs", json=request(), headers={"Content-Length": malformed}
+            ).status_code
+            == 400
+        )
+    assert (
+        client.post(
+            "/api/v1/runs",
+            json=request(),
+            headers={"Origin": "http://localhost:5173@attacker.example"},
+        ).status_code
+        == 403
+    )
+    large = (json.dumps(request()) + " " * 20000).encode()
+    assert (
+        client.post(
+            "/api/v1/runs",
+            content=iter([large]),
+            headers={"Content-Type": "application/json", "Transfer-Encoding": "chunked"},
+        ).status_code
+        == 413
+    )
+    assert not store.list_runs()
+    small = json.dumps(request()).encode()
+    accepted = client.post(
+        "/api/v1/runs",
+        content=iter([small[:10], small[10:]]),
+        headers={
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked",
+            "Origin": "http://127.0.0.1:5173",
+        },
+    )
+    assert accepted.status_code == 202 and len(store.list_runs()) == 1
+
+
 def test_agent_model_filters_update_the_same_cohort(store):
     store.create_run(request(), "filter")
     run_once(store)

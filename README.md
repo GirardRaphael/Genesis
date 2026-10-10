@@ -1,8 +1,8 @@
 # Genesis Logistics Observatory
 
-Local dashboard for delivery planning and for inspecting the work, outputs, tokens and estimated API cost of five collaborating agents. The interface is French; engineering documentation is English. Logistics data and traffic are synthetic Montréal scenarios.
+Local dashboard for delivery planning and for inspecting the work, outputs, tokens and estimated API cost of five collaborating agents. The interface is French; engineering documentation is English. The benchmark uses synthetic Montréal deliveries/traffic. Operator-selected addresses, real street geometry and declared municipal worksites belong to a separate dispatch extension; vehicle motion remains simulated.
 
-Implemented: independently validated baseline/OR-Tools routes, a bounded depot-only new-order replan, durable LangGraph executions, stored outputs, map and visit tables, six observatory views, two replay clocks and paired comparisons. A separate **Livraisons Montréal** page supports address search, multiple pickup/drop-off pairs, road routes and simulated vehicle tracking on a real street map without a Maps API key. See [dispatch contract and company release gates](docs/DISPATCH.md).
+Implemented: independently validated baseline/OR-Tools routes, a bounded depot-only new-order replan, durable LangGraph executions, stored outputs, map and visit tables, six observatory views, two replay clocks and paired comparisons. A separate **Livraisons Montréal** page supports address search, multiple pickup/drop-off pairs, five-role broker planning that compares shared/split/hybrid vehicle allocation, and simulated vehicle tracking on a real street map without a Maps API key. See [dispatch contract and company release gates](docs/DISPATCH.md).
 
 Cost monitoring refreshes during operations and shows every model attempt, agent/model totals and the overall ledger across all handled requests.
 
@@ -41,6 +41,8 @@ npm.cmd test
 ```
 
 The recorded benchmark contains 20 successful Anthropic executions and 100 calls, estimated US$0.6696181. These are analysis missions: an infeasible diagnostic can be a successful analysis without being a feasible fleet plan. See [report](docs/REPORT.md), [live manifest](experiments/live-manifest.json), [implementation status](docs/IMPLEMENTATION-STATUS.md) and [independent review](docs/reviews/implementation-review.md). Local database traces are ignored by Git; the manifest, usage summary and one sample run are portable evidence, not a complete trace database. The dashboard's overall total includes additional requests and therefore can exceed the benchmark subtotal.
+
+The candid [transport-company audit checklist](docs/TRANSPORT-CHECKLIST.md) is the go/no-go reference for customer use; the current delivery is a local prototype, not a validated commercial dispatch platform.
 
 ## Engineering references
 
