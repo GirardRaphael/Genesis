@@ -2742,3 +2742,18 @@ tr.selected {
     width: 100%;
   }
 }
+@media (max-width: 360px) {
+  .sidebar nav {
+    gap: 4px;
+    padding-inline: 6px;
+  }
+  .sidebar nav button {
+    padding-inline: 6px;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .sidebar nav button svg {
+    width: 14px;
+    height: 14px;
+  }
+}

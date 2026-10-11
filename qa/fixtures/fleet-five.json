@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "vehicles": [
+    {"id": "van1", "name": "QA Fourgonnette 1", "capacity_parcels": 2},
+    {"id": "est", "name": "QA Est", "capacity_parcels": 4},
+    {"id": "ouest", "name": "QA Ouest", "capacity_parcels": 6},
+    {"id": "nord", "name": "QA Nord — fourgonnette de démonstration au nom volontairement long", "capacity_parcels": 8},
+    {"id": "sud", "name": "QA Sud", "capacity_parcels": 10}
+  ]
+}

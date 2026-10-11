@@ -10,6 +10,8 @@ The broker intake slice adds a persistent **Carnet de commandes**: save geocoded
 
 The operator interface has three workspaces: Opérations opens Montréal dispatch, Analytique contains global reporting, and Agents groups execution activity, history, comparisons and detailed results. Historical links remain valid. Removable active filters, named compact/mobile navigation and Montréal daylight-saving-aware timestamps make the current scope visible. Analytics offers a local CSV export with units, timestamps, coverage and explicit limits; selected delivery stops link their schedule, map marker and paired pickup/drop-off details. See [interface refinement and verification scope](docs/work/U14-interface.md).
 
+The local dispatch fleet can optionally use a validated 1–10 vehicle JSON roster with per-vehicle parcel capacities; the default remains four 40-parcel vans. API/worker configuration fingerprints fence stale plans and unsafe changes while retaining historical trips. See [fleet configuration](docs/FLEET-CONFIGURATION.md). A disposable QA harness runs on API 8061/web 5174 with temporary SQLite state; `--fleet-fixture` supplies a synthetic five-van roster. See [isolated QA](docs/QA.md).
+
 Optional email alerts notify one configured recipient when the shared API budget guard triggers. The dashboard shows queued, SMTP-accepted, failed or uncertain delivery. Configure the SMTP fields in the private `.env`; see [budget-email setup and delivery contract](docs/BUDGET-EMAIL.md). No external email service is configured by default.
 
 The dispatcher now previews operator-entered addresses and multiple deliveries before reserving a van. Its route library recognizes completed recurring work and compares historical stop orders with simulated elapsed time, distance and cadence. Routine explanations use three live calls on a history miss and zero when a completed historical assignment matches the newly validated plan; the complete five-call policy remains selectable. Current roads, fleet, deadlines and certificates are checked every time. See [route-memory contract](docs/ROUTE-MEMORY.md).
@@ -30,7 +32,7 @@ Open [the dashboard](http://127.0.0.1:5173) or [API documentation](http://127.0.
 
 If an already-open route form still reports `Request fields or query bounds are invalid` after updating the U16 fix, reselect its pickup, drop-off and depot addresses or reload and enter the draft again. The repaired picker removes geocoder metadata before submission; hot reload can preserve an older in-memory draft. See [the repair and verification record](docs/work/U16-route-submission.md).
 
-SQLite is the verified local profile. PostgreSQL Compose and external Langfuse export are optional, unverified configurations. The loopback profile is not a publicly authenticated deployment.
+SQLite is the verified local profile. Application-only online backup/restore has been rehearsed against temporary fixtures; it does not include LangGraph checkpoints or establish cross-checkpoint worker recovery. PostgreSQL Compose and external Langfuse export are optional, unverified configurations. The loopback profile is not a publicly authenticated deployment.
 
 ## Verify and reproduce
 
@@ -54,7 +56,7 @@ npx.cmd playwright test --config playwright.routes.config.ts
 
 The recorded benchmark contains 20 successful Anthropic executions and 100 calls, estimated US$0.6696181. These are analysis missions: an infeasible diagnostic can be a successful analysis without being a feasible fleet plan. See [report](docs/REPORT.md), [live manifest](experiments/live-manifest.json), [implementation status](docs/IMPLEMENTATION-STATUS.md) and [independent review](docs/reviews/implementation-review.md). Local database traces are ignored by Git; the manifest, usage summary and one sample run are portable evidence, not a complete trace database. The dashboard's overall total includes additional requests and therefore can exceed the benchmark subtotal.
 
-The candid [transport-company audit checklist](docs/TRANSPORT-CHECKLIST.md) is the go/no-go reference for customer use; the current delivery is a local prototype, not a validated commercial dispatch platform.
+The candid [transport-company audit checklist](docs/TRANSPORT-CHECKLIST.md) is the go/no-go reference for customer use; the current delivery is a local prototype, not a validated commercial dispatch platform. U18/U19 local readiness evidence and remaining gates are summarized in [implementation status](docs/IMPLEMENTATION-STATUS.md).
 
 ## Engineering references
 

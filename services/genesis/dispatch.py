@@ -18,6 +18,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Column, MetaData, String, Table, Text, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 
+from .fleet_config import VEHICLE_ID_PATTERN, bind_fleet, configured_van, current_fleet
+
 
 BBOX = (-74.05, 45.38, -73.42, 45.74)
 PHOTON = "https://photon.komoot.io"
@@ -80,7 +82,7 @@ class Delivery(BaseModel):
 class TripRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(default="Livraisons Montréal", min_length=1, max_length=120)
-    vehicle_id: str = Field(pattern=r"^van[1-4]$")
+    vehicle_id: str = Field(pattern=VEHICLE_ID_PATTERN)
     deliveries: list[Delivery] = Field(min_length=1, max_length=10)
 
 
@@ -91,7 +93,7 @@ class PreviewRequest(BaseModel):
 
 class ReuseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    vehicle_id: str = Field(pattern=r"^van[1-4]$")
+    vehicle_id: str = Field(pattern=VEHICLE_ID_PATTERN)
     name: str | None = Field(default=None, min_length=1, max_length=120)
     variant_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
@@ -112,6 +114,26 @@ def _validated_deliveries(deliveries: list[dict]) -> list[dict]:
 
 def _error(status: int, code: str, message: str, retryable: bool = False) -> HTTPException:
     return HTTPException(status, {"code": code, "message": message, "retryable": retryable})
+
+
+def _validate_trip_capacity(request: dict, capacity: int) -> None:
+    deliveries = {delivery["id"]: delivery for delivery in request["deliveries"]}
+    order = request.get("stop_order") or [f"{delivery['id']}:{kind}" for delivery in request["deliveries"] for kind in ("pickup", "dropoff")]
+    expected = {f"{delivery_id}:{kind}" for delivery_id in deliveries for kind in ("pickup", "dropoff")}
+    if len(order) != len(expected) or set(order) != expected:
+        raise _error(422, "invalid_trip_order", "Trip has missing or duplicate stops")
+    load, onboard = 0, set()
+    for stop in order:
+        delivery_id, kind = stop.rsplit(":", 1)
+        if kind == "dropoff" and delivery_id not in onboard:
+            raise _error(422, "invalid_trip_order", "Dropoff must follow its pickup")
+        if kind == "pickup":
+            onboard.add(delivery_id)
+        else:
+            onboard.remove(delivery_id)
+        load += deliveries[delivery_id]["parcels"] * (1 if kind == "pickup" else -1)
+        if not 0 <= load <= capacity:
+            raise _error(422, "route_capacity", "Trip exceeds the selected van's parcel capacity")
 
 
 def _provider_json(url: str, params: dict | None = None) -> dict:
@@ -309,7 +331,7 @@ def _road_route(stops: list[dict], *, continue_straight: bool | None = None) -> 
 def road_matrix(nodes: list[dict]) -> dict:
     """One directional OSRM table for the frozen broker problem."""
     global _last_route_request
-    if not 2 <= len(nodes) <= 24 or any(not _inside(n["coordinates"]) for n in nodes):
+    if not 2 <= len(nodes) <= 30 or any(not _inside(n["coordinates"]) for n in nodes):
         raise _error(
             422, "invalid_matrix_nodes", "Road matrix nodes are outside the supported area"
         )
@@ -386,9 +408,13 @@ def _held_cargo(row) -> int:
 
 
 def _fleet_state(conn, vehicle_ids: list[str], depot: dict) -> dict:
+    config = current_fleet(conn)
+    if len(set(vehicle_ids)) != len(vehicle_ids):
+        raise _error(422, "duplicate_vehicle", "Vehicle IDs must be unique")
     rows = conn.execute(select(_trips).where(_trips.c.vehicle_id.in_(vehicle_ids))).mappings().all()
     vehicles = []
     for vehicle_id in vehicle_ids:
+        van = configured_van(conn, vehicle_id)
         history = [dict(row) for row in rows if row["vehicle_id"] == vehicle_id]
         held_cargo = sum(_held_cargo(row) for row in history)
         busy = any(_project(row)["status"] in {"ready", "running"} for row in history)
@@ -406,6 +432,9 @@ def _fleet_state(conn, vehicle_ids: list[str], depot: dict) -> dict:
         vehicles.append(
             {
                 "id": vehicle_id,
+                "name": van.name,
+                "capacity_parcels": van.capacity_parcels,
+                "fleet_config_version": config.fingerprint,
                 "available": not busy and not held_cargo,
                 "unresolved_cargo_parcels": held_cargo,
                 "origin": origin,
@@ -414,11 +443,11 @@ def _fleet_state(conn, vehicle_ids: list[str], depot: dict) -> dict:
                 "latest_trip_status": _project(latest)["status"] if latest else None,
             }
         )
-    return {"vehicles": vehicles}
+    return {"vehicles": vehicles, "fleet_config_version": config.fingerprint}
 
 
 def fleet_snapshot(engine, vehicle_ids: list[str], depot: dict) -> dict:
-    _trips.create(engine, checkfirst=True)
+    bind_fleet(engine)
     with engine.connect() as conn:
         return _fleet_state(conn, vehicle_ids, depot)
 
@@ -516,6 +545,8 @@ def materialize_broker_trips(
             "stop_order": stop_order,
             "service_seconds": service_seconds,
             "owner_run_id": run_id,
+            "fleet_config_version": snapshot["fleet_config_version"],
+            "capacity_parcels": next(v["capacity_parcels"] for v in snapshot["vehicles"] if v["id"] == vehicle_id),
             "broker_policy": constraint_policy(request),
             "broker_plan": {
                 "input_hash": problem["input_hash"],
@@ -544,6 +575,8 @@ def materialize_broker_trips(
                 raise _error(409, "materialization_conflict", "Broker trip creation was incomplete")
             return [row["id"] for row in existing]
         current = _fleet_state(conn, [v["id"] for v in snapshot["vehicles"]], request["depot"])
+        if current["fleet_config_version"] != snapshot["fleet_config_version"]:
+            raise _error(409, "fleet_changed", "Fleet configuration changed; replan")
         frozen = {v["id"]: v for v in snapshot["vehicles"]}
         for vehicle_id, _, _ in prepared:
             previous = frozen[vehicle_id]
@@ -552,12 +585,14 @@ def materialize_broker_trips(
                 not latest["available"]
                 or latest["latest_trip_id"] != previous["latest_trip_id"]
                 or latest["latest_trip_status"] != previous["latest_trip_status"]
+                or latest["capacity_parcels"] != previous["capacity_parcels"]
             ):
                 raise _error(
                     409, "fleet_changed", "A selected van changed; replan with the current fleet"
                 )
         ids = []
         for vehicle_id, trip_request, road in prepared:
+            _validate_trip_capacity(trip_request, configured_van(conn, vehicle_id).capacity_parcels)
             trip_id = str(uuid4())
             ids.append(trip_id)
             conn.execute(
@@ -746,6 +781,7 @@ def _ready_values(request: dict, route: dict, fingerprint: str, key: str | None)
 def register_dispatch(app: FastAPI) -> None:
     """Attach dispatch endpoints to an app whose state.store is already configured."""
     _trips.create(app.state.store.engine, checkfirst=True)
+    bind_fleet(app.state.store.engine)
     reconcile_broker_ready_trips(app.state.store)
 
     def get_row(trip_id: UUID) -> dict:
@@ -757,6 +793,8 @@ def register_dispatch(app: FastAPI) -> None:
 
     @app.get("/api/v1/dispatch/config")
     def dispatch_config():
+        with app.state.store.engine.connect() as conn:
+            config = current_fleet(conn)
         return {
             "map_style": "https://tiles.openfreemap.org/styles/positron",
             "geocoder": "Photon",
@@ -764,6 +802,8 @@ def register_dispatch(app: FastAPI) -> None:
             "tracking_mode": "simulation",
             "speedup": SPEEDUP,
             "capacity_parcels": 40,
+            "fleet_config_version": config.fingerprint,
+            "vehicles": [van.model_dump() for van in config.vehicles],
             "limits": "Public demo geocoding/routing has no production SLA; configure GENESIS_GEOCODER_URL and GENESIS_ROUTER_URL for owned services. No live GPS, live traffic, vehicle restrictions, or route optimization.",
         }
 
@@ -771,7 +811,7 @@ def register_dispatch(app: FastAPI) -> None:
     def dispatch_fleet():
         return fleet_snapshot(
             app.state.store.engine,
-            [f"van{i}" for i in range(1, 5)],
+            [van.id for van in bind_fleet(app.state.store.engine).vehicles],
             {"coordinates": [-73.5673, 45.5019]},
         )
 
@@ -788,7 +828,7 @@ def register_dispatch(app: FastAPI) -> None:
         road = _road_route([d[kind] for d in deliveries for kind in ("pickup", "dropoff")])
         projected = _project(
             _ready_values(
-                {"name": "Preview", "vehicle_id": "van1", "deliveries": deliveries}, road, "", None
+                {"name": "Preview", "vehicle_id": "preview", "deliveries": deliveries}, road, "", None
             )
         )
         return {key: projected[key] for key in ("tracking_mode", "deliveries", "stops", "route")}
@@ -873,6 +913,7 @@ def register_dispatch(app: FastAPI) -> None:
             "coordinates": deliveries[0]["pickup"]["coordinates"]
         }
         frozen = fleet_snapshot(engine, [body.vehicle_id], depot)["vehicles"][0]
+        request.update({"fleet_config_version": frozen["fleet_config_version"], "capacity_parcels": frozen["capacity_parcels"]})
         if not frozen["available"]:
             raise _error(409, "vehicle_busy", "Van is busy or has unresolved cargo")
         by_id = {d["id"]: d for d in deliveries}
@@ -882,7 +923,7 @@ def register_dispatch(app: FastAPI) -> None:
             delivery_id, kind = stop_id.rsplit(":", 1)
             delivery = by_id[delivery_id]
             load += delivery["parcels"] * (1 if kind == "pickup" else -1)
-            if not 0 <= load <= 40:
+            if not 0 <= load <= frozen["capacity_parcels"]:
                 raise _error(422, "route_capacity", "Saved route exceeds current parcel capacity")
             stops.append(delivery[kind])
         road = _road_route(stops, continue_straight=False)
@@ -951,6 +992,10 @@ def register_dispatch(app: FastAPI) -> None:
                 if existing["request_hash"] != fingerprint:
                     raise _error(409, "idempotency_conflict", "Key belongs to a different trip")
                 return _project(dict(existing))
+        with engine.connect() as conn:
+            van = configured_van(conn, request["vehicle_id"])
+            request.update({"fleet_config_version": current_fleet(conn).fingerprint, "capacity_parcels": van.capacity_parcels})
+        _validate_trip_capacity(request, van.capacity_parcels)
         stops = []
         for delivery in request["deliveries"]:
             for kind in ("pickup", "dropoff"):
@@ -961,6 +1006,8 @@ def register_dispatch(app: FastAPI) -> None:
             with app.state.store.transaction() as conn:
                 if engine.dialect.name == "postgresql":
                     conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+                van = configured_van(conn, request["vehicle_id"])
+                _validate_trip_capacity(request, van.capacity_parcels)
                 reservations = (
                     conn.execute(select(_trips).where(_trips.c.vehicle_id == request["vehicle_id"]))
                     .mappings()
@@ -1010,6 +1057,11 @@ def register_dispatch(app: FastAPI) -> None:
             if row["status"] == "cancelled" or _project(row)["status"] == "completed":
                 raise _error(409, "trip_not_startable", "Trip cannot be started")
             if row["status"] == "ready":
+                request = json.loads(row["request_json"])
+                van = configured_van(conn, row["vehicle_id"])
+                _validate_trip_capacity(request, van.capacity_parcels)
+                if request.get("fleet_config_version", current_fleet(conn).fingerprint) != current_fleet(conn).fingerprint:
+                    raise _error(409, "fleet_changed", "Trip uses a different fleet configuration; replan")
                 cancelled = (
                     conn.execute(
                         select(_trips).where(

@@ -39,7 +39,7 @@
 }
 .broker-vehicles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 4px;
   margin-top: 7px;
 }
@@ -55,6 +55,8 @@
   background: #f8fbfa;
   cursor: pointer;
   font-size: 11px;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .broker-vehicles label:has(input:checked) {
   border-color: #237481;
@@ -74,7 +76,7 @@
   display: none;
 }
 .broker-vehicles small {
-  font-size: 9px;
+  font-size: 10px;
 }
 .broker-origin-note {
   margin: 7px 0 0;

@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from sqlalchemy import select, update
 
 from .db import BudgetExceeded, LostLease, Store, now, outbox
+from .fleet_config import bind_fleet
 from .llm import BillingUncertain, LiveUnavailable
 from .notifications import drain_budget_alerts
 from .workflow import Cancelled, RunTimedOut, Runtime
@@ -172,6 +173,7 @@ def main():
     parser.add_argument("--seed-demo", action="store_true")
     args = parser.parse_args()
     store = Store()
+    bind_fleet(store.engine)
     if args.seed_demo:
         seed_demo(store)
         return

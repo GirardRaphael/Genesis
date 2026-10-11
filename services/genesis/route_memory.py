@@ -42,7 +42,7 @@ def constraint_policy(request: dict) -> dict:
     """Only transport constraints, never model settings, prompt text or private geometry."""
     return {
         "version": 1,
-        "capacity": 40,
+        **({"fleet_config_version": request["fleet_config_version"], "vehicle_capacities": request["vehicle_capacities"]} if "fleet_config_version" in request else {"capacity": 40}),
         "max_duration_s": 28800,
         "depot": _place(request["depot"]),
         "vehicle_ids": sorted(request["vehicle_ids"]),

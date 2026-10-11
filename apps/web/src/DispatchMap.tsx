@@ -9,7 +9,8 @@ import type {
   Place,
   Roadwork,
 } from "./dispatchTypes";
-import { mapFocusCoordinates } from "./dispatchView";
+import { dispatchColor, mapFocusCoordinates } from "./dispatchView";
+export { dispatchColor } from "./dispatchView";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -18,7 +19,6 @@ const ISLAND_BOUNDS = new maplibregl.LngLatBounds(
   [-74.05, 45.38],
   [-73.42, 45.74],
 );
-const COLORS = ["#167887", "#65649a", "#925e27", "#366a4d"];
 const LON_SCALE = Math.cos((45.5 * Math.PI) / 180);
 const segmentLength = (a: Coordinates, b: Coordinates) =>
   Math.hypot((b[0] - a[0]) * LON_SCALE, b[1] - a[1]);
@@ -74,12 +74,8 @@ function pointAt(
     }
   return points.at(-1) || CENTER;
 }
-export const dispatchColor = (vehicle: string) =>
-  COLORS[
-    Math.max(0, Number(vehicle.match(/(\d+)$/)?.[1] || 1) - 1) % COLORS.length
-  ];
-
 type Props = {
+  colors: Record<string, string>;
   trips: DispatchTrip[];
   selected: string;
   selectedStopId: string;
@@ -94,6 +90,7 @@ type Props = {
 };
 
 export function DispatchMap({
+  colors,
   trips,
   selected,
   selectedStopId,
@@ -333,7 +330,7 @@ export function DispatchMap({
         type: "Feature" as const,
         properties: {
           trip_id: trip.id,
-          color: dispatchColor(trip.vehicle_id),
+          color: colors[trip.vehicle_id] || dispatchColor(trip.vehicle_id),
           width: trip.id === selected ? 6 : 3.5,
           opacity: trip.id === selected ? 1 : 0.55,
         },
@@ -422,7 +419,7 @@ export function DispatchMap({
         stopMarkers.current.delete(key);
       }
     }
-  }, [trips, selected, selectedStopId, ready, draftPlaces, preview]);
+  }, [trips, selected, selectedStopId, ready, draftPlaces, preview, colors]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -467,7 +464,10 @@ export function DispatchMap({
         const element = document.createElement("button");
         element.type = "button";
         element.className = "dispatch-map-vehicle";
-        element.style.setProperty("--vehicle", dispatchColor(trip.vehicle_id));
+        element.style.setProperty(
+          "--vehicle",
+          colors[trip.vehicle_id] || dispatchColor(trip.vehicle_id),
+        );
         element.textContent = "➤";
         element.title = `${trip.vehicle_id} · position simulée, pas GPS`;
         element.setAttribute("aria-label", element.title);
@@ -478,6 +478,10 @@ export function DispatchMap({
         vehicles.current.set(trip.id, marker);
         continue;
       }
+      marker.getElement().style.setProperty(
+        "--vehicle",
+        colors[trip.vehicle_id] || dispatchColor(trip.vehicle_id),
+      );
       const previousFrame = animations.current.get(trip.id);
       if (previousFrame != null) cancelAnimationFrame(previousFrame);
       const previous = marker.getLngLat();
@@ -508,7 +512,7 @@ export function DispatchMap({
       };
       animations.current.set(trip.id, requestAnimationFrame(frame));
     }
-  }, [trips, ready]);
+  }, [trips, ready, colors]);
 
   useEffect(() => {
     const map = mapRef.current;

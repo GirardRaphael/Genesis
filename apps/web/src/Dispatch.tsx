@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Clock3,
@@ -20,6 +20,11 @@ import type { BrokerOrder } from "./orderData";
 import { DispatchMap, dispatchColor } from "./DispatchMap";
 import { RouteLibrary } from "./RouteLibrary";
 import { selectedDispatchStop, type StopSelection } from "./dispatchSelection";
+import {
+  selectedVehicleAfterConfig,
+  vehicleLabel,
+  vehicleColors,
+} from "./dispatchView";
 import type {
   BrokerDelivery,
   DispatchTrip,
@@ -27,6 +32,7 @@ import type {
   GeocodeResult,
   Place,
   Traffic,
+  DispatchConfig,
 } from "./dispatchTypes";
 import "./Dispatch.css";
 
@@ -113,7 +119,9 @@ export function Dispatch() {
   const acting = useRef(false);
   const createIntent = useRef<{ body: string; key: string } | null>(null);
   const [refresh, setRefresh] = useState(0);
-  const [vehicle, setVehicle] = useState("van1");
+  const [vehicle, setVehicle] = useState("");
+  const [config, setConfig] = useState<DispatchConfig | null>(null);
+  const [configError, setConfigError] = useState("");
   const [pickup, setPickup] = useState<Place | null>(null);
   const [dropoff, setDropoff] = useState<Place | null>(null);
   const [depot, setDepot] = useState<Place | null>(null);
@@ -140,6 +148,39 @@ export function Dispatch() {
   const [trafficError, setTrafficError] = useState("");
   const [showRoadworks, setShowRoadworks] = useState(false);
   const [trafficRefresh, setTrafficRefresh] = useState(0);
+  const colors = useMemo(
+    () => ({
+      ...vehicleColors(trips.map((trip) => trip.vehicle_id)),
+      ...vehicleColors(config?.vehicles.map((item) => item.id) || []),
+    }),
+    [trips, config],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api<DispatchConfig>("/dispatch/config", controller.signal)
+      .then((value) => {
+        if (controller.signal.aborted) return;
+        if (!Array.isArray(value.vehicles) || !value.vehicles.length)
+          throw new Error(
+            "La configuration de flotte est indisponible. Actualisez après le redémarrage du serveur.",
+          );
+        setConfig(value);
+        setVehicle((current) =>
+          selectedVehicleAfterConfig(current, value.vehicles),
+        );
+        setConfigError("");
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted)
+          setConfigError(
+            reason instanceof Error
+              ? reason.message
+              : "Configuration indisponible",
+          );
+      });
+    return () => controller.abort();
+  }, [refresh]);
 
   useEffect(() => {
     previewRequest.current?.abort();
@@ -346,6 +387,12 @@ export function Dispatch() {
 
   async function createTrip() {
     if (creating.current || selectedOrders.length) return;
+    if (configError || !config?.vehicles.some((item) => item.id === vehicle)) {
+      setFormError(
+        "Chargez une configuration de flotte valide avant de créer un trajet.",
+      );
+      return;
+    }
     if (!draft.length) {
       setFormError("Ajoutez au moins une livraison avant de créer le trajet.");
       return;
@@ -735,19 +782,40 @@ export function Dispatch() {
                 Véhicule
                 <select
                   value={vehicle}
+                  disabled={!config || !!configError}
                   onChange={(event) => setVehicle(event.target.value)}
                 >
-                  {[1, 2, 3, 4].map((n) => (
-                    <option key={n} value={`van${n}`}>
-                      Véhicule {n}
+                  {!config && (
+                    <option value="">Chargement de la flotte…</option>
+                  )}
+                  {config?.vehicles.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} · {item.capacity_parcels} colis
                     </option>
                   ))}
                 </select>
               </label>
+              {configError && (
+                <p role="alert">
+                  {configError}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setRefresh((value) => value + 1)}
+                  >
+                    Réessayer
+                  </button>
+                </p>
+              )}
               <button
                 type="button"
                 className="dispatch-create"
-                disabled={busy === "create" || !draft.length}
+                disabled={
+                  busy === "create" ||
+                  !draft.length ||
+                  !config ||
+                  !!configError ||
+                  !vehicle
+                }
                 onClick={() => void createTrip()}
               >
                 {busy === "create" ? (
@@ -790,6 +858,7 @@ export function Dispatch() {
             </div>
           </div>
           <DispatchMap
+            colors={colors}
             trips={showTrips ? visibleTrips : []}
             selected={selected}
             selectedStopId={selectedStop?.id || ""}
@@ -804,9 +873,15 @@ export function Dispatch() {
           />
           <div className="dispatch-map-foot">
             <div className="dispatch-legend">
-              {[1, 2, 3, 4].map((n) => (
-                <span key={n}>
-                  <i style={{ background: dispatchColor(`van${n}`) }} />V{n}
+              {[
+                ...new Set([
+                  ...(config?.vehicles.map((item) => item.id) || []),
+                  ...trips.map((trip) => trip.vehicle_id),
+                ]),
+              ].map((id) => (
+                <span key={id}>
+                  <i style={{ background: colors[id] || dispatchColor(id) }} />
+                  {vehicleLabel(id, config?.vehicles || [])}
                 </span>
               ))}
               <span>
@@ -936,10 +1011,14 @@ export function Dispatch() {
                   <div className="dispatch-trip-top">
                     <span
                       className="dispatch-vehicle-dot"
-                      style={{ background: dispatchColor(trip.vehicle_id) }}
+                      style={{
+                        background:
+                          colors[trip.vehicle_id] ||
+                          dispatchColor(trip.vehicle_id),
+                      }}
                     />
                     <strong>
-                      {trip.vehicle_id.replace("van", "Véhicule ")}
+                      {vehicleLabel(trip.vehicle_id, config?.vehicles || [])}
                     </strong>
                     <span className={`dispatch-status ${trip.status}`}>
                       {statusName(trip.status)}

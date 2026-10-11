@@ -14,6 +14,16 @@ Dispatch selected-stop state is presentation-only `(tripId, stopId)`. Resolve it
 
 U17 adds project-scoped durable orders and tracked broker request claims. See [BROKER-ORDERS.md](BROKER-ORDERS.md) for states, endpoint constraints, immutable payload and proposal-versus-delivery semantics. `explanation_policy=none` explicitly skips model calls; actual tool durations and handoffs remain. Request `mode=live` alone is not evidence of a model attempt. `model_policy_id=deterministic-tools-v1` identifies that omission policy, while leaf-attempt records remain authoritative for usage. Customer/reference/date metadata stays in local order storage and is not included in model evidence.
 
+## U18 SQLite recovery and isolated QA
+
+The online backup bundle contains the application database only. Its schema gate requires core application tables and validates `dispatch_trips` and `dispatch_fleet_config` fully when present, while accepting legacy U17 snapshots where either optional dispatch table is absent. Restore is to a new destination and preserves application orders/plans/trips/events/budget state; it does not restore LangGraph's separate checkpoint database or prove worker recovery across checkpoints. See [DATABASE-RECOVERY.md](DATABASE-RECOVERY.md).
+
+The disposable QA profile uses temporary SQLite state and synthetic providers. Its fixed five-van fixture is explicitly selected with `--fleet-fixture`; it never imports operator dotenv/configuration, calls paid providers or sends email. It is local acceptance evidence, not production or live-provider provenance. See [QA.md](QA.md).
+
+## U19 configurable fleet
+
+`GENESIS_FLEET_CONFIG` optionally selects a private UTF-8 JSON roster with 1–10 unique vehicles and parcel capacities 1–40. Absence retains the four-vehicle, 40-parcel default. The API and worker bind to the validated canonical roster hash. Changes require quiescence: active reservations/trips, queued/running broker work and unresolved cargo fence incompatible updates; stale processes and frozen plans fail closed. Historical trip records remain readable after quiescent removals. This hash/configuration is an application contract, not user authentication, tenant identity or physical truck/legal-load validation. See [FLEET-CONFIGURATION.md](FLEET-CONFIGURATION.md).
+
 Use UUID identities for project, run, invocation, model call, tool call, attempt, event, artifact and evaluation. One agent invocation may contain several model calls and tool calls. A retry is a new attempt under the same logical call. A revised analysis is a new invocation referencing the superseded artifact. Every stored row belongs to one project, including checkpoint and artifact metadata.
 
 Each event has `schema_version`, `event_id`, `project_id`, `run_id`, `run_seq`, `kind`, `occurred_at`, `ingested_at`, optional `invocation_id`, `attempt_id`, `caused_by_event_id`, `trace_id`, `span_id`, and a schema-validated redacted `payload`. UTC RFC3339 timestamps preserve milliseconds; the UI renders in its explicit timezone, initially America/Toronto. Derive durations from a monotonic clock within a process and store integer milliseconds. Do not subtract clocks from unrelated workers as if they were synchronized.

@@ -11,13 +11,13 @@ import {
   Truck,
 } from "lucide-react";
 import { api } from "./api";
-import { selectedVehiclesAfterRefresh } from "./dispatchView";
+import { selectedVehiclesAfterRefresh, vehicleLabel } from "./dispatchView";
 import { money, num } from "./state";
 import type { Usage } from "./analyticsData";
 import type {
   BrokerDelivery,
   BrokerPlan,
-  Coordinates,
+  FleetSnapshot,
   DispatchTrip,
   Place,
 } from "./dispatchTypes";
@@ -44,7 +44,6 @@ const TERMINAL = new Set([
   "timed_out",
   "budget_exceeded",
 ]);
-const DEFAULT_VANS = ["van1", "van2", "van3", "van4"];
 const strategyName = (strategy: string) =>
   strategy === "hybrid"
     ? "Regroupement libre"
@@ -77,16 +76,6 @@ const agentStatus = (status?: string) =>
           ? "Annulé"
           : "En attente";
 
-type Fleet = {
-  vehicles: {
-    id: string;
-    available: boolean;
-    unresolved_cargo_parcels?: number;
-    origin?: Coordinates;
-    origin_assumed?: boolean;
-  }[];
-  captured_at?: string;
-};
 type Props = {
   deliveries: BrokerDelivery[];
   depot: Place | null;
@@ -104,7 +93,7 @@ export function BrokerPlanning({
   onPlanSubmitted,
   onTripsCreated,
 }: Props) {
-  const [fleet, setFleet] = useState<Fleet | null>(null);
+  const [fleet, setFleet] = useState<FleetSnapshot | null>(null);
   const [fleetError, setFleetError] = useState("");
   const [eligible, setEligible] = useState<string[]>([]);
   const initialFleet = useRef(false);
@@ -148,7 +137,10 @@ export function BrokerPlanning({
       if (inFlight) return;
       inFlight = true;
       try {
-        const value = await api<Fleet>("/dispatch/fleet", controller.signal);
+        const value = await api<FleetSnapshot>(
+          "/dispatch/fleet",
+          controller.signal,
+        );
         if (!controller.signal.aborted) {
           setFleet(value);
           setFleetError("");
@@ -346,10 +338,7 @@ export function BrokerPlanning({
       <div className="broker-field">
         <span className="broker-label">Véhicules admissibles</span>
         <div className="broker-vehicles">
-          {(
-            fleet?.vehicles ||
-            DEFAULT_VANS.map((id) => ({ id, available: false }))
-          ).map((van) => (
+          {(fleet?.vehicles || []).map((van) => (
             <label key={van.id} className={!van.available ? "unavailable" : ""}>
               <input
                 type="checkbox"
@@ -364,7 +353,8 @@ export function BrokerPlanning({
                 }
               />
               <Truck size={14} />
-              <span>{van.id.replace("van", "V")}</span>
+              <span>{vehicleLabel(van.id, fleet?.vehicles || [])}</span>
+              <small>{van.capacity_parcels} colis max.</small>
               <small>
                 {van.available
                   ? van.origin_assumed
@@ -378,6 +368,9 @@ export function BrokerPlanning({
             </label>
           ))}
         </div>
+        {!fleet && !fleetError && (
+          <p role="status">Chargement de la flotte configurée…</p>
+        )}
         <p className="broker-origin-note">
           Vos choix sont conservés lorsque les véhicules deviennent occupés. Le
           serveur garde ces véhicules verrouillés et les exclut de l’affectation
@@ -808,7 +801,7 @@ function PlanResult({
                     <p>
                       <Truck size={13} />{" "}
                       {trip
-                        ? `${trip.vehicle_id.replace("van", "Véhicule ")} · ${trip.stops.length} arrêts · ${trip.route.distance_km.toFixed(1)} km · ${trip.status === "ready" ? "Prête" : trip.status === "running" ? "En simulation" : trip.status === "completed" ? "Terminée" : "Annulée"}`
+                        ? `${vehicleLabel(trip.vehicle_id, plan?.fleet_snapshot?.vehicles || [])} · ${trip.stops.length} arrêts · ${trip.route.distance_km.toFixed(1)} km · ${trip.status === "ready" ? "Prête" : trip.status === "running" ? "En simulation" : trip.status === "completed" ? "Terminée" : "Annulée"}`
                         : `Trajet ${id.slice(0, 8)} · chargement…`}
                     </p>
                     {trip && (

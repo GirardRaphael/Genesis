@@ -37,6 +37,8 @@ Decisions are dated 2026-10-10 and remain implementation proposals unless explic
 | D29 | Power BI-style analytics in the custom dashboard | User requested KPI/graph/donut exploration; reuse ECharts and common filtered API cohorts | Broader warehouse/reporting needs demonstrated |
 | D30 | Keyless Montréal dispatch with open road map/address/routing providers | User declined Google billing/API setup; OpenFreeMap/Photon/OSRM are replaceable and the local prototype separates real street geometry, declared worksites and simulated vehicles | Commercial deployment requires owned geocoding/routing, authentication, driver tracking and SLA evidence |
 | D31 | Implemented local one-per-budget email queue with a separate SMTP worker (U13) | Preserve transactional budget evidence and delivery state without blocking model work or adding a provider dependency | Verified external mail service, a new budget lifecycle, supported recovery/reset requirements or a measured need for another transport |
+| D36 | U18 recovery bundles cover SQLite application DB only; optional dispatch tables are schema-checked when present | Keep legacy U17 backups compatible without weakening validation; separate application state from LangGraph checkpoint state | Cross-checkpoint recovery or unattended production restore becomes a required, rehearsed workflow |
+| D37 | U19 fleet roster is optional local configuration, canonical-hash-bound across API/worker | Preserve default four 40-parcel vans while supporting a bounded local roster and failing closed on stale fleet assumptions | Authenticated multi-tenant fleet administration, physical truck constraints or a migration to a different configuration authority |
 
 ## ADR D31 — budget email, 2026-10-10
 
@@ -86,3 +88,11 @@ U16 removes geocoder metadata at the shared address-selection boundary, retainin
 U17 uses the existing database, solver, independent certificate and five-role graph. Persist a minimal local order ledger with immutable delivery payloads, normalized unique references and atomic plan claims. Reference retries are idempotent only for identical content. Structured CSV is previewed and committed as a bounded all-or-nothing batch. An organizational service date must not imply unsupported calendar scheduling.
 
 The daily planner defaults to `explanation_policy=none`: all tools/checks still run without Anthropic key, billing reservations or generated explanations. Keep live/fixture provenance backward compatible and disclose the separate policy in detail/UI; never count a no-model run as a paid model experiment. Complete five-role Anthropic explanations and original scenario experiments remain available, satisfying the user's reminder to retain explicitly required project technologies and workflows. Hide diagnostic density behind disclosures rather than remove required charts or telemetry. Prepared trips remain simulation-only and wait for an explicit start.
+
+### D36 — Application-only SQLite recovery (U18, 2026-10-11)
+
+Keep online SQLite backup/restore scoped to the application database and always restore to a new file. Core tables remain required; legacy U17 backups may omit optional `dispatch_trips` and `dispatch_fleet_config`, but either table is validated fully when present. The bundle does not include LangGraph checkpoint state, so it cannot establish a coherent worker recovery point. Do not route a restored copy into a running worker without a separately reviewed quiesced cross-database recovery contract.
+
+### D37 — Bounded local fleet roster (U19, 2026-10-11)
+
+Allow an optional local JSON fleet configuration of 1–10 vehicles with parcel capacities from 1–40, preserving the existing four 40-parcel default. Bind API, worker, trip admission and broker plans to its canonical hash. Require quiescence around roster changes and retain historical trip readability. This controls local dispatch assumptions only; it does not provide fleet CRUD, user identity, tenant isolation or vehicle/legal-load qualification.

@@ -1,0 +1,2 @@
+reference,customer,service_date,pickup_label,pickup_longitude,pickup_latitude,dropoff_label,dropoff_longitude,dropoff_latitude,parcels,deadline_minutes
+QA-U18-INVALID,Client synthétique,2026-10-11,"4500 rue Saint-Denis, Montréal",-73.582,45.523,"1050 avenue du Mont-Royal Est, Montréal",-73.581,45.528,0,120

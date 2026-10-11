@@ -69,12 +69,14 @@ class BrokerRuntime(Runtime):
             lambda: fleet_snapshot(self.store.engine, request["vehicle_ids"], request["depot"]), calls,
         )
         snapshot["captured_at"] = self.store.get_run(self.run_id)["started_at"]
+        if request.get("fleet_config_version", snapshot["fleet_config_version"]) != snapshot["fleet_config_version"]:
+            raise LiveUnavailable("Fleet configuration differs from the accepted request; replan")
         available = [v for v in snapshot["vehicles"] if v["available"]]
         if not available:
             raise LiveUnavailable("No selected van remains free; replan when fleet capacity changes")
         nodes = [{"coordinates": list(v["origin"]), "kind": "start", "vehicle_id": v["id"]} for v in available]
         vehicles = [{
-            "id": v["id"], "start_index": i, "capacity": 40,
+            "id": v["id"], "start_index": i, "capacity": v["capacity_parcels"],
             "fixed_cost_cents": _cents(request["activation_cost_cad"]),
             "cost_per_km_cents": _cents(request["cost_per_km_cad"]),
             "driver_hour_cents": _cents(request["driver_cost_per_hour_cad"]),

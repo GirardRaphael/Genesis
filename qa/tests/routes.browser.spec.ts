@@ -3,16 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 
 const API = 'http://127.0.0.1:8061/api/v1';
 
-test.beforeEach(async ({ page }) => {
-  // Exercise the application API using a fresh fixture fleet, never the operator database.
-  await page.route('**/api/v1/**', async (route) => {
-    const response = await route.fetch({ url: route.request().url().replace('http://127.0.0.1:5173/api/v1', API) });
-    await route.fulfill({ response });
-  });
-});
-
-test.afterEach(async ({ page }) => {
-  await page.unrouteAll({ behavior: 'wait' });
+test.beforeEach(async ({ request }) => {
+  expect((await (await request.get('/api/v1/qa/fixture')).json()).synthetic).toBe(true);
 });
 
 async function selectAddress(page: Page, label: string, text: string) {
@@ -145,7 +137,7 @@ test('broker revalidates completed recurring work and exposes zero actual explan
   await page.getByText('Explications IA et mode de démonstration · facultatifs', { exact: true }).click();
   await page.getByRole('radio', { name: 'Démonstration déterministe sans appel IA', exact: true }).check();
   await page.getByRole('radio', { name: 'Routine · explications ciblées', exact: true }).check();
-  for (const van of ['V1', 'V3', 'V4']) {
+  for (const van of ['Fourgonnette 1', 'Fourgonnette 3', 'Fourgonnette 4']) {
     await page.getByRole('checkbox', { name: new RegExp(`^${van}\\b`) }).uncheck();
   }
   const firstCreated = page.waitForResponse((response) => response.url().endsWith('/dispatch/plans') && response.request().method() === 'POST');

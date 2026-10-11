@@ -5,6 +5,28 @@ export type Place = {
   coordinates: Coordinates;
 };
 
+export type ConfiguredVehicle = {
+  id: string;
+  name: string;
+  capacity_parcels: number;
+};
+
+export type DispatchConfig = {
+  vehicles: ConfiguredVehicle[];
+  fleet_config_version: string;
+};
+
+export type FleetSnapshot = {
+  vehicles: (ConfiguredVehicle & {
+    available: boolean;
+    unresolved_cargo_parcels?: number;
+    origin?: Coordinates;
+    origin_assumed?: boolean;
+  })[];
+  fleet_config_version: string;
+  captured_at?: string;
+};
+
 export type Delivery = {
   pickup: Place;
   dropoff: Place;
@@ -89,6 +111,8 @@ export type BrokerPlan = {
   fleet_snapshot?: {
     vehicles: {
       id: string;
+      name?: string;
+      capacity_parcels?: number;
       available: boolean;
       origin?: Coordinates;
       origin_assumed?: boolean;

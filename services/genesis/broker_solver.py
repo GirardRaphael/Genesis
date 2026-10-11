@@ -1,7 +1,7 @@
 """Bounded pickup/delivery fleet search with an independent route certificate."""
 
 from collections import Counter
-from itertools import permutations
+from itertools import islice, permutations
 import math
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2
@@ -29,7 +29,7 @@ def _problem(problem):
         or not isinstance(deliveries, list)
     ):
         raise ValueError("nodes, vehicles and deliveries must be lists")
-    if not 1 <= len(deliveries) <= 10 or not 1 <= len(vehicles) <= 4 or len(nodes) < 3:
+    if not 1 <= len(deliveries) <= 10 or not 1 <= len(vehicles) <= 10 or len(nodes) < 3:
         raise ValueError("fleet or delivery count outside supported bounds")
     if problem.get("objective", "cost") not in {"cost", "fastest", "balanced"}:
         raise ValueError("unknown objective")
@@ -494,7 +494,8 @@ def compare_strategies(problem):
         )
     else:
         best = None
-        for chosen in permutations(vehicles, len(deliveries)):
+        # Ten vans otherwise permit 10! assignments; this remains a bounded candidate search.
+        for chosen in islice(permutations(vehicles, len(deliveries)), 1000):
             orders = {
                 v["id"]: [d["pickup_index"], d["dropoff_index"]] for d, v in zip(deliveries, chosen)
             }
@@ -506,7 +507,7 @@ def compare_strategies(problem):
                 best is None or candidate["objective_value"] < best["objective_value"]
             ):
                 best = candidate
-        add("separated", best)
+        add("separated", best, "At most 1000 stable-order assignments evaluated; global optimality is not proven.")
     valid = [x for x in candidates if x["status"] == "feasible_candidate"]
     chosen = (
         min(valid, key=lambda x: (x["solution"]["objective_value"], x["strategy"]))

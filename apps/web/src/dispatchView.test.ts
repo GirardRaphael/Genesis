@@ -2,8 +2,53 @@ import { describe, expect, it } from "vitest";
 import {
   mapFocusCoordinates,
   selectedVehiclesAfterRefresh,
+  selectedVehicleAfterConfig,
+  vehicleLabel,
+  vehicleColors,
 } from "./dispatchView";
 import type { DispatchPreview, DispatchTrip, Place } from "./dispatchTypes";
+
+describe("configured operator fleet", () => {
+  const vehicles = [
+    { id: "est", name: "Fourgonnette Est", capacity_parcels: 8 },
+    { id: "ouest", name: "Fourgonnette Ouest", capacity_parcels: 20 },
+  ];
+  it("keeps a valid choice and replaces a retired vehicle without inventing IDs", () => {
+    expect(selectedVehicleAfterConfig("ouest", vehicles)).toBe("ouest");
+    expect(selectedVehicleAfterConfig("van1", vehicles)).toBe("est");
+    expect(selectedVehicleAfterConfig("est", [])).toBe("");
+  });
+  it("uses configured names and preserves readable retired history", () => {
+    expect(vehicleLabel("est", vehicles)).toBe("Fourgonnette Est");
+    expect(vehicleLabel("van3", vehicles)).toBe("Véhicule 3");
+    expect(vehicleLabel("retired", vehicles)).toBe("retired");
+    expect(vehicleLabel("vanguard", vehicles)).toBe("vanguard");
+  });
+  it("distinguishes ten arbitrary vehicle IDs while preserving default colors and roster-order stability", () => {
+    const ids = [
+      "van1",
+      "est",
+      "ouest",
+      "nord",
+      "sud",
+      "alpha",
+      "beta",
+      "gamma",
+      "delta",
+      "echo",
+    ];
+    const colors = vehicleColors(ids);
+    expect(new Set(Object.values(colors)).size).toBe(10);
+    expect(vehicleColors([...ids].reverse())).toEqual(colors);
+    expect(colors.van1).toBe("#167887");
+    expect(vehicleColors(["van1", "van2", "van3", "van4"])).toEqual({
+      van1: "#167887",
+      van2: "#65649a",
+      van3: "#925e27",
+      van4: "#366a4d",
+    });
+  });
+});
 
 describe("dispatch map bounds", () => {
   const places: Place[] = [

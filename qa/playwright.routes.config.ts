@@ -6,11 +6,11 @@ export default defineConfig({
   outputDir: './results/routes',
   workers: 1,
   timeout: 45_000,
-  use: { baseURL: 'http://127.0.0.1:5173', headless: true, viewport: { width: 1440, height: 1000 }, trace: 'retain-on-failure' },
+  use: { baseURL: 'http://127.0.0.1:5174', headless: true, viewport: { width: 1440, height: 1000 }, trace: 'retain-on-failure' },
   webServer: {
-    command: '"..\\.venv\\Scripts\\python.exe" route_memory_server.py',
-    url: 'http://127.0.0.1:8061/api/v1/dispatch/config',
+    command: '"..\\.venv\\Scripts\\python.exe" start_isolated.py',
+    url: 'http://127.0.0.1:5174/api/v1/qa/fixture',
     reuseExistingServer: false,
-    timeout: 30_000,
+    timeout: 90_000,
   },
 });

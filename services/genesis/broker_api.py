@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .db import Conflict
 from .dispatch import Delivery, Place, _inside, fleet_snapshot
+from .fleet_config import MAX_VEHICLES, bind_fleet, default_fleet
 from .llm import LiveUnavailable, live_configuration
 
 
@@ -25,7 +26,7 @@ class BrokerRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     deliveries: list[BrokerDelivery] = Field(min_length=1, max_length=10)
     depot: Place
-    vehicle_ids: list[Literal["van1", "van2", "van3", "van4"]] = Field(default_factory=lambda: ["van1", "van2", "van3", "van4"], min_length=1, max_length=4)
+    vehicle_ids: list[str] = Field(default_factory=lambda: [van.id for van in default_fleet().vehicles], min_length=1, max_length=MAX_VEHICLES)
     objective: Literal["cost", "fastest", "balanced"] = "balanced"
     explanation_policy: Literal["always", "routine", "none"] = "always"
     order_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=10)
@@ -76,6 +77,8 @@ def register_broker(app: FastAPI) -> None:
             load_dotenv(override=True)
         original = body.model_dump(mode="json")
         request = json.loads(json.dumps(original))
+        if "vehicle_ids" not in body.model_fields_set:
+            request["vehicle_ids"] = [van.id for van in bind_fleet(app.state.store.engine).vehicles]
         for index, delivery in enumerate(request["deliveries"]):
             if not delivery["id"]:
                 source = json.dumps({"delivery": delivery, "index": index}, sort_keys=True, separators=(",", ":"))
@@ -85,6 +88,8 @@ def register_broker(app: FastAPI) -> None:
         if idempotency_key:
             old = next((r for r in app.state.store.list_runs() if r["idempotency_key"] == idempotency_key), None)
             if old:
+                if "vehicle_ids" not in body.model_fields_set:
+                    request["vehicle_ids"] = old["request"]["vehicle_ids"]
                 # Existing keys retain their previously generated IDs across identity-policy changes.
                 for index, (submitted, persisted) in enumerate(zip(request["deliveries"], old["request"].get("deliveries", []))):
                     if not body.deliveries[index].id:
@@ -95,6 +100,8 @@ def register_broker(app: FastAPI) -> None:
         snapshot = fleet_snapshot(app.state.store.engine, request["vehicle_ids"], request["depot"])
         if not any(vehicle["available"] for vehicle in snapshot["vehicles"]):
             raise HTTPException(409, {"code": "fleet_unavailable", "message": "No selected van is free for a new plan", "retryable": True})
+        request["fleet_config_version"] = snapshot["fleet_config_version"]
+        request["vehicle_capacities"] = {vehicle["id"]: vehicle["capacity_parcels"] for vehicle in snapshot["vehicles"]}
         request.update({"scenario_id": "BROKER", "policy": "broker_dispatch", "seed": 0, "workflow_kind": "broker"})
         if body.mode == "live" and body.explanation_policy != "none":
             try:
