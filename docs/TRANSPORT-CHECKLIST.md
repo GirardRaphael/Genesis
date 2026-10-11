@@ -41,7 +41,7 @@ All fixes above are scoped to the local prototype. Tests are evidence for their 
 
 ## P1 — must demonstrate operational value
 
-- [x] U17 local intake slice: persistent reference/customer/date backlog, bounded CSV preview, all-or-nothing import, immutable order-to-plan linkage and concurrent-claim protection. Deterministic planning can run without Anthropic. Automated/source acceptance only; new browser acceptance awaits local service restart.
+- [x] U17 local intake slice: persistent reference/customer/date backlog, bounded CSV preview, all-or-nothing import, immutable order-to-plan linkage and concurrent-claim protection. Deterministic planning can run without Anthropic. Automated/source acceptance plus a bounded MCP browser journey now cover saved-order persistence, duplicate-safe saving, geocoded-depot planning, five-role evidence, certified ready trips and predeparture rejection/reopening. CSV upload and comprehensive responsive/accessibility browser checks remain open.
 - [ ] Extend this backlog to authenticated carrier acceptance and actual service events; service dates currently organize work rather than enforce calendar windows. Measure time from intake to accepted assignment during a staffed pilot.
 
 - [ ] Version real shifts, breaks, service windows, capacity in weight/volume/pallets, temperature, depot returns and loading rules; reject unsupported orders explicitly.
