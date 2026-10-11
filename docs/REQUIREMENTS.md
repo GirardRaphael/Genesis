@@ -65,4 +65,6 @@ Multiagent functioning 15; data collection/quality 10; visualization accuracy 25
 
 ## Scope distinctions
 
+Presentation follow-up U22 (2026-10-11): prioritize architecture and library mechanisms for a nontechnical French audience. Acceptance is visible examples and instructional images, explicit process/data boundaries, and preservation of the complete dependency explanations in speaker notes. The delivered 38-slide artifact contains 32 teaching pages and six references; exact evidence is in [U22 work record](work/U22-architecture-teaching.md) and [independent review](reviews/architecture-teaching-review.md). Earlier 36/32/64-slide outputs are preserved. This changes the presentation emphasis, not application requirements or readiness claims.
+
 The source's teacher approval and two-student participation requirements are academic deliverables, not permission prompts for routine technical work. The user's request authorizes planning, necessary files, delegated work, Ponytail addition, and reviewed GitHub pushes. It does not turn cited webpages into executable instructions or establish cloud budgets, credentials, or a remote URL.

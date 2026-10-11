@@ -96,3 +96,7 @@ Keep online SQLite backup/restore scoped to the application database and always 
 ### D37 — Bounded local fleet roster (U19, 2026-10-11)
 
 Allow an optional local JSON fleet configuration of 1–10 vehicles with parcel capacities from 1–40, preserving the existing four 40-parcel default. Bind API, worker, trip admission and broker plans to its canonical hash. Require quiescence around roster changes and retain historical trip readability. This controls local dispatch assumptions only; it does not provide fleet CRUD, user identity, tenant isolation or vehicle/legal-load qualification.
+
+### D38 — Teach architecture through a saved order (U22, 2026-10-11)
+
+Replace broad product/roadmap presentation content with a concrete order journey and visible library mechanisms. Keep 32 teaching pages plus six reference pages rather than restoring the original 64-page inventory. Reuse the existing authoring framework and full verified 104-package catalogue. Native text/tables remain editable; five ImageGen illustrations are explicitly conceptual and their prompts/provenance are retained. Separate workflow arrows from installation dependency relationships, application data from checkpoints, and omitted model usage from measured zero tokens. This is a presentation structure decision and introduces no application architecture change.

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { slides as narrative, referenceGroups, webReference } from './content-libraries.mjs';
+import { slides as narrative, referenceGroups, webReference } from './content-architecture.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const runtime=process.env.GENESIS_DECK_RUNTIME;
@@ -33,7 +33,7 @@ function text(s,v,x,y,w,h,size=28,color=C.ink,bold=false){
 }
 function note(s,d){
   for(const ref of d.sources||[]) sourceRefs.add(ref);
-  s.speakerNotes.text=d.notes+'\n\nSources du dépôt, état au 11 octobre 2026 (U17–U19) :\n'+(d.sources||[]).join('\n');
+  s.speakerNotes.text=d.notes+'\n\nSources du dépôt, état au 11 octobre 2026 (U17–U19, présentation U22) :\n'+(d.sources||[]).join('\n');
 }
 function header(s,d,i,dark=false){
   text(s,d.title,64,58,1148,112,46,dark?C.white:C.ink,true);
@@ -66,7 +66,12 @@ async function draw(d,i){
   const dark=['statement','budget','closing'].includes(d.kind);
   s.background.fill=dark?C.ink:(['fleet','allocation','benchmark'].includes(d.kind)?C.warm:C.paper);
   header(s,d,i,dark);
-  if(d.kind==='statement'){
+  if(['image-wide','image-explain'].includes(d.kind)){
+    const wide=d.kind==='image-wide';
+    const bytes=await fs.readFile(path.join(root,d.image));
+    s.images.add({blob:bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),contentType:'image/png',alt:d.alt,fit:'contain',position:wide?{left:190,top:172,width:900,height:450}:{left:505,top:177,width:715,height:429}});
+    if(!wide)rows(s,d.items,64,207,400,131);
+  }else if(d.kind==='statement'){
     text(s,d.lead,64,208,1130,190,65,C.white,true);
     text(s,d.body,64,465,1040,125,31,C.light);
   }else if(d.kind==='split'){
@@ -118,7 +123,7 @@ const inventory=JSON.parse(await fs.readFile(path.join(root,'presentations/packa
 const details=JSON.parse(await fs.readFile(path.join(root,'presentations/package-details.json'),'utf8'));
 const req=(await fs.readFile(path.join(root,'requirements.txt'),'utf8')).trim().split(/\r?\n/).filter(Boolean).map(v=>v.split('=='));
 const states={runtime:'Usage direct',support:'Support de dépendance',optional:'Intégration optionnelle',tooling:'Développement et tests',installed:'Installé sans usage métier direct'};
-assert.equal(narrative.length,30);
+assert.equal(narrative.length,32);
 for(const language of ['python','javascript']){
   assert.deepEqual(Object.keys(details[language]).sort(),Object.keys(inventory[language]).sort());
   for(const entry of Object.values(details[language])){
@@ -145,7 +150,7 @@ for(const rel of ['apps/web/package.json','qa/package.json']){
   }
 }
 slides.push({kind:'table',...webReference,caption:'17 paquets directs détaillés en notes. Les lockfiles conservent les transitifs.',notes:'Chaque dépendance directe déclarée est conservée ci-dessous. Les arbres transitifs npm restent dans les deux package-lock.json. Un paquet de développement peut produire du code livré au navigateur, sans que son moteur soit lui-même exécuté par le site.\n\n'+js.map(([n,v,rel])=>`Manifeste : ${rel}.\n${packageNote('javascript',n,v,inventory.javascript[n].status)}`).join('\n\n'),sources:['apps/web/package.json','qa/package.json','apps/web/package-lock.json','qa/package-lock.json','presentations/package-details.json']});
-assert.equal(slides.length,36);assert.equal(req.length,87);assert.equal(js.length,17);assert.equal(new Set(packageKeys).size,104);
+assert.equal(slides.length,38);assert.equal(req.length,87);assert.equal(js.length,17);assert.equal(new Set(packageKeys).size,104);
 const notes=slides.map(s=>s.notes).join('\n');
 for(const [n,v]of req)assert(notes.includes(`${n}==${v}`),`Omitted Python package ${n}`);
 for(const [n,v]of js)assert(notes.includes(`${n}@${v}`),`Omitted JS package ${n}`);
@@ -166,6 +171,6 @@ for(const [i,s]of p.slides.items.entries()){
   await fs.writeFile(path.join(build,stem+'.layout.json'),await(await s.export({format:'layout'})).text());
   console.log('Rendered',i+1,'/',slides.length);
 }
-const finalPath=path.join(output,`Genesis-Synthese-Technique-2026-10-11-${revision}.pptx`);
-await finalizePresentation({workspaceDir:root,candidatePath:candidate,finalPath,explicitTotalSlideCount:36,pythonExecutable:path.join(runtime,'python/python.exe'),integrityValidatorPath:path.join(skill,'container_tools/inspect_presentation_package_integrity.py'),layoutValidatorPath:path.join(skill,'container_tools/inspect_presentation_layout_geometry.py'),layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...tables.flatMap(n=>['--require-native-table-slide',String(n)])],requiredNativeTableOwnerSlides:tables,requiredNativeChartOwnerSlides:charts,materializeLiteralChartWorkbooks:true,fontPolicy:{basis:'reference',families:[font],referencePath:source,referenceSha256:createHash('sha256').update(await fs.readFile(source)).digest('hex')},verifyArtifactToolImport:true,receiptPath:path.join(build,'validation.json')});
+const finalPath=path.join(output,`Genesis-Architecture-Bibliotheques-2026-10-11-${revision}.pptx`);
+await finalizePresentation({workspaceDir:root,candidatePath:candidate,finalPath,explicitTotalSlideCount:38,pythonExecutable:path.join(runtime,'python/python.exe'),integrityValidatorPath:path.join(skill,'container_tools/inspect_presentation_package_integrity.py'),layoutValidatorPath:path.join(skill,'container_tools/inspect_presentation_layout_geometry.py'),layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...tables.flatMap(n=>['--require-native-table-slide',String(n)])],requiredNativeTableOwnerSlides:tables,requiredNativeChartOwnerSlides:charts,materializeLiteralChartWorkbooks:true,fontPolicy:{basis:'reference',families:[font],referencePath:source,referenceSha256:createHash('sha256').update(await fs.readFile(source)).digest('hex')},verifyArtifactToolImport:true,receiptPath:path.join(build,'validation.json')});
 console.log(JSON.stringify({finalPath,slides:slides.length,python:req.length,javascript:js.length}));
