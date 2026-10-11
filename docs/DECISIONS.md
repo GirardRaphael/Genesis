@@ -44,6 +44,12 @@ Store one immutable logical alert per persistent project budget in a dedicated d
 
 Allow at most three known pre-DATA attempts. Ambiguous DATA, lost sending claims and crashes after acceptance become terminal uncertain with no automatic resend. SMTP acceptance is distinct from inbox receipt. Do not add a reset/resend operation in this release: a reviewed recovery transition is required before retrying terminal states. The cost panel reads status independently so transport/status failures cannot stall the budget display. See BUDGET-EMAIL.md for contracts, configuration and limitations.
 
+## ADR D32 — bounded interface completion, 2026-10-11
+
+Use the existing React components, native controls and read projections for operator polish. Keep per-call monitoring behind a native overview disclosure and fully visible in the observatory; global costs and alert state remain independent of filters. Export one local typed CSV with explicit scope/coverage instead of adding a reporting service. Stop inspection is a UI selection over existing trip data, never a substitute for broker certification. No extra dependencies, artificial KPI trends or new operational authority are needed.
+
+Browser policy rejected the live-page inspection. Continue static-render/logic/build and independent source review without another automation surface; publish the bounded source improvement with that verification limitation. Current visual/browser acceptance remains open rather than reusing old screenshots as proof of this render.
+
 ## Risks and controls
 
 | Risk | Impact | Control and evidence |
@@ -67,3 +73,6 @@ Allow at most three known pre-DATA attempts. Ambiguous DATA, lost sending claims
 ## Outstanding external inputs
 
 Anthropic API access and the C$100 cap were configured; 20 live experiments completed. Classroom approval is needed to claim the academic topic is approved. GitHub destination is established from the user's URL and the reviewed planning branch is published. No guessed identities, budgets, URLs or fabricated approvals have been inserted. All other plan work can proceed from these defaults.
+### D33 — Three operator workspaces
+
+On 2026-10-11 the user rejected redundant primary pages. Keep Opérations, Analytique and Agents as the only main destinations, open Opérations by default, and move existing execution projections into the Agents context selector. Preserve all explicit historical query URLs, run selections and filters. Remove duplicate cohort/global reporting from execution pages; Analytique owns aggregate charts, global cost and budget-email status. Individual run metering remains in Agents. This avoids deleting evidence or replacing the routing contract solely to simplify navigation. Browser acceptance remains pending a user reload from the MCP-blocked data: error page.

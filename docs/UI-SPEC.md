@@ -69,6 +69,20 @@ Every chart has a short computed description stating the strongest measured obse
 
 ## Acceptance gates
 
+### U14 implementation refinement — 2026-10-11
+
+The dark slate navigation rail separates workspace switching from the light data canvas; the established teal accent remains reserved for actions/selection. Compact navigation retains accessible names, and the narrow layout uses labeled horizontal navigation instead of unidentified icons. Native controls remain keyboard reachable. The noninteractive workspace label has no dropdown affordance.
+
+Active-filter chips expose scenario/policy/status/agent/model even when the editor is closed. Inventory free text is labeled local and applies only to its loaded rows; typed search/model edits replace URL state rather than adding one history entry per character. Selected runs and comparison IDs survive filter clearing. No new server search or pagination is claimed: the inventory states its loaded/total counts and newest-200 bound. A comparison auto-selects only an available matching scenario/seed/provenance candidate, never an arbitrary unrelated fallback.
+
+Primary navigation has exactly three workspaces: Opérations (default and brand destination), Analytique and Agents. The Agents context selector retains activity, history, comparison, execution summary and simulated plan without making them primary tabs. Explicit legacy URLs remain valid and workspace changes preserve run IDs and filters. Cohort dashboards and the global budget appear in Analytique only; the global budget remains independent of its cohort filters. Execution pages retain individual-call evidence and per-run results. Montréal timezone labels use America/Toronto and follow daylight saving.
+
+Analytics adds a local CSV export and stronger chart/table hierarchy, retaining every table alternative and coverage label. Export is disabled until a matching-query snapshot is available, can export the last good same-query snapshot with stale metadata, and contains no full model outputs, addresses or secrets. Dispatch schedule buttons select map stops and a detail panel; paired stop navigation uses the same trip, with no invented certificate/window/load values. Selection is cleared when its route becomes hidden or disappears. Polling retains marker elements and does not continually recenter a selected stop.
+
+Historical screenshots informed this refinement. MCP inventory subsequently identified a stopped web server and a data: browser error page. The web server was restored, but MCP still rejects navigation from that error page; user reload is pending. No alternate browser automation was used. Unit/static-render/build evidence does not certify rendered responsive layout, MapLibre focus, download delivery or WCAG compliance. A fresh visual/browser review remains a release gate.
+
+### Original visual and usability gates
+
 Target WCAG 2.2 AA with keyboard and screen-reader task review, visible focus, reduced motion, text resizing and reflow. Meet at least 4.5:1 normal text contrast and appropriate graphical-control contrast; validate final tokens rather than asserting compliance. Test 1440x900, 1280x800, 1024x768, 768x1024 and 390x844, plus 320 CSS-pixel reflow where applicable. Record deliberate table/graph two-dimensional exceptions.
 
 Visual fixtures cover long multilingual labels, zero/missing data, 1 MB artifacts with bounded rendering, rejected outputs, hundreds of spans, interrupted streams and citations. Baselines run in a pinned browser/font environment. Review every changed screenshot, never bulk-accept snapshots to clear CI.

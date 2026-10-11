@@ -82,7 +82,9 @@ export const dispatchColor = (vehicle: string) =>
 type Props = {
   trips: DispatchTrip[];
   selected: string;
+  selectedStopId: string;
   onSelect: (id: string) => void;
+  onSelectStop: (tripId: string, stopId: string) => void;
   focusVersion: number;
   roadworks?: Roadwork[];
   showRoadworks?: boolean;
@@ -94,7 +96,9 @@ type Props = {
 export function DispatchMap({
   trips,
   selected,
+  selectedStopId,
   onSelect,
+  onSelectStop,
   focusVersion,
   roadworks = [],
   showRoadworks = false,
@@ -105,13 +109,17 @@ export function DispatchMap({
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
+  const stopMarkers = useRef(new Map<string, maplibregl.Marker>());
   const vehicles = useRef(new Map<string, maplibregl.Marker>());
   const animations = useRef(new Map<string, number>());
   const lastFit = useRef(0);
+  const lastStopFocus = useRef("");
   const onSelectRef = useRef(onSelect);
+  const onSelectStopRef = useRef(onSelectStop);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   onSelectRef.current = onSelect;
+  onSelectStopRef.current = onSelectStop;
 
   useEffect(() => {
     if (!container.current) return;
@@ -305,6 +313,8 @@ export function DispatchMap({
       resize.disconnect();
       markers.current.forEach((marker) => marker.remove());
       markers.current = [];
+      stopMarkers.current.forEach((marker) => marker.remove());
+      stopMarkers.current.clear();
       vehicles.current.forEach((marker) => marker.remove());
       vehicles.current.clear();
       animations.current.forEach(cancelAnimationFrame);
@@ -373,24 +383,67 @@ export function DispatchMap({
           .addTo(map),
       );
     });
+    const visibleStopKeys = new Set<string>();
     for (const trip of trips) {
       if (trip.id !== selected) continue;
       trip.stops.forEach((stop, index) => {
-        const element = document.createElement("button");
-        element.type = "button";
-        element.className = `dispatch-map-stop ${stop.kind}`;
-        element.textContent = String(index + 1);
-        element.title = `${index + 1}. ${stop.kind === "pickup" ? "Ramassage" : "Livraison"} · ${stop.label}`;
-        element.setAttribute("aria-label", element.title);
-        element.addEventListener("click", () => onSelectRef.current(trip.id));
-        markers.current.push(
-          new maplibregl.Marker({ element })
+        const key = `${trip.id}:${stop.id}`;
+        visibleStopKeys.add(key);
+        let marker = stopMarkers.current.get(key);
+        if (!marker) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "dispatch-map-stop";
+          button.addEventListener("click", () =>
+            onSelectStopRef.current(trip.id, stop.id),
+          );
+          marker = new maplibregl.Marker({ element: button })
             .setLngLat(stop.coordinates)
-            .addTo(map),
+            .addTo(map);
+          stopMarkers.current.set(key, marker);
+        }
+        const element = marker.getElement();
+        element.classList.toggle("pickup", stop.kind === "pickup");
+        element.classList.toggle("dropoff", stop.kind === "dropoff");
+        element.classList.toggle("selected", stop.id === selectedStopId);
+        element.textContent = String(index + 1);
+        element.title = `${index + 1}. ${stop.kind === "pickup" ? "Ramassage" : "Livraison"} · ${stop.label} · ${stop.status === "completed" ? "arrêt simulé terminé" : trip.status === "cancelled" ? "non desservi · simulation annulée" : "à desservir"}`;
+        element.setAttribute("aria-label", element.title);
+        element.setAttribute(
+          "aria-pressed",
+          String(stop.id === selectedStopId),
         );
+        marker.setLngLat(stop.coordinates);
       });
     }
-  }, [trips, selected, ready, draftPlaces, preview]);
+    for (const [key, marker] of stopMarkers.current) {
+      if (!visibleStopKeys.has(key)) {
+        marker.remove();
+        stopMarkers.current.delete(key);
+      }
+    }
+  }, [trips, selected, selectedStopId, ready, draftPlaces, preview]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const stop = trips
+      .find((trip) => trip.id === selected)
+      ?.stops.find((item) => item.id === selectedStopId);
+    if (!stop) {
+      lastStopFocus.current = "";
+      return;
+    }
+    const key = `${selected}:${selectedStopId}`;
+    if (!map || !ready || lastStopFocus.current === key) return;
+    lastStopFocus.current = key;
+    map.easeTo({
+      center: stop.coordinates,
+      duration: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? 0
+        : 250,
+    });
+    // Only explicit stop selection recenters; polling preserves the operator's map view.
+  }, [selectedStopId, selected, ready, trips]);
 
   useEffect(() => {
     const map = mapRef.current;

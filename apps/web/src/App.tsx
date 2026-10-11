@@ -13,14 +13,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Boxes,
-  ChartNoAxesCombined,
   Check,
   ChevronDown,
   ChevronRight,
   Command,
   GitCompareArrows,
-  LayoutDashboard,
-  Map,
   Plus,
   RefreshCw,
   Search,
@@ -44,6 +41,7 @@ import type {
 } from "./types";
 import {
   comparable,
+  comparisonCandidate,
   delta,
   filterRuns,
   mergeEvents,
@@ -53,13 +51,12 @@ import {
   selectionSearch,
   statusLabel,
   clock,
+  montrealZone,
 } from "./state";
 import type { Selection, View } from "./state";
 import { CertificateBadge, Exceptions, Fleet, FleetStats } from "./Fleet";
 import {
   AgentGraph,
-  CohortCharts,
-  Kpis,
   OutputInspector,
   Outputs,
   roleName,
@@ -73,18 +70,16 @@ import { Chart } from "./Chart";
 import { Metering } from "./Metering";
 import { OverallCost } from "./OverallCost";
 import { Analytics } from "./Analytics";
+import {
+  ActiveFilters,
+  AgentViewSelector,
+  WorkspaceNavigation,
+  clearedFilters,
+  selectionFilters,
+} from "./WorkspaceControls";
 const Dispatch = lazy(() =>
   import("./Dispatch").then((module) => ({ default: module.Dispatch })),
 );
-const navigation = [
-  { id: "overview", label: "Vue d’ensemble", icon: LayoutDashboard },
-  { id: "dispatch", label: "Livraisons Montréal", icon: Map },
-  { id: "analytics", label: "Analytique", icon: ChartNoAxesCombined },
-  { id: "fleet", label: "Flotte & tournées", icon: Truck },
-  { id: "runs", label: "Exécutions", icon: Activity },
-  { id: "compare", label: "Comparer", icon: GitCompareArrows },
-  { id: "observatory", label: "Observatoire", icon: ChartNoAxesCombined },
-] as const;
 const headings: Record<View, [string, string]> = {
   dispatch: [
     "Livraisons sur l’île de Montréal",
@@ -95,15 +90,15 @@ const headings: Record<View, [string, string]> = {
     "Explorez les coûts, les tokens et les performances par agent et modèle.",
   ],
   overview: [
-    "Vue d’ensemble",
-    "Une vue claire sur vos livraisons et les agents qui les orchestrent.",
+    "Résumé de l’exécution",
+    "Le résultat du plan sélectionné, ses exceptions et son certificat.",
   ],
   fleet: [
-    "Flotte & tournées",
+    "Plan de livraison simulé",
     "Inspectez les visites, les contraintes et chaque résultat de la journée.",
   ],
   runs: [
-    "Exécutions",
+    "Historique des exécutions",
     "Retrouvez les plans, les diagnostics et leurs preuves.",
   ],
   compare: [
@@ -121,6 +116,7 @@ export default function App() {
     readSelection(location.search),
   );
   const [runs, setRuns] = useState<Run[]>([]),
+    [runTotal, setRunTotal] = useState<number | null>(null),
     [scenarios, setScenarios] = useState<Scenario[]>([]),
     [metrics, setMetrics] = useState<Cohort | null>(null),
     [rawDetail, setDetail] = useState<RunDetail | null>(null),
@@ -143,6 +139,11 @@ export default function App() {
     live_unavailable_reasons: string[];
   } | null>(null);
   const [mode, setMode] = useState("fixture");
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
   const modalRef = useRef<HTMLElement>(null),
     inspectorRef = useRef<HTMLDivElement>(null);
   useDialog(modalRef, drawer, () => {
@@ -169,15 +170,15 @@ export default function App() {
   );
   const visibleEvents =
     replayIndex == null ? events : events.slice(0, replayIndex + 1);
-  const update = useCallback(
-    (change: Partial<Selection>) =>
-      setSelection((prev) => {
-        const next = { ...prev, ...change };
-        history.pushState({}, "", selectionSearch(next));
-        return next;
-      }),
-    [],
-  );
+  const update = useCallback((change: Partial<Selection>, replace = false) => {
+    const next = { ...readSelection(location.search), ...change };
+    const search = selectionSearch(next);
+    if (search !== location.search) {
+      if (replace) history.replaceState({}, "", search);
+      else history.pushState({}, "", search);
+    }
+    setSelection(next);
+  }, []);
   useEffect(() => {
     const pop = () => setSelection(readSelection(location.search));
     window.addEventListener("popstate", pop);
@@ -199,12 +200,13 @@ export default function App() {
         p.set(key === "scenario" ? "scenario_id" : key, selection[key]);
     p.set("limit", "200");
     Promise.all([
-      api<{ items: Run[] }>("/runs?" + p, controller.signal),
+      api<{ items: Run[]; total: number }>("/runs?" + p, controller.signal),
       api<{ items: Scenario[] }>("/scenarios", controller.signal),
       api<Cohort>("/metrics?" + p, controller.signal),
     ])
       .then(([r, s, m]) => {
         setRuns(r.items);
+        setRunTotal(r.total);
         setScenarios(s.items);
         setMetrics(m);
         if (!selection.run && r.items.length) update({ run: r.items[0].id });
@@ -371,10 +373,11 @@ export default function App() {
       <aside className="sidebar">
         <a
           className="brand"
-          href="?view=overview"
+          aria-label="Genesis — opérations"
+          href="?view=dispatch"
           onClick={(e) => {
             e.preventDefault();
-            update({ view: "overview" });
+            update({ view: "dispatch" });
           }}
         >
           <div className="brand-symbol">
@@ -389,25 +392,14 @@ export default function App() {
             <Boxes size={15} />
           </div>
           <div>
-            Espace démonstration<small>Montréal, Canada</small>
+            Centre de répartition<small>Montréal, Canada</small>
           </div>
-          <ChevronDown size={13} />
         </div>
-        <span className="nav-label">ESPACE DE TRAVAIL</span>
-        <nav aria-label="Navigation principale">
-          {navigation.map((item) => (
-            <button
-              key={item.id}
-              className={selection.view === item.id ? "active" : ""}
-              onClick={() => update({ view: item.id })}
-              aria-current={selection.view === item.id ? "page" : undefined}
-            >
-              <item.icon size={17} />
-              <span>{item.label}</span>
-              {selection.view === item.id && <i />}
-            </button>
-          ))}
-        </nav>
+        <span className="nav-label">PILOTAGE DES OPÉRATIONS</span>
+        <WorkspaceNavigation
+          view={selection.view}
+          onNavigate={(view) => update({ view })}
+        />
         <div className="sidebar-bottom">
           <div className="system-status">
             <i /> Environnement local
@@ -434,7 +426,7 @@ export default function App() {
             <strong>{title[0]}</strong>
           </div>
           <div className="topbar-right">
-            <span className="timezone">Montréal · UTC−04</span>
+            <span className="timezone">Montréal · {montrealZone(now)}</span>
             <span className="demo-tag">
               <Radio size={12} />
               Démonstration
@@ -442,7 +434,7 @@ export default function App() {
             <span className="avatar">GL</span>
           </div>
         </header>
-        <main id="main">
+        <main id="main" tabIndex={-1}>
           <div className="page-heading">
             <div>
               <div className="eyebrow">
@@ -464,19 +456,25 @@ export default function App() {
                   <RefreshCw size={14} />
                   <span>Actualiser</span>
                 </button>
-                <button
-                  className="button primary"
-                  onClick={() => {
-                    setDrawer(true);
-                    setCreateError("");
-                  }}
-                >
-                  <Plus size={15} />
-                  Nouvelle exécution
-                </button>
+                {selection.view !== "analytics" && (
+                  <button
+                    className="button primary"
+                    onClick={() => {
+                      setDrawer(true);
+                      setCreateError("");
+                    }}
+                  >
+                    <Plus size={15} />
+                    Nouvelle exécution
+                  </button>
+                )}
               </div>
             )}
           </div>
+          <AgentViewSelector
+            view={selection.view}
+            onNavigate={(view) => update({ view })}
+          />
           {selection.view !== "dispatch" && (
             <div className="filter-bar">
               <div className="filter-primary">
@@ -513,15 +511,29 @@ export default function App() {
                 </label>
                 <button
                   className={"filter-more " + (showFilters ? "active" : "")}
+                  aria-expanded={showFilters}
+                  aria-controls="advanced-filters"
                   onClick={() => setShowFilters(!showFilters)}
                 >
                   <Plus size={12} />
                   Filtres
+                  {selectionFilters(selection).length > 0 && (
+                    <span className="filter-count">
+                      {selectionFilters(selection).length}
+                    </span>
+                  )}
                 </button>
               </div>
-              <span className="snapshot-label">
+              <span
+                className="snapshot-label"
+                data-state={error ? "stale" : loading ? "loading" : "ready"}
+              >
                 <i />
-                {loading ? "Chargement…" : "Dernier état enregistré"}
+                {error
+                  ? "Actualisation indisponible"
+                  : loading
+                    ? "Chargement…"
+                    : "Dernier état enregistré"}
                 <small>
                   {metrics?.refreshed_at
                     ? new Date(metrics.refreshed_at).toLocaleTimeString(
@@ -536,7 +548,7 @@ export default function App() {
             </div>
           )}
           {selection.view !== "dispatch" && showFilters && (
-            <div className="advanced-filters">
+            <div className="advanced-filters" id="advanced-filters">
               <label>
                 Statut
                 <select
@@ -583,25 +595,17 @@ export default function App() {
                 Modèle
                 <input
                   value={selection.model}
-                  onChange={(e) => update({ model: e.target.value })}
+                  onChange={(e) => update({ model: e.target.value }, true)}
                   placeholder="Identifiant du modèle"
                 />
               </label>
-              <button
-                onClick={() =>
-                  update({
-                    scenario: "",
-                    status: "",
-                    policy: "",
-                    agent: "",
-                    model: "",
-                    query: "",
-                  })
-                }
-              >
+              <button onClick={() => update(clearedFilters)}>
                 Réinitialiser
               </button>
             </div>
+          )}
+          {selection.view !== "dispatch" && (
+            <ActiveFilters selection={selection} onChange={update} />
           )}
           {selection.view === "dispatch" ? (
             <Suspense
@@ -634,13 +638,13 @@ export default function App() {
             </div>
           ) : (
             <>
-              {(selection.view === "analytics" ||
-                ((selection.view === "overview" ||
-                  selection.view === "observatory") &&
-                  replayIndex == null &&
-                  simIndex == null)) && <OverallCost />}
+              {selection.view === "analytics" && <OverallCost />}
               {selection.view === "analytics" ? (
-                <Analytics selection={selection} onFilter={update} />
+                <Analytics
+                  selection={selection}
+                  onFilter={update}
+                  refreshKey={refresh}
+                />
               ) : selection.view === "runs" ? (
                 <RunInventory
                   runs={filtered}
@@ -650,6 +654,8 @@ export default function App() {
                   update={update}
                   sort={sort}
                   setSort={setSort}
+                  total={runTotal}
+                  loaded={runs.length}
                 />
               ) : selection.view === "compare" ? (
                 <Compare runs={runs} selection={selection} update={update} />
@@ -712,7 +718,26 @@ export default function App() {
                   </div>
                   {rawDetail &&
                     (selection.view === "observatory" ||
-                      selection.view === "overview") && (
+                      selection.view === "overview") &&
+                    (selection.view === "overview" ? (
+                      <details className="usage-disclosure" key={rawDetail.id}>
+                        <summary>
+                          <Activity size={17} aria-hidden="true" />
+                          <span>
+                            Coûts, tokens et appels de cette exécution
+                          </span>
+                          <ChevronDown size={16} aria-hidden="true" />
+                        </summary>
+                        <Metering
+                          runId={rawDetail.id}
+                          asOfSeq={
+                            replayIndex == null
+                              ? undefined
+                              : (currentEvent?.run_seq ?? 0)
+                          }
+                        />
+                      </details>
+                    ) : (
                       <Metering
                         runId={rawDetail.id}
                         asOfSeq={
@@ -721,7 +746,7 @@ export default function App() {
                             : (currentEvent?.run_seq ?? 0)
                         }
                       />
-                    )}
+                    ))}
                   {detailError ? (
                     <div className="error-state" role="alert">
                       <AlertCircle />
@@ -950,22 +975,6 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                          <div className="section-title">
-                            <div>
-                              <span className="eyebrow">
-                                OBSERVABILITÉ · COHORTE FILTRÉE
-                              </span>
-                              <h2>Les opérations derrière les opérations</h2>
-                            </div>
-                            <button
-                              className="text-button"
-                              onClick={() => update({ view: "observatory" })}
-                            >
-                              Ouvrir l’observatoire
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
-                          {replayIndex == null && <Kpis metrics={metrics} />}
                         </>
                       ) : selection.view === "fleet" ? (
                         <>
@@ -1019,7 +1028,6 @@ export default function App() {
                         </>
                       ) : (
                         <>
-                          {replayIndex == null && <Kpis metrics={metrics} />}
                           <div className="section-title">
                             <div>
                               <span className="eyebrow">
@@ -1074,9 +1082,6 @@ export default function App() {
                             </p>
                           )}
                           <RunCharts detail={detail} events={visibleEvents} />
-                          {metrics && replayIndex == null && (
-                            <CohortCharts metrics={metrics} />
-                          )}
                           <details className="panel data-alternative">
                             <summary>
                               Journal ordonné de l’exécution ({events.length}{" "}
@@ -1315,14 +1320,18 @@ function RunInventory({
   update,
   sort,
   setSort,
+  total,
+  loaded,
 }: {
   runs: Run[];
   selected: string;
   onSelect: (id: string) => void;
   selection: Selection;
-  update: (c: Partial<Selection>) => void;
+  update: (c: Partial<Selection>, replace?: boolean) => void;
   sort: string;
   setSort: (s: string) => void;
+  total: number | null;
+  loaded: number;
 }) {
   return (
     <div className="panel">
@@ -1338,9 +1347,9 @@ function RunInventory({
             <Search size={14} />
             <input
               aria-label="Rechercher une exécution"
-              placeholder="Rechercher…"
+              placeholder="Nom ou identifiant…"
               value={selection.query}
-              onChange={(e) => update({ query: e.target.value })}
+              onChange={(e) => update({ query: e.target.value }, true)}
             />
           </label>
           <select
@@ -1448,8 +1457,13 @@ function RunInventory({
         </table>
       </div>
       <div className="table-footer">
-        Maximum 200 exécutions affichées · La cohorte des indicateurs est
-        calculée sur le serveur.
+        {runs.length} résultat(s) dans les {loaded} exécutions chargées
+        {total != null && ` sur ${total} dans la cohorte`}.
+        {total != null && total > loaded
+          ? " Seules les 200 plus récentes sont chargées : affinez les filtres pour retrouver les autres."
+          : ""}{" "}
+        Recherche et tri sur les lignes chargées ; indicateurs sur toute la
+        cohorte serveur.
       </div>
     </div>
   );
@@ -1468,15 +1482,7 @@ function Compare({
     [error, setError] = useState(""),
     [side, setSide] = useState("left");
   const leftId = selection.left || runs[0]?.id || "",
-    rightId =
-      selection.right ||
-      runs.find(
-        (r) =>
-          r.id !== leftId &&
-          comparable(r, runs.find((r) => r.id === leftId) || r),
-      )?.id ||
-      runs[1]?.id ||
-      "";
+    rightId = selection.right || comparisonCandidate(runs, leftId);
   useEffect(() => {
     setLeft(null);
     setRight(null);
@@ -1542,6 +1548,15 @@ function Compare({
               value={i ? rightId : leftId}
               onChange={(e) => update({ [key]: e.target.value })}
             >
+              <option value="" disabled>
+                Choisir une exécution
+              </option>
+              {(i ? rightId : leftId) &&
+                !runs.some((run) => run.id === (i ? rightId : leftId)) && (
+                  <option value={i ? rightId : leftId}>
+                    Résultat sélectionné · {(i ? rightId : leftId).slice(0, 8)}
+                  </option>
+                )}
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.scenario_id} ·{" "}
@@ -1560,8 +1575,12 @@ function Compare({
       ) : !leftId || !rightId ? (
         <div className="empty-state">
           <GitCompareArrows size={28} />
-          <h2>Deux exécutions sont nécessaires</h2>
-          <p>Créez deux politiques sur le même scénario et la même graine.</p>
+          <h2>Choisir deux exécutions à comparer</h2>
+          <p>
+            Aucune paire comparable n’a été sélectionnée. Choisissez deux
+            résultats du même scénario, de la même graine et de la même
+            provenance, ou une autre paire pour une lecture exploratoire.
+          </p>
         </div>
       ) : !left || !right || left.id !== leftId || right.id !== rightId ? (
         <div className="loading-state">
@@ -1624,8 +1643,14 @@ function Compare({
                   },
                   {
                     label: "Coût opérationnel estimé",
-                    a: Number(left.metrics?.fleet_cost_cad),
-                    b: Number(right.metrics?.fleet_cost_cad),
+                    a:
+                      left.metrics?.fleet_cost_cad == null
+                        ? null
+                        : Number(left.metrics.fleet_cost_cad),
+                    b:
+                      right.metrics?.fleet_cost_cad == null
+                        ? null
+                        : Number(right.metrics.fleet_cost_cad),
                     unit: "CAD",
                   },
                   {
@@ -1636,8 +1661,12 @@ function Compare({
                   },
                   {
                     label: "Durée des agents",
-                    a: (left.duration_ms || 0) / 1000,
-                    b: (right.duration_ms || 0) / 1000,
+                    a:
+                      left.duration_ms == null ? null : left.duration_ms / 1000,
+                    b:
+                      right.duration_ms == null
+                        ? null
+                        : right.duration_ms / 1000,
                     unit: "s",
                   },
                 ].map((m) => (

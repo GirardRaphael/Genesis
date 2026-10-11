@@ -18,11 +18,11 @@ test('persisted routes, residual certificate, filters and comparison', async ({ 
   await expect(page.locator('.route-map .maplibregl-canvas')).toBeVisible();
   await expect(page.locator('.route-map .stop-marker')).toHaveCount(chosen.simulation.replan_dataset.stops.length);
   await page.screenshot({ path:'screenshots/residual.png', fullPage:true });
-  await page.getByRole('button', {name:'Exécutions',exact:true}).click();
+  await page.getByLabel('Dossier des agents', {exact:true}).selectOption('runs');
   await page.getByLabel('Filtrer par scénario').selectOption('S03');
   const expectedRows=(await (await request.get('http://127.0.0.1:8000/api/v1/runs?scenario_id=S03&limit=200')).json()).items.length;
   await expect(page.locator('.run-table tbody tr')).toHaveCount(expectedRows);
-  await page.getByRole('button', {name:'Comparer',exact:true}).first().click();
+  await page.getByLabel('Dossier des agents', {exact:true}).selectOption('compare');
   await expect(page.getByLabel('Exécution A')).toBeVisible();
   const pair=(await (await request.get('http://127.0.0.1:8000/api/v1/runs?scenario_id=S03&provenance=fixture&status=succeeded&limit=200')).json()).items;
   const a=pair.find(row=>row.policy==='baseline_only'&&row.seed===17);
@@ -72,7 +72,7 @@ test('individual failed model attempts are inspectable without fictional tokens'
 });
 
 test('create fixture through API and preserve modal keyboard focus',async({page})=>{
-  await page.goto('/');
+  await page.goto('/?view=runs');
   const opener=page.getByRole('button',{name:'Nouvelle exécution',exact:true});
   await opener.click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -82,15 +82,16 @@ test('create fixture through API and preserve modal keyboard focus',async({page}
   await opener.click();
   await page.getByRole('button',{name:'Créer l’exécution',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button',{name:'Flotte & tournées',exact:true}).click();
+  await page.getByLabel('Dossier des agents', {exact:true}).selectOption('fleet');
   await expect(page.getByRole('heading',{name:'Tournées de la flotte / Montréal'})).toBeVisible({timeout:15000});
 });
 
 test('responsive overview accessibility and rendering',async({page,request})=>{
   const rows=(await (await request.get('http://127.0.0.1:8000/api/v1/runs?provenance=fixture&status=succeeded&scenario_id=S01&limit=1')).json()).items;
   await page.goto(`/?view=overview&run=${rows[0].id}`);
-  await expect(page.getByRole('heading',{name:'Vue d’ensemble',exact:true})).toBeVisible();
-  await expect(page.locator('.overall-cost .meter-summary')).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Résumé de l’exécution',exact:true})).toBeVisible();
+  await expect(page.locator('.overall-cost')).toHaveCount(0);
+  await expect(page.getByRole('navigation', {name:'Navigation principale'}).getByRole('button')).toHaveCount(3);
   await expect(page.getByRole('heading',{name:'Tournées de la flotte / Montréal'})).toBeVisible();
   await expect(page.locator('.route-map .maplibregl-canvas')).toBeVisible();
   const results=await new AxeBuilder({page}).analyze();

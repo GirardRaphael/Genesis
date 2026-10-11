@@ -6,6 +6,8 @@ Implemented: independently validated baseline/OR-Tools routes, a bounded depot-o
 
 Cost monitoring refreshes during operations and shows every model attempt, agent/model totals and the overall ledger across all handled requests.
 
+The operator interface has three workspaces: Opérations opens Montréal dispatch, Analytique contains global reporting, and Agents groups execution activity, history, comparisons and detailed results. Historical links remain valid. Removable active filters, named compact/mobile navigation and Montréal daylight-saving-aware timestamps make the current scope visible. Analytics offers a local CSV export with units, timestamps, coverage and explicit limits; selected delivery stops link their schedule, map marker and paired pickup/drop-off details. See [interface refinement and verification scope](docs/work/U14-interface.md).
+
 Optional email alerts notify one configured recipient when the shared API budget guard triggers. The dashboard shows queued, SMTP-accepted, failed or uncertain delivery. Configure the SMTP fields in the private `.env`; see [budget-email setup and delivery contract](docs/BUDGET-EMAIL.md). No external email service is configured by default.
 
 The dispatcher now previews operator-entered addresses and multiple deliveries before reserving a van. Its route library recognizes completed recurring work and compares historical stop orders with simulated elapsed time, distance and cadence. Routine explanations use three live calls on a history miss and zero when a completed historical assignment matches the newly validated plan; the complete five-call policy remains selectable. Current roads, fleet, deadlines and certificates are checked every time. See [route-memory contract](docs/ROUTE-MEMORY.md).

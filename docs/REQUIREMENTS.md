@@ -39,6 +39,12 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 | U12 | User: arbitrary Montréal address routes, multiple deliveries and habitual-route efficiency context to reduce tokens | Editable address drafts and reservation-free road previews, visible-route filters, durable successful-trip history/variants, bounded aggregate context and explicit routine explanation policy | Different real-provider previews; isolated browser history/edit/reuse; current-origin, current-road, constraint/hash/fleet checks; always 5/routine miss 3/routine hit 0 explanation tests; explicit simulation and omission provenance; replay protects future outcomes |
 | U13 | User: email notifications once the service limit is reached | One durable shared-budget alert, optional verified-TLS SMTP worker, read-only redacted delivery status beside global costs | Global vs run-local trigger tests, atomic capture/dedup/restart, held-fund/blocked-request truth, credential validation, retries/uncertainty fencing, real loopback SMTP capture, independent cost/status polling and accessible state checks; external configuration pending |
 
+## Interface extension — 2026-10-11
+
+| ID | Source and requirement | Implementation | Acceptance evidence |
+|---|---|---|---|
+| U14 | User: senior web-design refinement, useful completion features and fewer redundant tabs | Three primary workspaces, preserved execution deep links, readable responsive controls, visible removable filters, scoped CSV analytics export, selected-stop map/schedule/detail links, truthful timezone and comparison defaults | Logic/static-render tests and build; independent source review. Browser acceptance awaits user reload from an MCP-blocked data: error page; no commercial-readiness claim |
+
 ## Rubric priority
 
 Multiagent functioning 15; data collection/quality 10; visualization accuracy 25; interactivity/usability 15; interpretation 20; technical organization 5; report/documentation 5; presentation 5. These are the brief's proposed points, not earned scores.

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Download, RefreshCw } from "lucide-react";
 import type { EChartsCoreOption } from "echarts/core";
 import { Chart, palette } from "./Chart";
 import { api } from "./api";
@@ -13,9 +14,11 @@ import {
   tokensByRole,
 } from "./analyticsData";
 import type { RunPage, Usage, UsageGroup } from "./analyticsData";
+import { analyticsCsv } from "./analyticsExport";
+import type { AnalyticsSnapshot } from "./analyticsExport";
 import "./Analytics.css";
 
-type Snapshot = { metrics: Cohort; usage: Usage; runs: RunPage };
+type Snapshot = AnalyticsSnapshot & { query: string };
 type Group = "agents" | "models";
 type Measure = "cost" | "tokens" | "latency";
 
@@ -25,16 +28,29 @@ const shortPolicy = (policy: string) =>
     : policy === "solver_with_one_replan"
       ? "Solveur + replan."
       : policy;
+const statusColors: Record<string, string> = {
+  succeeded: "#366a4d",
+  failed: "#a3423d",
+  running: "#167887",
+  queued: "#65649a",
+  cancelled: "#647178",
+  timed_out: "#925e27",
+  budget_exceeded: "#925e27",
+};
 
 export function Analytics({
   selection,
   onFilter,
+  refreshKey = 0,
 }: {
   selection: Selection;
   onFilter: (change: Partial<Selection>) => void;
+  refreshKey?: number;
 }) {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [loadedSnapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
   const [group, setGroup] = useState<Group>("agents");
   const [measure, setMeasure] = useState<Measure>("cost");
   const query = useMemo(() => {
@@ -55,17 +71,19 @@ export function Analytics({
     selection.agent,
     selection.model,
   ]);
+  const snapshot = loadedSnapshot?.query === query ? loadedSnapshot : null;
 
   useEffect(() => {
     const controller = new AbortController();
     let inFlight = false;
-    setSnapshot(null);
     setError("");
+    setExportMessage("");
     const suffix = query ? `?${query}` : "";
     const runQuery = `${query ? `${query}&` : ""}limit=200`;
     const refresh = async () => {
       if (inFlight) return;
       inFlight = true;
+      setRefreshing(true);
       try {
         const [metrics, usage, runs] = await Promise.all([
           api<Cohort>(`/metrics${suffix}`, controller.signal),
@@ -73,7 +91,13 @@ export function Analytics({
           api<RunPage>(`/runs?${runQuery}`, controller.signal),
         ]);
         if (!controller.signal.aborted) {
-          setSnapshot({ metrics, usage, runs });
+          setSnapshot({
+            metrics,
+            usage,
+            runs,
+            query,
+            receivedAt: new Date().toISOString(),
+          });
           setError("");
         }
       } catch (reason) {
@@ -83,6 +107,7 @@ export function Analytics({
           );
       } finally {
         inFlight = false;
+        if (!controller.signal.aborted) setRefreshing(false);
       }
     };
     void refresh();
@@ -91,7 +116,31 @@ export function Analytics({
       controller.abort();
       clearInterval(interval);
     };
-  }, [query]);
+  }, [query, refreshKey]);
+
+  const exportCsv = () => {
+    if (!snapshot) return;
+    try {
+      const exportedAt = new Date().toISOString();
+      const blob = new Blob(
+        [analyticsCsv(snapshot, selection, exportedAt, Boolean(error))],
+        { type: "text/csv;charset=utf-8" },
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `genesis-analyses-${exportedAt.slice(0, 19).replaceAll(":", "-")}.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setExportMessage(
+        "Export CSV préparé avec les filtres et la couverture des données.",
+      );
+    } catch {
+      setExportMessage("Export impossible dans ce navigateur. Réessayez.");
+    }
+  };
 
   const rows = snapshot?.usage[group] || [];
   const tokenRows = snapshot ? tokensByRole(snapshot.usage.agents) : [];
@@ -104,15 +153,22 @@ export function Analytics({
   };
   const groupLabel = (row: UsageGroup) =>
     group === "agents" ? roleName(row.role || "") : row.model || "Indisponible";
-  const labels = rows.filter((row) => row.calls).map(groupLabel);
+  const latencyRows = rows.filter(
+    (row) => row.calls && row.mean_latency_ms != null,
+  );
+  const topLatency = [...latencyRows].sort(
+    (a, b) => (b.mean_latency_ms ?? 0) - (a.mean_latency_ms ?? 0),
+  )[0];
   const costData = share(rows, group === "agents" ? "role" : "model").map(
     (item) => ({
       ...item,
       name: group === "agents" ? roleName(item.name) : item.name,
     }),
   );
+  const topCost = [...costData].sort((a, b) => b.value - a.value)[0];
   const costOption: EChartsCoreOption = {
     color: palette,
+    animationDurationUpdate: 0,
     tooltip: {
       trigger: "item",
       valueFormatter: (value: unknown) => money(Number(value), "USD"),
@@ -123,6 +179,7 @@ export function Analytics({
       right: 0,
       top: "middle",
       width: "43%",
+      textStyle: { width: 175, overflow: "truncate" },
     },
     series: [
       {
@@ -130,6 +187,7 @@ export function Analytics({
         radius: ["52%", "72%"],
         center: ["30%", "50%"],
         label: { show: false },
+        itemStyle: { borderColor: "#fff", borderWidth: 3 },
         data: costData,
       },
     ],
@@ -138,24 +196,27 @@ export function Analytics({
     color: [palette[0], palette[1]],
     tooltip: { trigger: "axis" },
     legend: { bottom: 0, data: ["Entrée", "Sortie"] },
-    grid: { left: 50, right: 12, top: 16, bottom: 65, containLabel: true },
-    xAxis: {
+    grid: { left: 8, right: 28, top: 26, bottom: 45, containLabel: true },
+    xAxis: { type: "value", name: "tokens", minInterval: 1 },
+    yAxis: {
       type: "category",
+      inverse: true,
       data: tokenRows.map((row) => roleName(row.role)),
-      axisLabel: { rotate: 22 },
+      axisLabel: { width: 125, overflow: "truncate" },
     },
-    yAxis: { type: "value", name: "tokens" },
     series: [
       {
         type: "bar",
         name: "Entrée",
         stack: "tokens",
+        barMaxWidth: 28,
         data: tokenRows.map((row) => ({ value: row.input, key: row.role })),
       },
       {
         type: "bar",
         name: "Sortie",
         stack: "tokens",
+        barMaxWidth: 28,
         data: tokenRows.map((row) => ({ value: row.output, key: row.role })),
       },
     ],
@@ -166,11 +227,11 @@ export function Analytics({
       trigger: "axis",
       valueFormatter: (value: unknown) => `${num(Number(value), 0)} ms`,
     },
-    grid: { left: 16, right: 22, top: 15, bottom: 25, containLabel: true },
+    grid: { left: 8, right: 32, top: 25, bottom: 25, containLabel: true },
     xAxis: { type: "value", name: "ms" },
     yAxis: {
       type: "category",
-      data: labels,
+      data: latencyRows.map(groupLabel),
       inverse: true,
       axisLabel: { width: 125, overflow: "truncate" },
     },
@@ -178,17 +239,15 @@ export function Analytics({
       {
         type: "bar",
         barMaxWidth: 28,
-        data: rows
-          .filter((row) => row.calls)
-          .map((row) => ({
-            value: row.mean_latency_ms,
-            key: group === "agents" ? row.role : row.model,
-          })),
+        data: latencyRows.map((row) => ({
+          value: row.mean_latency_ms,
+          key: group === "agents" ? row.role : row.model,
+        })),
       },
     ],
   };
   const statusOption: EChartsCoreOption = {
-    color: palette,
+    color: statuses.map((item) => statusColors[item.name] || "#647178"),
     tooltip: { trigger: "item" },
     legend: {
       type: "scroll",
@@ -203,6 +262,7 @@ export function Analytics({
         radius: ["52%", "72%"],
         center: ["30%", "50%"],
         label: { show: false },
+        itemStyle: { borderColor: "#fff", borderWidth: 3 },
         data: statuses.map((item) => ({
           ...item,
           name: statusLabel(item.name),
@@ -219,29 +279,77 @@ export function Analytics({
     >
       <div className="analytics-intro">
         <div>
-          <span className="eyebrow">
-            ANALYSE DE COHORTE · ACTUALISÉE TOUTES LES 3 S
-          </span>
+          <span className="eyebrow">ANALYSE DE COHORTE</span>
           <h2>Activité et consommation</h2>
         </div>
-        <p>
+        <p className="analytics-description">
           Scénario, statut, politique, agent et modèle suivent les filtres
           communs. Les montants API sont estimés en USD ; les coûts de flotte
           sont estimés en CAD.
         </p>
       </div>
+      <div className="analytics-toolbar">
+        <div className={`analytics-freshness ${error ? "is-stale" : ""}`}>
+          <RefreshCw size={14} aria-hidden="true" />
+          <span>
+            {snapshot
+              ? `${error ? "Dernier état reçu" : "Reçu"} à ${new Date(snapshot.receivedAt).toLocaleTimeString("fr-CA", { timeZone: "America/Toronto" })} · Montréal`
+              : error
+                ? "Chargement échoué"
+                : "Chargement en cours"}
+          </span>
+          <span className="analytics-refresh-note">
+            {refreshing && snapshot
+              ? "Actualisation…"
+              : "Actualisation toutes les 3 s"}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="analytics-export"
+          onClick={exportCsv}
+          disabled={!snapshot}
+        >
+          <Download size={16} aria-hidden="true" /> Exporter le CSV
+        </button>
+      </div>
+      <p className="analytics-scope">
+        Toutes les dates disponibles · Temps réel pour les appels · Simulation
+        pour la flotte. Les tableaux de scénarios et de statuts couvrent au plus
+        200 exécutions récentes.
+      </p>
+      {exportMessage && (
+        <p className="analytics-export-message" role="status">
+          {exportMessage}
+        </p>
+      )}
       {error && (
         <p className="notice" role="alert">
-          Données analytiques indisponibles : {error}
-          {snapshot ? " · Dernier état conservé." : ""}
+          {snapshot
+            ? "Actualisation échouée"
+            : "Données analytiques indisponibles"}{" "}
+          : {error}
+          {snapshot
+            ? " · Dernier état conservé ; le CSV indiquera cet état."
+            : " · Nouvelle tentative automatique toutes les 3 s."}
         </p>
       )}
       {!snapshot ? (
-        <p className="notice" role="status">
-          Chargement de la cohorte…
-        </p>
+        !error && (
+          <div className="analytics-loading" role="status">
+            <RefreshCw size={20} aria-hidden="true" />
+            <strong>Chargement de la cohorte…</strong>
+            <span>Indicateurs, appels et exécutions filtrées.</span>
+          </div>
+        )
       ) : (
         <>
+          {snapshot.metrics.total_runs === 0 && (
+            <p className="notice" role="status">
+              Aucune exécution ne correspond aux filtres. Élargissez la
+              sélection pour explorer les données disponibles.
+            </p>
+          )}
           <div
             className="analytics-kpis"
             aria-label="Indicateurs de la cohorte"
@@ -268,6 +376,7 @@ export function Analytics({
                   : num(Number(snapshot.usage.totals.cost_usd), 6)
               }
               note={`${num(snapshot.usage.totals.cost_coverage * 100, 0)} % des ${snapshot.usage.totals.calls} appels avec coût`}
+              emphasis
             />
             <Kpi
               title="Tokens déclarés"
@@ -292,7 +401,7 @@ export function Analytics({
               <div className="panel-heading analytics-heading">
                 <div>
                   <span className="eyebrow">
-                    APPELS DE MODÈLE · COHORTE COMPLÈTE
+                    APPELS CORRESPONDANT AUX FILTRES
                   </span>
                   <h2 id="analytics-usage-title">
                     Répartition par {group === "agents" ? "agent" : "modèle"}
@@ -353,7 +462,9 @@ export function Analytics({
                   />
                 ) : (
                   <p className="empty">
-                    Aucun coût API connu dans cette cohorte.
+                    {rows.some((row) => row.cost_usd != null)
+                      ? "Coût API connu nul : aucune part à représenter. Consultez les valeurs et la couverture dans le tableau."
+                      : "Aucun coût API connu dans cette cohorte."}
                   </p>
                 )
               ) : measure === "tokens" ? (
@@ -392,6 +503,31 @@ export function Analytics({
                 </p>
               )}
               <p className="chart-caption">
+                {measure === "cost" && costData.length > 0 && (
+                  <>
+                    {topCost.name} représente le coût connu le plus élevé (
+                    {money(topCost.value, "USD")}). La répartition porte sur les
+                    coûts connus, avec une couverture de{" "}
+                    {num(snapshot.usage.totals.cost_coverage * 100, 0)} % des
+                    appels.{" "}
+                  </>
+                )}
+                {measure === "tokens" &&
+                  snapshot.usage.totals.total_tokens != null && (
+                    <>
+                      {num(snapshot.usage.totals.total_tokens, 0)} tokens
+                      déclarés ; entrée et sortie disponibles pour{" "}
+                      {num(snapshot.usage.totals.usage_coverage * 100, 0)} % des
+                      appels.{" "}
+                    </>
+                  )}
+                {measure === "latency" && topLatency && (
+                  <>
+                    {groupLabel(topLatency)} présente la moyenne mesurée la plus
+                    élevée : {num(topLatency.mean_latency_ms, 0)} ms sur{" "}
+                    {topLatency.latency_samples} appels.{" "}
+                  </>
+                )}
                 Cliquez un élément ou son nom dans le tableau pour filtrer. Les
                 tokens mis en cache sont déjà inclus dans l’entrée et ne sont
                 pas ajoutés une deuxième fois. Valeurs manquantes exclues du
@@ -399,6 +535,11 @@ export function Analytics({
               </p>
               <div className="table-scroll">
                 <table className="analytics-table">
+                  <caption className="analytics-table-caption">
+                    Détail des appels par{" "}
+                    {group === "agents" ? "agent" : "modèle"} · toutes les
+                    exécutions filtrées
+                  </caption>
                   <thead>
                     <tr>
                       <th>{group === "agents" ? "Agent" : "Modèle"}</th>
@@ -499,16 +640,36 @@ export function Analytics({
                       })
                     }
                   >
-                    <span>{statusLabel(item.name)}</span>
-                    <strong>{item.value}</strong>
+                    <span>
+                      <i
+                        className="analytics-status-dot"
+                        style={{
+                          background: statusColors[item.name] || "#647178",
+                        }}
+                        aria-hidden="true"
+                      />
+                      {statusLabel(item.name)}
+                    </span>
+                    <strong>
+                      {item.value}{" "}
+                      <small>
+                        {num(
+                          snapshot.runs.items.length
+                            ? (item.value / snapshot.runs.items.length) * 100
+                            : 0,
+                          0,
+                        )}{" "}
+                        %
+                      </small>
+                    </strong>
                   </button>
                 ))}
               </div>
               <p className="chart-caption">
                 {snapshot.runs.items.length}/{snapshot.runs.total} exécutions
                 affichées.{" "}
-                {snapshot.runs.total > 200
-                  ? "Répartition limitée aux 200 plus récentes de la cohorte."
+                {snapshot.runs.total > snapshot.runs.items.length
+                  ? "Répartition limitée à la page reçue, au plus 200 exécutions récentes."
                   : "Répartition de toute la cohorte."}
               </p>
             </section>
@@ -532,6 +693,10 @@ export function Analytics({
             </p>
             <div className="table-scroll">
               <table className="analytics-table">
+                <caption className="analytics-table-caption">
+                  Scénarios · {snapshot.runs.items.length}/{snapshot.runs.total}{" "}
+                  exécutions récentes reçues
+                </caption>
                 <thead>
                   <tr>
                     <th>Scénario</th>
@@ -583,8 +748,8 @@ export function Analytics({
             </div>
             <p className="chart-caption">
               Coût flotte synthétique en CAD, séparé de la dépense API.{" "}
-              {snapshot.runs.total > 200
-                ? "Table limitée aux 200 exécutions les plus récentes ; les indicateurs d’appels et de cohorte portent sur toutes les exécutions filtrées."
+              {snapshot.runs.total > snapshot.runs.items.length
+                ? "Table limitée à la page reçue, au plus 200 exécutions récentes ; les indicateurs d’appels et de cohorte portent sur toutes les exécutions filtrées."
                 : "Toutes les exécutions filtrées sont incluses."}
             </p>
           </section>
@@ -598,13 +763,17 @@ function Kpi({
   title,
   value,
   note,
+  emphasis = false,
 }: {
   title: string;
   value: string;
   note: string;
+  emphasis?: boolean;
 }) {
   return (
-    <div className="analytics-kpi">
+    <div
+      className={`analytics-kpi ${emphasis ? "analytics-kpi-emphasis" : ""}`}
+    >
       <span>{title}</span>
       <strong>{value}</strong>
       <small>{note}</small>

@@ -19,7 +19,7 @@ test.afterEach(async ({ page }) => {
 });
 
 test('real alert endpoint reports setup needed without hiding the global ledger', async ({ page }) => {
-  await page.goto('/?view=overview');
+  await page.goto('/?view=analytics');
   await expect(page.getByRole('heading', { name: 'Coût API global des opérations', exact: true })).toBeVisible();
   await expect(page.locator('.budget-alert')).toContainText('Configuration requise');
   await expect(page.locator('.budget-alert')).toContainText('.env privé');
@@ -42,7 +42,7 @@ test('SMTP acceptance, uncertain delivery and stale status preserve privacy and 
         created_at: '2026-10-10T18:00:00.000+00:00', updated_at: '2026-10-10T18:00:05.000+00:00', sent_at: state === 'sent' ? '2026-10-10T18:00:05.000+00:00' : null,
       } } });
   });
-  await page.goto('/?view=overview');
+  await page.goto('/?view=analytics');
   await expect(page.locator('.budget-alert .badge')).toHaveText('Acceptée par le serveur SMTP');
   await expect(page.locator('.budget-alert')).toContainText('ne confirme pas la réception');
   state = 'uncertain';
@@ -66,7 +66,7 @@ test('stalled mail status cannot stall global cost loading', async ({ page }) =>
     await wait;
     await route.fulfill({ json: { configured: false, configuration_error: 'not_configured', guard, event: null } });
   });
-  await page.goto('/?view=overview');
+  await page.goto('/?view=analytics');
   try {
     await expect(page.locator('.overall-cost .meter-summary')).toBeVisible();
     await expect(page.locator('.budget-alert')).toContainText('Chargement de l’état du courriel');

@@ -18,6 +18,16 @@ Evidence date: 2026-10-10. **Verdict: local decision-support prototype; not read
 
 All fixes above are scoped to the local prototype. Tests are evidence for their cases, not proof of absence of every bug. Prior local baseline:59 Python tests,12 web tests and7 browser journeys; current broker checks include 78 Python tests and 13 web tests. Targeted browser journeys passed 8/8; the independent full rerun was 6/8 because prior trips exhausted the shared demo fleet. This QA isolation limitation is open and recorded in the review. Actual model-spend evidence is separated from fixture outputs.
 
+## Interface refinement follow-up (U14)
+
+- [x] Expose active filters and individual clearing, keep navigation named at compact widths, and fix the Montréal seasonal offset.
+- [x] Add scoped local analytics export with explicit coverage/units/staleness and formula-safe text.
+- [x] Link a saved trip's schedule, selected map marker and paired stop details; preserve simulated status and unavailable evidence honestly.
+- [x] Consolidate into three workspaces; keep global budget/reporting in Analytique and per-run monitoring/evidence in Agents. Label newest-200 inventory limits and avoid arbitrary default comparison pairs.
+- [ ] Review the updated rendered layout at 1440/1280/1024/768/390/320px, keyboard/reduced-motion behavior, CSV download and MapLibre focus. Browser policy blocked this session; static checks do not close this gate.
+- [ ] Add server-side inventory search/pagination when the newest-200 limit prevents an operator from finding required records; test chronological cursor continuity and selection preservation.
+- [ ] Validate usability with actual dispatchers and then prioritize authenticated driver acceptance/GPS/POD and cargo recovery. Cosmetic completion cannot replace the operational P0 items below.
+
 ## P0 — must finish before any real customer operation
 
 - [ ] **Identity/tenant isolation.** Authenticate dispatchers and drivers; scope every plan, trip, artifact, SSE stream, export and mutation to its company. Acceptance: two-tenant denial tests across all paths and immutable mutation audit.

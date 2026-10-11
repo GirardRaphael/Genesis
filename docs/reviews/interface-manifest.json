@@ -1,0 +1,124 @@
+{
+  "reviewed_base": "e8eb34d247c7db69e886ac1cf502ac63d28ec946",
+  "review_date": "2026-10-11",
+  "scope": "U14 interface implementation after three-workspace consolidation; excludes U15 presentation work and publication metadata",
+  "normalization": "UTF-8 text; CRLF and CR replaced by LF; fingerprint of sorted path + NUL + lowercase SHA256 + LF records",
+  "exclusions": [
+    "docs/reviews/*",
+    "docs/ACTION-LOG.md",
+    "docs/IMPLEMENTATION-STATUS.md",
+    "presentations/**",
+    "docs/work/U15-technical-presentation.md"
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "sha256_lf": "bba75f712c29b50ef7b0122e9c75da2abf628b77e5f57e0efe1484a167c50954"
+    },
+    {
+      "path": "apps/web/src/Analytics.css",
+      "sha256_lf": "04c2f941cf2defe1cf31c0c8015ec074515e74e47f33b889d05259e0da466d16"
+    },
+    {
+      "path": "apps/web/src/Analytics.tsx",
+      "sha256_lf": "654ee9991d87da30b076004c1a6a4fd93dde69948593e039a92911f8e46ea381"
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "sha256_lf": "7f67ebacb86de8c0bb594e9d4691bc077b307cd8c68a293ddc9d6a61220574fc"
+    },
+    {
+      "path": "apps/web/src/Dispatch.css",
+      "sha256_lf": "38b0c3f90185f8f894e6793cf66fa20554433a3ec83b46ccd48983d2dc1eeb78"
+    },
+    {
+      "path": "apps/web/src/Dispatch.tsx",
+      "sha256_lf": "daa16af1cfe1b05b1eb099e206ca58515060e1af47aba6c8a35ba3439bd559d2"
+    },
+    {
+      "path": "apps/web/src/DispatchMap.tsx",
+      "sha256_lf": "a5546b6c00104da3759f2ef446ff864ec72aa2711da17c298c3f7f0ec08ab53c"
+    },
+    {
+      "path": "apps/web/src/WorkspaceControls.test.tsx",
+      "sha256_lf": "9c47dbf8a3da4daa83aec2a7d1d1d84aa90e28838856fe97593fc111298686f3"
+    },
+    {
+      "path": "apps/web/src/WorkspaceControls.tsx",
+      "sha256_lf": "5e0f4c65b7122249497d910c288bd6a6667f9b169d2a3e054eeddc77c1bfce14"
+    },
+    {
+      "path": "apps/web/src/analyticsExport.test.ts",
+      "sha256_lf": "d3746e0ebeecb4b93630f547b5bdf695733ff8877c0b2cfce653d3ef63fa610b"
+    },
+    {
+      "path": "apps/web/src/analyticsExport.ts",
+      "sha256_lf": "b6982af056b1d149a5a48febc2be60597cb81aa6db9bad9fd7779b9e6e00b8c6"
+    },
+    {
+      "path": "apps/web/src/dispatchSelection.test.ts",
+      "sha256_lf": "dd595d928749d534e0da865bb154fe5180ff8e773213e61a4d677c64c6bc62b2"
+    },
+    {
+      "path": "apps/web/src/dispatchSelection.ts",
+      "sha256_lf": "11968aac668ca32ee48b598b4c97a0854c63e0b33bf1dd3e3340fc7dfb7ab9a6"
+    },
+    {
+      "path": "apps/web/src/state.test.ts",
+      "sha256_lf": "cd7ac36a8c4d184bd3c99d1e999655ccd256b29f3e8282860c07091d9286b6aa"
+    },
+    {
+      "path": "apps/web/src/state.ts",
+      "sha256_lf": "480bb6058e438b2e83bd387e64c09079b4d00da7c7f2331c0d0bfba78de228c0"
+    },
+    {
+      "path": "apps/web/src/style.css",
+      "sha256_lf": "3e46f61a3f17d640cefb51c65e4b67e86f711c9cd7b191783b7cbd57b3897f5a"
+    },
+    {
+      "path": "docs/DATA-CONTRACT.md",
+      "sha256_lf": "6a4abe9b0bdaa6116d079a381a96b641a4110c7dedb8fedf995f4ee8b3b1f3d6"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256_lf": "af3a128aaa1b81188705f2e45155d2e6734b8c247d53a4bdf5e0785e315a4021"
+    },
+    {
+      "path": "docs/PLAN.md",
+      "sha256_lf": "42a4166be763cafcedb58cd53391771747b05b44c7612dab7bf7cfb14f4fdade"
+    },
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "sha256_lf": "574dc2f7ba83f356df9c8d5d8913b2a1ab6596ea407efc58b08bf58e7f58fa1a"
+    },
+    {
+      "path": "docs/TRANSPORT-CHECKLIST.md",
+      "sha256_lf": "b4f8329a50ce85b5a68f7c619c251bf9e70ce5019cf0d01fb85f54be3a2c0375"
+    },
+    {
+      "path": "docs/UI-SPEC.md",
+      "sha256_lf": "a5b8648c5155d693592287942358bc06726475acf82415af603453cfc3846dea"
+    },
+    {
+      "path": "docs/work/U14-analytics.md",
+      "sha256_lf": "ba96f5c94f8f61ffa18e9af984659811e35f84fb7a06f0e011bda39344df959f"
+    },
+    {
+      "path": "docs/work/U14-dispatch.md",
+      "sha256_lf": "55854b619b9bea94f5fc23b08e4061afc1790b02e9e5e8f07575a470a678d314"
+    },
+    {
+      "path": "docs/work/U14-interface.md",
+      "sha256_lf": "54f06f3578ae2c125f6cc632b16110a5e007c95b2078a583bc147b4a1962a5a0"
+    },
+    {
+      "path": "qa/tests/budget.browser.spec.ts",
+      "sha256_lf": "1058d0f4bd35d43d0d731d4b391e221ba87ce20423b983fdf65e355a5e450b07"
+    },
+    {
+      "path": "qa/tests/observatory.spec.ts",
+      "sha256_lf": "f313ff5d399d3e6fb37683ddfed4d6779087371546eecb0858f6a017de5ae5ff"
+    }
+  ],
+  "content_sha256": "9e72c9be00c5844bb9a4fcfad5471f7a5670390c63edd0b6c053d58d638bccbc"
+}

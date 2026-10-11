@@ -1,0 +1,27 @@
+# U14 analytics finish and local export
+
+Date: 2026-10-11. Owner: delegated Codex analytics agent; actual model label is not exposed in this context. Status: implementation complete, awaiting consolidated build and independent review by the lead's separate verifier.
+
+Requirements: U14 (lead-assigned UI finish), U08, U07, U04; R09/R10 comparisons, charts and KPI semantics; R11/R12 readable units, captions and filters. R07/R08 graph/run inspection are dependencies preserved outside this package, not newly implemented here.
+
+Owned files: `apps/web/src/Analytics.tsx`, `apps/web/src/Analytics.css`, `apps/web/src/analyticsExport.ts`, `apps/web/src/analyticsExport.test.ts`, and this record. Dependencies: existing `analyticsData`, `Chart`, common `Selection`, Cohort/Usage/RunPage contracts, API `/metrics`, `/usage`, `/runs`; parent owns App/common styles and public docs/action log.
+
+Acceptance: current-filter local CSV contains timestamps, exact scope/page counts, units, sample denominators and coverage; API decimal cost strings retained; zero differs from missing; proper CSV quoting/CRLF/UTF-8 BOM; formula-looking text is inert in spreadsheets. Keep filter-linked charts and keyboard table alternatives, French UI, sober teal/slate palette. Distinguish initial loading/failure, loaded empty, refresh and stale retained data. Optional `refreshKey` connects parent refresh. Run focused export tests and existing analytics tests; lead owns consolidated build and independent review.
+
+Exclusions: backend, new dependencies, live provider/API execution, secrets/private artifacts, address/output export, .env, browser/alternate UI automation (live browser access is blocked), commits/pushes and modifications outside owned files. Endpoint reads occur together but no cross-endpoint snapshot guarantee is available; export must state this limit.
+
+## Changes and evidence
+
+Added a local CSV download of the current filtered refresh batch: cohort KPIs, both usage groupings, and existing bounded status/scenario summaries. Metadata names selected filters, UTC receipt/export timestamps, metrics snapshot, all-date scope, clocks, USD/CAD units, coverage ratios and bounded page counts. It states the lack of cross-endpoint transactional consistency. API cost decimals remain strings; scenario mean fleet cost reuses the existing numeric projection. Missing cells stay empty and zero stays numeric zero. CSV uses nine consistent columns, quotes/escaped quotes, embedded newline preservation, CRLF and UTF-8 BOM. Formula-looking text receives an apostrophe. Inspection IDs/search strings, outputs and addresses are excluded.
+
+Analytics now keeps successful same-filter data through refresh failures, suppresses old-filter snapshots, shows receipt/refresh/stale/initial-failure/empty states, and accepts optional `refreshKey`. KPI values share one restrained surface, token bars run horizontally with readable labels, null latencies are excluded, status colors are stable and status counts include visible-page percentages. Captions provide computed observations and coverage; existing interactive table alternatives remain present. Page-limit captions compare actual received/total counts.
+
+Verification: `npx.cmd prettier --write src/Analytics.tsx src/Analytics.css src/analyticsExport.ts src/analyticsExport.test.ts`; focused `npm.cmd test -- src/analyticsData.test.ts src/analyticsExport.test.ts` passed twice, finally 2026-10-11 10:16:59 local (2 files, 6 tests). New tests exercise scope/timestamps, exact decimal cost, coverage, missing vs zero, both groupings, all formula prefixes/whitespace, quotes/embedded newlines/BOM/CRLF and an empty run page. Existing analytics projections still pass. Owned-file diff inspected; no API/provider/browser call, commit or push. Lead owns full build, action log/public contract updates and independent review; visual QA and actual browser download remain unverified under the browser access block.
+
+Pre-freeze CSS refinement: raised analytics labels/captions/freshness to at least 12px and table content/links/control labels to at least 13px, using `max(px, rem)` to preserve scaling with the app's 14px root. Export target is at least 40px high, 44px on narrow layouts. Scoped header/link overrides prevent smaller inherited global table styles. Formatted owned CSS and checked the diff; no logic changed, so focused tests were not repeated for this refinement. Final build/review remain with the lead and browser access remains blocked.
+
+Independent reviewer P2 correction: freshness uses explicit `America/Toronto` rather than the browser's implicit timezone, with a visible Montréal qualifier, matching the application shell even on a non-Eastern device. CSV timestamps remain explicit UTC. Lead owns consolidated verification of this corrected tree.
+
+Second independent P2 correction: CSV run-scope metadata now describes matching agent invocations/model attempts, including fixture and policy-omitted invocations with zero model calls; separate call-scope metadata remains unchanged. Added a zero-call metadata assertion test and clarified API cost string preservation versus the existing numeric mean fleet-cost projection. Query/filter sources are unchanged.
+
+Corrected-tree focused verification: `npm.cmd test -- src/analyticsData.test.ts src/analyticsExport.test.ts` passed at 10:22:12 local, 2026-10-11 (2 files, 7 tests). Owned-file Prettier and `git diff --check` pass. Analytics owned files are frozen for the lead's final build and independent re-review.

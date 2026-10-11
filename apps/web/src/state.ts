@@ -33,7 +33,7 @@ export function readSelection(search: string): Selection {
       "dispatch",
     ].includes(view || "")
       ? (view as View)
-      : "overview",
+      : "dispatch",
     run: p.get("run") || "",
     left: p.get("left") || "",
     right: p.get("right") || "",
@@ -50,6 +50,16 @@ export function selectionSearch(s: Selection) {
   for (const [key, value] of Object.entries(s))
     if (value) p.set(key === "query" ? "q" : key, value);
   return "?" + p.toString();
+}
+export function montrealZone(date: Date) {
+  return (
+    new Intl.DateTimeFormat("fr-CA", {
+      timeZone: "America/Toronto",
+      timeZoneName: "shortOffset",
+    })
+      .formatToParts(date)
+      .find((part) => part.type === "timeZoneName")?.value || "America/Toronto"
+  );
 }
 export function filterRuns(runs: Run[], s: Selection) {
   return runs.filter(
@@ -76,6 +86,12 @@ export function comparable(a: Run, b: Run) {
     a.seed === b.seed &&
     a.provenance === b.provenance
   );
+}
+export function comparisonCandidate(runs: Run[], leftId: string) {
+  const left = runs.find((run) => run.id === leftId);
+  return left
+    ? runs.find((run) => run.id !== leftId && comparable(left, run))?.id || ""
+    : "";
 }
 export function delta(a: number, b: number) {
   return { absolute: b - a, percent: a === 0 ? null : ((b - a) / a) * 100 };

@@ -17,6 +17,7 @@ import { api } from "./api";
 import { BrokerPlanning } from "./BrokerPlanning";
 import { DispatchMap, dispatchColor } from "./DispatchMap";
 import { RouteLibrary } from "./RouteLibrary";
+import { selectedDispatchStop, type StopSelection } from "./dispatchSelection";
 import type {
   BrokerDelivery,
   DispatchTrip,
@@ -98,6 +99,9 @@ async function postDispatch<T>(
 export function Dispatch() {
   const [trips, setTrips] = useState<DispatchTrip[]>([]);
   const [selected, setSelected] = useState("");
+  const [stopSelection, setStopSelection] = useState<StopSelection | null>(
+    null,
+  );
   const [mapFocus, setMapFocus] = useState(0);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
@@ -196,12 +200,35 @@ export function Dispatch() {
   }, [trafficRefresh]);
 
   const chosen = trips.find((trip) => trip.id === selected);
+  const selectedStop = selectedDispatchStop(
+    stopSelection,
+    chosen,
+    showTrips && (tripFilter === "all" || chosen?.status === tripFilter),
+  );
+  useEffect(() => {
+    if (stopSelection && !selectedStop) setStopSelection(null);
+  }, [stopSelection, selectedStop]);
+
   const selectTrip = (id: string) => {
+    if (id !== selected) setStopSelection(null);
     setSelected(id);
     setShowTrips(true);
     setTripFilter("all");
     setMapTarget("selected");
     setMapFocus((n) => n + 1);
+  };
+  const selectStop = (tripId: string, stopId: string) => {
+    if (
+      !trips.some(
+        (trip) =>
+          trip.id === tripId && trip.stops.some((stop) => stop.id === stopId),
+      )
+    )
+      return;
+    setSelected(tripId);
+    setStopSelection({ tripId, stopId });
+    setShowTrips(true);
+    setTripFilter("all");
   };
   const active = trips.filter((trip) => trip.status === "running").length;
   const planned = trips.filter((trip) => trip.status === "ready").length;
@@ -683,7 +710,9 @@ export function Dispatch() {
           <DispatchMap
             trips={showTrips ? visibleTrips : []}
             selected={selected}
+            selectedStopId={selectedStop?.id || ""}
             onSelect={selectTrip}
+            onSelectStop={selectStop}
             focusVersion={mapFocus}
             focusTarget={mapTarget}
             draftPlaces={showPreview ? draftPlaces : []}
@@ -849,7 +878,17 @@ export function Dispatch() {
               ))}
             </div>
           )}
-          {chosen && <TripDetail trip={chosen} busy={busy} onAction={act} />}
+          {chosen && (
+            <TripDetail
+              key={chosen.id}
+              trip={chosen}
+              selectedStopId={selectedStop?.id || ""}
+              onSelectStop={(stopId) => selectStop(chosen.id, stopId)}
+              onClearStop={() => setStopSelection(null)}
+              busy={busy}
+              onAction={act}
+            />
+          )}
         </aside>
       </div>
       <RouteLibrary
@@ -1074,15 +1113,37 @@ function PlaceSearch({
   );
 }
 
-function TripDetail({
+export function TripDetail({
   trip,
+  selectedStopId,
+  onSelectStop,
+  onClearStop,
   busy,
   onAction,
 }: {
   trip: DispatchTrip;
+  selectedStopId: string;
+  onSelectStop: (stopId: string) => void;
+  onClearStop: () => void;
   busy: string;
   onAction: (id: string, action: "start" | "cancel") => Promise<void>;
 }) {
+  const stopList = useRef<HTMLOListElement>(null);
+  const detailId = useId();
+  const selectedStop = trip.stops.find((stop) => stop.id === selectedStopId);
+  const pairedStop =
+    selectedStop &&
+    trip.stops.find(
+      (stop) =>
+        stop.delivery_id === selectedStop.delivery_id &&
+        stop.kind !== selectedStop.kind,
+    );
+  useEffect(() => {
+    const list = stopList.current;
+    const row = list?.querySelector<HTMLElement>(".selected");
+    if (list && row) list.scrollTop = Math.max(0, row.offsetTop - 8);
+  }, [selectedStopId]);
+
   return (
     <div className="dispatch-trip-detail">
       <div className="dispatch-trip-detail-head">
@@ -1107,31 +1168,137 @@ function TripDetail({
           </span>
         </div>
       </div>
-      <ol className="dispatch-stop-list">
+      <div className="dispatch-schedule-head">
+        <h3>
+          Ordre de passage <span>{trip.stops.length} arrêts</span>
+        </h3>
+        <p>Choisissez un arrêt pour le repérer et consulter ses détails.</p>
+      </div>
+      <ol
+        className="dispatch-stop-list"
+        ref={stopList}
+        aria-label="Arrêts dans l’ordre du trajet"
+      >
         {trip.stops.map((stop, index) => (
           <li
             key={stop.id}
-            className={stop.status === "completed" ? "completed" : ""}
+            className={`${stop.status === "completed" ? "completed" : ""} ${stop.id === selectedStopId ? "selected" : ""}`}
           >
-            <span className="dispatch-stop-index">{index + 1}</span>
-            <div>
-              <strong>
-                {stop.kind === "pickup" ? "Ramassage" : "Livraison"}
-              </strong>
-              <span>{stop.label}</span>
-              <small>
-                {stop.status === "completed"
-                  ? "Arrêt simulé terminé"
-                  : trip.status === "cancelled"
-                    ? "Non desservi · simulation annulée"
-                    : stop.eta_at
-                      ? `Simulation : ${fmtTime(stop.eta_at)}`
-                      : `Départ + ${Math.round(stop.eta_seconds / 60)} min simulées`}
-              </small>
-            </div>
+            <button
+              type="button"
+              className="dispatch-stop-select"
+              aria-pressed={stop.id === selectedStopId}
+              aria-controls={detailId}
+              onClick={() => onSelectStop(stop.id)}
+            >
+              <span className="dispatch-stop-index" aria-hidden="true">
+                {index + 1}
+              </span>
+              <span className="dispatch-stop-text">
+                <strong>
+                  {index + 1}.{" "}
+                  {stop.kind === "pickup" ? "Ramassage" : "Livraison"}
+                </strong>
+                <span>{stop.label}</span>
+                <small>
+                  {stop.status === "completed"
+                    ? "Arrêt simulé terminé"
+                    : trip.status === "cancelled"
+                      ? "Non desservi · simulation annulée"
+                      : stop.eta_at
+                        ? `Simulation : ${fmtTime(stop.eta_at)}`
+                        : `Départ + ${Math.round(stop.eta_seconds / 60)} min simulées`}
+                </small>
+              </span>
+            </button>
           </li>
         ))}
       </ol>
+      <section
+        className="dispatch-stop-detail"
+        id={detailId}
+        aria-label="Détails de l’arrêt sélectionné"
+      >
+        {selectedStop ? (
+          <>
+            <div className="dispatch-stop-detail-head">
+              <h3>
+                Arrêt {trip.stops.indexOf(selectedStop) + 1} ·{" "}
+                {selectedStop.kind === "pickup" ? "Ramassage" : "Livraison"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  stopList.current
+                    ?.querySelector<HTMLButtonElement>(".selected button")
+                    ?.focus({ preventScroll: true });
+                  onClearStop();
+                }}
+                aria-label="Fermer les détails de l’arrêt"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <p className="dispatch-stop-address" role="status">
+              {selectedStop.label}
+            </p>
+            <dl>
+              <div>
+                <dt>État simulé</dt>
+                <dd>
+                  {selectedStop.status === "completed"
+                    ? "Arrêt terminé"
+                    : trip.status === "cancelled"
+                      ? "Non desservi · annulé"
+                      : "À desservir"}
+                </dd>
+              </div>
+              <div>
+                <dt>Arrivée simulée prévue</dt>
+                <dd>
+                  {selectedStop.eta_at
+                    ? `${fmtTime(selectedStop.eta_at)} · Montréal`
+                    : `Départ + ${Math.round(selectedStop.eta_seconds / 60)} min`}
+                </dd>
+              </div>
+              <div>
+                <dt>Arrêt associé</dt>
+                <dd>
+                  {pairedStop ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectStop(pairedStop.id)}
+                    >
+                      Arrêt {trip.stops.indexOf(pairedStop) + 1} ·{" "}
+                      {pairedStop.kind === "pickup" ? "Ramassage" : "Livraison"}{" "}
+                      <ArrowRight size={12} />
+                    </button>
+                  ) : (
+                    "Non exposé"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Source routière</dt>
+                <dd>{trip.route.source || "Indisponible"}</dd>
+              </div>
+              <div>
+                <dt>Calcul routier</dt>
+                <dd>{fmtDate(trip.route.computed_at)}</dd>
+              </div>
+            </dl>
+            <p className="dispatch-stop-evidence">
+              Fenêtres, charge à cet arrêt et certificat non exposés dans ce
+              trajet. Consultez le résultat du courtier pour les contraintes
+              validées.
+            </p>
+          </>
+        ) : (
+          <p className="dispatch-stop-prompt">
+            La liste reste utilisable si le fond de carte est indisponible.
+          </p>
+        )}
+      </section>
       {trip.status === "running" && (
         <p className="dispatch-sim-progress">
           Position simulée · vitesse {trip.speedup}× ·{" "}
