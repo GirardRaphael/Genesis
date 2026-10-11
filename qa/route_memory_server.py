@@ -63,7 +63,11 @@ def matrix(nodes):
 
 def search(query):
     normalized = query.casefold()
-    items = [place for place in PLACES if normalized in place["label"].casefold()]
+    items = [
+        {"id": f"qa-place-{index}", **place}
+        for index, place in enumerate(PLACES)
+        if normalized in place["label"].casefold()
+    ]
     return {"items": items, "source": "QA synthetic geocoder", "fetched_at": dispatch._stamp()}
 
 

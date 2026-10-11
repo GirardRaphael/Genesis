@@ -1065,7 +1065,7 @@ function PlaceSearch({
                   request.current += 1;
                   controller.current?.abort();
                   setSearching(false);
-                  onChange(item);
+                  onChange({ label: item.label, coordinates: item.coordinates });
                   setText(item.label);
                   setItems([]);
                 }}

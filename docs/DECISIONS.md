@@ -76,3 +76,7 @@ Anthropic API access and the C$100 cap were configured; 20 live experiments comp
 ### D33 — Three operator workspaces
 
 On 2026-10-11 the user rejected redundant primary pages. Keep Opérations, Analytique and Agents as the only main destinations, open Opérations by default, and move existing execution projections into the Agents context selector. Preserve all explicit historical query URLs, run selections and filters. Remove duplicate cohort/global reporting from execution pages; Analytique owns aggregate charts, global cost and budget-email status. Individual run metering remains in Agents. This avoids deleting evidence or replacing the routing contract solely to simplify navigation. Browser acceptance remains pending a user reload from the MCP-blocked data: error page.
+
+### D34 — Selected addresses follow the strict Place contract
+
+U16 removes geocoder metadata at the shared address-selection boundary, retaining only label and coordinates for pickup, drop-off and depot. Keep the API's unknown-field rejection: ignoring arbitrary extra input would hide the client mismatch. QA geocoder results include IDs so the preview, manual and broker request checks exercise the real provider shape. This changes no backend schema, routing algorithm, model policy or persisted history.

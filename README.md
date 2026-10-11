@@ -26,6 +26,8 @@ Copy-Item .env.example .env
 
 Open [the dashboard](http://127.0.0.1:5173) or [API documentation](http://127.0.0.1:8000/docs). Start creates a loopback API, dedicated worker and web server. Stop with `.\scripts\stop.ps1`. Existing private `.env` files should be edited, never overwritten by the example. Price records expire 2026-10-17 and must be revalidated before later live execution.
 
+If an already-open route form still reports `Request fields or query bounds are invalid` after updating the U16 fix, reselect its pickup, drop-off and depot addresses or reload and enter the draft again. The repaired picker removes geocoder metadata before submission; hot reload can preserve an older in-memory draft. See [the repair and verification record](docs/work/U16-route-submission.md).
+
 SQLite is the verified local profile. PostgreSQL Compose and external Langfuse export are optional, unverified configurations. The loopback profile is not a publicly authenticated deployment.
 
 ## Verify and reproduce

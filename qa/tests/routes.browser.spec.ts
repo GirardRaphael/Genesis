@@ -18,12 +18,22 @@ test.afterEach(async ({ page }) => {
 async function selectAddress(page: Page, label: string, text: string) {
   const input = page.getByRole('searchbox', { name: label, exact: true });
   await input.fill(text);
+  const searched = page.waitForResponse((response) => response.url().includes('/dispatch/geocode?'));
   await input.press('Enter');
+  const results = await (await searched).json();
+  expect(results.items.length).toBeGreaterThan(0);
+  expect(results.items.every((item: { id?: string }) => typeof item.id === 'string')).toBe(true);
   const list = page.getByRole('list', { name: `Résultats pour ${label.toLowerCase()}` });
   await expect(list).toBeVisible();
   await input.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(list).toHaveCount(0);
+}
+
+function expectPlaceFields(body: { depot?: object; deliveries: { pickup: object; dropoff: object }[] }) {
+  const places = body.deliveries.flatMap((delivery) => [delivery.pickup, delivery.dropoff]);
+  if (body.depot) places.push(body.depot);
+  for (const place of places) expect(Object.keys(place).sort()).toEqual(['coordinates', 'label']);
 }
 
 test('different entered addresses and multiple deliveries preview without fleet or billing mutations', async ({ page, request }) => {
@@ -34,18 +44,24 @@ test('different entered addresses and multiple deliveries preview without fleet 
   await selectAddress(page, 'Lieu de ramassage', '4500');
   await selectAddress(page, 'Lieu de livraison', '1050');
   await page.getByRole('button', { name: 'Ajouter cette livraison', exact: true }).click();
-  const firstResponse = page.waitForResponse((response) => response.url().endsWith('/dispatch/preview') && response.status() === 200);
+  const firstResponse = page.waitForResponse((response) => response.url().endsWith('/dispatch/preview') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Aperçu routier des livraisons', exact: true }).click();
-  const first = await (await firstResponse).json();
+  const firstReply = await firstResponse;
+  expectPlaceFields(firstReply.request().postDataJSON());
+  expect(firstReply.status()).toBe(200);
+  const first = await firstReply.json();
   await expect(page.locator('.dispatch-preview-summary')).toContainText('2 arrêts');
   expect(first.stops.map((stop: { coordinates: number[] }) => stop.coordinates)).toEqual([[-73.582, 45.523], [-73.581, 45.528]]);
   await selectAddress(page, 'Lieu de ramassage', '5300');
   await selectAddress(page, 'Lieu de livraison', '400 rue');
   await page.getByRole('button', { name: 'Ajouter cette livraison', exact: true }).click();
   await expect(page.locator('.dispatch-preview-summary')).toHaveCount(0);
-  const secondResponse = page.waitForResponse((response) => response.url().endsWith('/dispatch/preview') && response.status() === 200);
+  const secondResponse = page.waitForResponse((response) => response.url().endsWith('/dispatch/preview') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Aperçu routier des livraisons', exact: true }).click();
-  const second = await (await secondResponse).json();
+  const secondReply = await secondResponse;
+  expectPlaceFields(secondReply.request().postDataJSON());
+  expect(secondReply.status()).toBe(200);
+  const second = await secondReply.json();
   await expect(page.locator('.dispatch-preview-summary')).toContainText('4 arrêts');
   expect(second.route.coordinates).not.toEqual(first.route.coordinates);
   expect(second.route.distance_km).toBeGreaterThan(first.route.distance_km);
@@ -54,6 +70,28 @@ test('different entered addresses and multiple deliveries preview without fleet 
   expect((await (await request.get(`${API}/usage`)).json())).toEqual(initialSpend);
   await expect(page.locator('.dispatch-map-canvas canvas')).toBeVisible();
   await page.screenshot({ path: 'screenshots/routes-preview.png', fullPage: true });
+});
+
+test('manual routes accept selected geocoder addresses without provider IDs', async ({ page, request }) => {
+  await page.goto('/?view=dispatch');
+  await selectAddress(page, 'Lieu de ramassage', '5300');
+  await selectAddress(page, 'Lieu de livraison', '400 rue');
+  await page.getByRole('button', { name: 'Ajouter cette livraison', exact: true }).click();
+  await page.locator('.dispatch-manual summary').click();
+  await page.locator('.dispatch-manual select').selectOption('van4');
+  const created = page.waitForResponse((response) => response.url().endsWith('/dispatch/trips') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: /Créer sans courtier/ }).click();
+  const response = await created;
+  expectPlaceFields(response.request().postDataJSON());
+  expect(response.status()).toBe(201);
+  const trip = await response.json();
+  try {
+    await expect(page.getByRole('button', { name: 'Démarrer la simulation', exact: true })).toBeVisible();
+    expect(trip.stops).toHaveLength(2);
+    expect(trip.status).toBe('ready');
+  } finally {
+    expect((await request.post(`${API}/dispatch/trips/${trip.id}/cancel`)).status()).toBe(200);
+  }
 });
 
 test('completed route history loads an editable draft and preserves historical records', async ({ page, request }) => {
@@ -110,6 +148,7 @@ test('broker revalidates completed recurring work and exposes zero actual explan
   const firstCreated = page.waitForResponse((response) => response.url().endsWith('/dispatch/plans') && response.request().method() === 'POST');
   await page.getByRole('button', { name: /Planifier avec les agents/ }).click();
   const first = await firstCreated;
+  expectPlaceFields(first.request().postDataJSON());
   expect(first.status()).toBe(202);
   const firstId = (await first.json()).id;
   await expect.poll(async () => (await (await request.get(`${API}/dispatch/plans/${firstId}`)).json()).status, { timeout: 25_000 }).toBe('succeeded');
