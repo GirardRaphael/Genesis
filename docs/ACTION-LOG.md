@@ -101,6 +101,8 @@ Date basis: America/Toronto, 2026-10-10. Records summarize actual actions; futur
 
 | A080 | Lead | Verified23 staged material hashes,27 staged paths/known credential patterns/whitespace, ignored .env and actual remote; committed/pushed reviewed U13 normally | Commitf2502eb pushed to origin/codex/logistics-implementation. No force push, external email, new account or model-provider call. Only this publication record follows the approved source; recipient/SMTP setup is still pending operator input |
 
+| A081 | 2026-10-11 user / lead; Gmail setup research assigned gpt-6-luna/medium | Resumed U13 checkpoint, configured the user-selected Gmail sender/recipient privately and verified connection/authentication | Official Google SMTP/app-password documentation checked. First stdin check failed before network use because dotenv path discovery lacked a parent frame; corrected with explicit .env path. TLS and SMTP login succeeded without MAIL/RCPT/DATA or any email. API reports configured/no alert/C$100; worker active,0 running jobs. Credentials/address not emitted in public artifacts, .env ignored, no budget reset or billable model call |
+
 ## Verification and publishing records
 
 Records are appended after execution. Historical planning entries describe their state at the time; implementation and paid API evidence appears in A037 onwards.
