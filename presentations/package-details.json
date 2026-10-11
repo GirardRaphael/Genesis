@@ -1,0 +1,1254 @@
+{
+  "python": {
+    "absl-py": {
+      "function": "Fournit les utilitaires Abseil pour options, journalisation et tests Python.",
+      "genesis": "Sert de bibliothèque de support d’OR-Tools; Genesis ne l’importe pas directement.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par ortools.",
+      "example": "Le paquet permet aux modules OR-Tools qui dépendent d’Abseil de charger leurs utilitaires communs.",
+      "evidence": [
+        "services/genesis/solver.py",
+        ".venv/Lib/site-packages/absl_py-2.5.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://abseil.io/docs/python/"
+      ]
+    },
+    "aiosqlite": {
+      "function": "Expose SQLite à asyncio en exécutant les opérations sur une file et un thread dédié.",
+      "genesis": "Est requis par le paquet de checkpoints SQLite, mais Genesis sélectionne le saver synchrone; aucun appel applicatif direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint-sqlite; liens conditionnels distincts : SQLAlchemy (extra == \"aiosqlite\").",
+      "example": "AsyncSqliteSaver peut attendre une écriture sans bloquer la boucle asyncio; ce saver n’est pas celui du workflow Genesis.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/aiosqlite-0.22.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://aiosqlite.omnilib.dev"
+      ]
+    },
+    "alembic": {
+      "function": "Versionne et applique les évolutions de schéma d’une base SQLAlchemy.",
+      "genesis": "Est installé pour l’architecture SQL, mais aucune migration Alembic active n’est appelée; le schéma local est créé par le code.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Une révision Alembic décrirait l’ajout d’une colonne et sa réversion; Genesis n’exécute pas ce mécanisme actuellement.",
+      "evidence": [
+        "services/genesis/db.py",
+        ".venv/Lib/site-packages/alembic-1.20.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://alembic.sqlalchemy.org"
+      ]
+    },
+    "annotated-doc": {
+      "function": "Associe du texte documentaire aux paramètres et types avec typing.Annotated.",
+      "genesis": "Supporte les annotations internes de FastAPI sans import direct dans Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par fastapi.",
+      "example": "Une annotation Doc décrit un paramètre de fonction de bibliothèque; elle ne valide pas une capacité de véhicule.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/annotated_doc-0.0.5.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/fastapi/annotated-doc"
+      ]
+    },
+    "annotated-types": {
+      "function": "Décrit des contraintes réutilisables comme minimum, maximum et longueur dans Annotated.",
+      "genesis": "Fournit les métadonnées interprétées par Pydantic pour ses schémas; Genesis utilise les champs Pydantic.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pydantic.",
+      "example": "Une contrainte Ge représente une borne numérique que le moteur de validation peut appliquer.",
+      "evidence": [
+        "services/genesis/models.py",
+        ".venv/Lib/site-packages/annotated_types-0.8.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/annotated-types/annotated-types"
+      ]
+    },
+    "anthropic": {
+      "function": "Fournit le client officiel de l’API Anthropic, ses types de réponse et ses erreurs.",
+      "genesis": "ModelAdapter l’utilise pour les explications payantes; les autres fournisseurs ne sont pas activés et les reprises SDK sont désactivées.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "messages.create renvoie le texte, l’usage et l’identifiant de requête d’une tentative enregistrée par Genesis.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/anthropic-1.13.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/anthropics/anthropic-sdk-python"
+      ]
+    },
+    "anyio": {
+      "function": "Offre des tâches, synchronisations et entrées/sorties asynchrones sur différents moteurs async.",
+      "genesis": "Supporte Starlette et les clients HTTP installés; aucune orchestration métier Genesis n’appelle directement AnyIO.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic, httpx, httpx2 (sys_platform != \"emscripten\"), langsmith, starlette.",
+      "example": "Une couche serveur peut déléguer un travail synchrone à un thread plutôt que bloquer la boucle événementielle.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/anyio-4.15.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://anyio.readthedocs.io/en/latest/"
+      ]
+    },
+    "backoff": {
+      "function": "Décore une opération pour la réessayer après des délais croissants et une condition d’arrêt.",
+      "genesis": "Est une dépendance du SDK Langfuse facultatif; aucune reprise applicative directe ne lui est confiée.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langfuse.",
+      "example": "Le SDK peut espacer ses tentatives de transport; le budget et les reprises des appels IA restent gérés dans Genesis.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/backoff-2.2.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/litl/backoff"
+      ]
+    },
+    "certifi": {
+      "function": "Distribue un ensemble de certificats racines Mozilla pour vérifier TLS.",
+      "genesis": "Supporte HTTPX/httpcore et Requests; Genesis ne manipule pas directement son fichier de certificats.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par httpcore, httpx, requests.",
+      "example": "Un client HTTP peut vérifier la chaîne TLS d’un serveur contre ce bundle.",
+      "evidence": [
+        "services/genesis/dispatch.py",
+        ".venv/Lib/site-packages/certifi-2026.7.22.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/certifi/python-certifi"
+      ]
+    },
+    "charset-normalizer": {
+      "function": "Détecte l’encodage probable d’un contenu texte reçu comme octets.",
+      "genesis": "Est un support de Requests installé; le code métier utilise HTTPX et ne l’importe pas.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par requests.",
+      "example": "Requests peut décoder une réponse sans encodage exploitable à partir d’une estimation de charset.",
+      "evidence": [
+        "services/genesis/dispatch.py",
+        ".venv/Lib/site-packages/charset_normalizer-3.5.2.dist-info/METADATA",
+        "requirements.txt",
+        "https://charset-normalizer.readthedocs.io/"
+      ]
+    },
+    "click": {
+      "function": "Construit des commandes terminal avec arguments, options et aide intégrée.",
+      "genesis": "Fournit l’interface de commande du serveur Uvicorn; les scripts métier Genesis utilisent argparse.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par uvicorn.",
+      "example": "L’option de lancement --host est analysée par la commande Uvicorn avant le démarrage ASGI.",
+      "evidence": [
+        "scripts/start.ps1",
+        ".venv/Lib/site-packages/click-8.5.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://click.palletsprojects.com/"
+      ]
+    },
+    "colorama": {
+      "function": "Adapte les séquences de couleur de terminal entre plateformes, notamment Windows.",
+      "genesis": "Supporte pytest sous Windows; ce n’est pas une bibliothèque de couleurs de l’interface web.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pytest (sys_platform == \"win32\").",
+      "example": "Les résultats de tests peuvent conserver une sortie terminal colorée sous Windows.",
+      "evidence": [
+        "scripts/check.ps1",
+        ".venv/Lib/site-packages/colorama-0.4.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/tartley/colorama"
+      ]
+    },
+    "distro": {
+      "function": "Expose les informations d’une distribution de système d’exploitation.",
+      "genesis": "Est requis par Langsmith, sans import ni diagnostic métier direct dans Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langsmith.",
+      "example": "Le SDK peut recueillir le nom et la version de la plateforme; cela ne mesure aucun KPI de livraison.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/distro-1.9.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/python-distro/distro"
+      ]
+    },
+    "docstring_parser": {
+      "function": "Analyse les docstrings Python au format reST, Google ou NumPy.",
+      "genesis": "Est requis par le SDK Anthropic, sans appel direct dans l’application.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic.",
+      "example": "Un outil de bibliothèque peut transformer les descriptions de paramètres d’une docstring en métadonnées structurées.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/docstring_parser-0.18.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/rr-/docstring_parser"
+      ]
+    },
+    "fastapi": {
+      "function": "Déclare des routes HTTP typées et produit validation, réponses et documentation OpenAPI.",
+      "genesis": "Expose les missions, commandes, plans, coûts et événements de l’API locale.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Une commande mal formée est refusée avant sa réservation ou son insertion en base.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/fastapi-0.143.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/fastapi/fastapi"
+      ]
+    },
+    "googleapis-common-protos": {
+      "function": "Fournit des classes Protobuf communes aux protocoles Google et à des échanges compatibles.",
+      "genesis": "Supporte l’exporteur OTLP installé; cela n’active aucune API Google Maps dans Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-exporter-otlp-proto-http.",
+      "example": "Un message partagé de statut peut être décodé dans une réponse d’export de télémétrie.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/googleapis_common_protos-1.75.5.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/googleapis/google-cloud-python/tree/main/packages/googleapis-common-protos"
+      ]
+    },
+    "h11": {
+      "function": "Implémente la machine d’état HTTP/1.1 sans gérer lui-même les sockets.",
+      "genesis": "Supporte Uvicorn et les transports httpcore/httpcore2 sans import métier.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par httpcore, httpcore2, uvicorn.",
+      "example": "Le transport traduit des octets en événements Request, Data et EndOfMessage.",
+      "evidence": [
+        "scripts/start.ps1",
+        ".venv/Lib/site-packages/h11-0.16.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/python-hyper/h11"
+      ]
+    },
+    "httpcore": {
+      "function": "Gère connexions, pools et transports synchrones/asynchrones de bas niveau.",
+      "genesis": "Est le transport de HTTPX utilisé pour les services routiers et les tests API.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par httpx.",
+      "example": "Le pool peut réutiliser une connexion vers OSRM au lieu d’ouvrir un socket par requête.",
+      "evidence": [
+        "services/genesis/dispatch.py",
+        ".venv/Lib/site-packages/httpcore-1.0.9.dist-info/METADATA",
+        "requirements.txt",
+        "https://www.encode.io/httpcore"
+      ]
+    },
+    "httpcore2": {
+      "function": "Fournit le transport de bas niveau de la distribution httpx2 installée.",
+      "genesis": "Supporte indirectement le client du SDK Anthropic; Genesis ne l’importe pas.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par httpx2 (sys_platform != \"emscripten\").",
+      "example": "Il gère le transport réseau et le pool de connexions d’une requête envoyée via httpx2.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/httpcore2-2.13.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic/httpx2"
+      ]
+    },
+    "httpx": {
+      "function": "Fournit des clients HTTP synchrones/asynchrones, délais et gestion d’erreurs.",
+      "genesis": "Genesis l’appelle pour Photon, OSRM et les permis de travaux municipaux; les tests l’emploient aussi.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core, langfuse, langgraph-sdk.",
+      "example": "Une matrice routière est demandée avec un délai borné et sa réponse est contrôlée avant utilisation.",
+      "evidence": [
+        "services/genesis/dispatch.py",
+        ".venv/Lib/site-packages/httpx-0.28.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://www.python-httpx.org"
+      ]
+    },
+    "httpx2": {
+      "function": "Fournit une autre distribution de client HTTP, distincte du paquet HTTPX 0.28 installé.",
+      "genesis": "Le SDK Anthropic installé la requiert; les appels routiers Genesis importent le paquet httpx.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic, langsmith.",
+      "example": "La requête d’explication traverse le client httpx2 du SDK sans remplacer l’adaptateur routier HTTPX.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/httpx2-2.13.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic/httpx2"
+      ]
+    },
+    "idna": {
+      "function": "Convertit et valide les noms de domaine internationalisés suivant IDNA.",
+      "genesis": "Supporte les clients HTTP et AnyIO; aucun appel direct de Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anyio, httpx, httpx2, requests.",
+      "example": "Un nom de domaine Unicode peut être normalisé en forme ASCII utilisable dans une connexion réseau.",
+      "evidence": [
+        "services/genesis/dispatch.py",
+        ".venv/Lib/site-packages/idna-3.20.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/kjd/idna"
+      ]
+    },
+    "immutabledict": {
+      "function": "Fournit des dictionnaires dont les entrées ne peuvent pas être modifiées après construction.",
+      "genesis": "Est requis par OR-Tools; Genesis n’utilise pas directement ce type.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par ortools.",
+      "example": "Une bibliothèque peut partager des paramètres immuables sans autoriser une mutation accidentelle.",
+      "evidence": [
+        "services/genesis/solver.py",
+        ".venv/Lib/site-packages/immutabledict-4.3.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://immutabledict.corenting.fr"
+      ]
+    },
+    "iniconfig": {
+      "function": "Lit des fichiers de configuration INI en sections et valeurs.",
+      "genesis": "Est une dépendance de pytest; ce n’est pas le lecteur de configuration métier Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pytest.",
+      "example": "pytest dispose de ce parseur pour les formats INI, alors que les réglages Genesis de pytest sont dans pyproject.toml.",
+      "evidence": [
+        "pyproject.toml",
+        ".venv/Lib/site-packages/iniconfig-2.3.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pytest-dev/iniconfig"
+      ]
+    },
+    "jiter": {
+      "function": "Analyse rapidement des documents JSON via une implémentation Rust.",
+      "genesis": "Est requis par le SDK Anthropic; aucun comptage ou validation métier ne lui est confié directement.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic.",
+      "example": "Le SDK peut désérialiser une réponse JSON avant de la transformer en objets typés.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/jiter-0.17.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic/jiter/"
+      ]
+    },
+    "jsonpatch": {
+      "function": "Applique et construit des opérations JSON Patch définies par la RFC 6902.",
+      "genesis": "Est requis par langchain-core; Genesis ne produit pas directement de patch JSON avec ce module.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core.",
+      "example": "Une opération replace sur /status représente une différence d’état, sans recalculer une tournée.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/jsonpatch-1.34.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/stefankoegl/python-json-patch.git"
+      ]
+    },
+    "jsonpointer": {
+      "function": "Résout des chemins vers les valeurs d’un document JSON suivant la RFC 6901.",
+      "genesis": "Supporte jsonpatch sans import applicatif Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par jsonpatch.",
+      "example": "Le chemin /vehicles/0/id désigne une valeur précise dans un document structuré.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/jsonpointer-3.2.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/stefankoegl/python-json-pointer"
+      ]
+    },
+    "langchain-core": {
+      "function": "Fournit les abstractions de messages, exécutables, outils et schémas de l’écosystème LangChain.",
+      "genesis": "Est une fondation requise par LangGraph; Genesis construit son propre StateGraph et utilise Anthropic directement.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph, langgraph-checkpoint, langgraph-prebuilt, langgraph-sdk.",
+      "example": "Les composants du graphe peuvent s’appuyer sur ces primitives sans que Genesis crée une chaîne LangChain dédiée.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langchain_core-1.6.9.dist-info/METADATA",
+        "requirements.txt",
+        "https://docs.langchain.com/"
+      ]
+    },
+    "langchain-protocol": {
+      "function": "Fournit les types du protocole de diffusion d’événements d’agents LangChain.",
+      "genesis": "Est requis par langchain-core et le SDK LangGraph; aucune intégration distante directe n’est appelée.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core, langgraph-sdk.",
+      "example": "Une bibliothèque peut typer des événements de flux d’agent; le contrat d’événements Genesis reste défini séparément.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langchain_protocol-0.0.19.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/agent-protocol/tree/main/streaming"
+      ]
+    },
+    "langfuse": {
+      "function": "Fournit traçage LLM, gestion de prompts, jeux de données et outils d’évaluation.",
+      "genesis": "Le worker l’importe uniquement pour l’export externe facultatif; la base locale et l’outbox restent la source d’observation.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "export_outbox transmet un événement assaini si l’export est configuré; aucune connexion externe n’est démontrée ici.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/langfuse-4.17.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://langfuse.com"
+      ]
+    },
+    "langgraph": {
+      "function": "Construit et exécute des graphes d’état avec nœuds, transitions et checkpoints.",
+      "genesis": "Orchestre les cinq rôles du workflow à travers un StateGraph compilé avec persistance SQLite.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Le nœud de monitoring reçoit les résultats de l’optimisation avant le nœud d’exception.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph-1.2.14.dist-info/METADATA",
+        "requirements.txt",
+        "https://docs.langchain.com/oss/python/langgraph/overview"
+      ]
+    },
+    "langgraph-checkpoint": {
+      "function": "Définit les interfaces de sauvegarde et la sérialisation des checkpoints LangGraph.",
+      "genesis": "Relie le graphe au saver SQLite utilisé; Genesis n’implémente pas de nouveau backend de checkpoints.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph, langgraph-checkpoint-postgres, langgraph-checkpoint-sqlite, langgraph-prebuilt.",
+      "example": "Le moteur sauvegarde l’état et les écritures d’une étape pour une reprise ultérieure.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph_checkpoint-4.2.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/langgraph/tree/main/libs/checkpoint"
+      ]
+    },
+    "langgraph-checkpoint-postgres": {
+      "function": "Implémente la persistance des checkpoints LangGraph dans PostgreSQL.",
+      "genesis": "Est installé, mais le workflow importe SqliteSaver; aucune exécution du saver PostgreSQL n’est établie.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "PostgresSaver pourrait enregistrer l’état dans PostgreSQL, mais sa présence n’atteste pas la reprise du profil local.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph_checkpoint_postgres-3.1.2.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/langgraph/tree/main/libs/checkpoint-postgres"
+      ]
+    },
+    "langgraph-checkpoint-sqlite": {
+      "function": "Implémente les savers et composants de stockage SQLite pour LangGraph.",
+      "genesis": "Genesis utilise SqliteSaver pour conserver les états du graphe dans une base de checkpoints distincte.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Une étape enregistrée du workflow peut être relue sans confondre cette base avec la sauvegarde de la base applicative.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph_checkpoint_sqlite-3.1.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/langgraph/tree/main/libs/checkpoint-sqlite"
+      ]
+    },
+    "langgraph-prebuilt": {
+      "function": "Fournit des assemblages prêts à l’emploi pour agents et nœuds d’outils LangGraph.",
+      "genesis": "Est requis par LangGraph, mais Genesis assemble explicitement ses rôles et n’importe pas ces agents préfabriqués.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph.",
+      "example": "Un ToolNode préfabriqué peut exécuter des appels d’outils; Genesis emploie son propre déroulement borné.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph_prebuilt-1.1.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/langgraph/tree/main/libs/prebuilt"
+      ]
+    },
+    "langgraph-sdk": {
+      "function": "Fournit un client pour communiquer avec une API de serveur LangGraph.",
+      "genesis": "Est requis par LangGraph; Genesis exécute son graphe dans un worker local sans appel explicite à un serveur LangGraph distant.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph.",
+      "example": "Le SDK peut soumettre un run à un serveur LangGraph; ce mécanisme ne remplace pas la file locale Genesis.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langgraph_sdk-0.4.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/langchain-ai/langgraph/tree/main/libs/sdk-py"
+      ]
+    },
+    "langsmith": {
+      "function": "Fournit un client de traçage et d’évaluation de la plateforme LangSmith.",
+      "genesis": "Est requis par langchain-core; aucun export LangSmith explicite n’apparaît dans Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core.",
+      "example": "La bibliothèque propose un client de traces, mais sa présence installée ne prouve pas un envoi de télémétrie.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/langsmith-0.14.7.dist-info/METADATA",
+        "requirements.txt",
+        "https://smith.langchain.com/"
+      ]
+    },
+    "Mako": {
+      "function": "Transforme des modèles textuels contenant expressions et blocs Python en documents.",
+      "genesis": "Est requis par Alembic installé, sans génération de page web métier Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par alembic.",
+      "example": "Alembic peut générer un fichier de révision depuis un modèle Mako; aucune migration active n’est observée.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/mako-1.4.3.dist-info/METADATA",
+        "requirements.txt",
+        "https://www.makotemplates.org/"
+      ]
+    },
+    "MarkupSafe": {
+      "function": "Échappe les caractères sensibles HTML/XML et distingue une chaîne déjà sûre.",
+      "genesis": "Supporte Mako; il ne protège pas les transactions ni les prompts Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par Mako.",
+      "example": "Le caractère < peut devenir &lt; lors d’un rendu textuel de gabarit.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/markupsafe-3.0.4.dist-info/METADATA",
+        "requirements.txt",
+        "https://markupsafe.palletsprojects.com/"
+      ]
+    },
+    "numpy": {
+      "function": "Fournit des tableaux numériques multidimensionnels et opérations vectorisées.",
+      "genesis": "Est requis par OR-Tools et pandas; aucun import numérique direct n’est observé dans le code métier.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par ortools, pandas (python_version < \"3.14\"); liens conditionnels distincts : pandas (python_version >= \"3.14\").",
+      "example": "Une dépendance peut convertir des données en tableaux; les capacités et horaires Genesis sont définis dans ses propres contrats.",
+      "evidence": [
+        "services/genesis/solver.py",
+        ".venv/Lib/site-packages/numpy-2.5.3.dist-info/METADATA",
+        "requirements.txt",
+        "https://numpy.org"
+      ]
+    },
+    "opentelemetry-api": {
+      "function": "Définit les interfaces et le contexte de traces, métriques et journaux OpenTelemetry.",
+      "genesis": "Est requis notamment par FastAPI et Langfuse; Genesis ne l’importe pas pour calculer ses métriques locales.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par fastapi, langfuse, opentelemetry-exporter-http-transport, opentelemetry-exporter-otlp-proto-http, opentelemetry-sdk, opentelemetry-semantic-conventions.",
+      "example": "Une bibliothèque peut obtenir un tracer sans imposer elle-même un exporteur de données.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/opentelemetry_api-1.45.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api"
+      ]
+    },
+    "opentelemetry-exporter-http-transport": {
+      "function": "Définit les transports HTTP partageables entre exporteurs OpenTelemetry.",
+      "genesis": "Supporte indirectement l’export OTLP du SDK Langfuse facultatif, sans appel métier direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-exporter-otlp-proto-http.",
+      "example": "Une implémentation RequestsHTTPTransport envoie un lot HTTP et normalise statut, en-têtes et erreurs.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_exporter_http_transport-0.66b1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-http-transport"
+      ]
+    },
+    "opentelemetry-exporter-otlp-common": {
+      "function": "Fournit les utilitaires partagés OTLP pour compression, délais et reprises d’export.",
+      "genesis": "Appartient à la chaîne de l’export OTLP installée, sans calculer les coûts ou certificats Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-exporter-otlp-proto-http.",
+      "example": "Le moteur commun reconnaît Retry-After et certains statuts temporaires pour espacer les envois.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_exporter_otlp_common-0.66b1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-common"
+      ]
+    },
+    "opentelemetry-exporter-otlp-proto-common": {
+      "function": "Encode les données du SDK OpenTelemetry en messages Protobuf OTLP.",
+      "genesis": "Supporte l’exporteur HTTP utilisé par Langfuse lorsqu’il est activé.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-exporter-otlp-proto-http.",
+      "example": "Un span du SDK est transformé en message de trace compatible avec le protocole OTLP.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_exporter_otlp_proto_common-1.45.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-proto-common"
+      ]
+    },
+    "opentelemetry-exporter-otlp-proto-http": {
+      "function": "Envoie les traces, métriques et journaux OTLP encodés en Protobuf sur HTTP.",
+      "genesis": "Est requis par Langfuse; sa présence ne démontre pas un export externe Genesis effectivement configuré.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langfuse.",
+      "example": "Un lot de spans peut être envoyé à un point de collecte OTLP avec des délais et reprises bornés par l’exporteur.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_exporter_otlp_proto_http-1.45.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp-proto-http"
+      ]
+    },
+    "opentelemetry-proto": {
+      "function": "Distribue les classes Python générées à partir des schémas Protobuf OpenTelemetry.",
+      "genesis": "Supporte les encodeurs et exporteurs de la chaîne OTLP installée.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-exporter-otlp-proto-common, opentelemetry-exporter-otlp-proto-http.",
+      "example": "Un message ExportTraceServiceRequest représente un lot de traces dans un format interopérable.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_proto-1.45.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-proto"
+      ]
+    },
+    "opentelemetry-sdk": {
+      "function": "Implémente les fournisseurs, processeurs et exporteurs des signaux OpenTelemetry.",
+      "genesis": "Supporte le SDK Langfuse facultatif; les métriques du tableau de bord viennent de la base applicative Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langfuse, opentelemetry-exporter-otlp-common, opentelemetry-exporter-otlp-proto-http.",
+      "example": "Un processeur de spans peut assembler les événements avant leur export sans modifier le registre de dépenses.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/opentelemetry_sdk-1.45.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-sdk"
+      ]
+    },
+    "opentelemetry-semantic-conventions": {
+      "function": "Distribue les noms d’attributs et conventions sémantiques de télémétrie.",
+      "genesis": "Est requis par le SDK OpenTelemetry; le contrat d’événements métier Genesis reste distinct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par opentelemetry-sdk.",
+      "example": "Un attribut standard identifie le service ou le transport d’un span et facilite sa lecture par les outils.",
+      "evidence": [
+        "docs/DATA-CONTRACT.md",
+        ".venv/Lib/site-packages/opentelemetry_semantic_conventions-0.66b1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-semantic-conventions"
+      ]
+    },
+    "orjson": {
+      "function": "Sérialise et désérialise rapidement du JSON, avec une implémentation native.",
+      "genesis": "Est requis par le SDK LangGraph, Langsmith et le saver PostgreSQL installé; Genesis importe json de la bibliothèque standard.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint-postgres, langgraph-sdk, langsmith (platform_python_implementation != \"PyPy\").",
+      "example": "Une bibliothèque peut encoder un objet en octets JSON; ce chemin n’établit aucun usage du saver PostgreSQL.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/orjson-3.13.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/ijl/orjson"
+      ]
+    },
+    "ormsgpack": {
+      "function": "Encode et décode des objets Python au format MessagePack binaire.",
+      "genesis": "Est requis par langgraph-checkpoint pour sa couche de sérialisation.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint.",
+      "example": "Le sérialiseur des checkpoints peut stocker un état compact avant sa réhydratation.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/ormsgpack-1.12.2.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/ormsgpack/ormsgpack"
+      ]
+    },
+    "ortools": {
+      "function": "Fournit des solveurs de contraintes, d’optimisation et de tournées de véhicules.",
+      "genesis": "Genesis utilise RoutingModel avec capacités, fenêtres et durée de recherche bornée; un validateur indépendant décide de l’admission.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Le solveur compare l’affectation partagée, séparée ou hybride des enlèvements et livraisons.",
+      "evidence": [
+        "services/genesis/broker_solver.py",
+        ".venv/Lib/site-packages/ortools-9.15.6755.dist-info/METADATA",
+        "requirements.txt",
+        "https://developers.google.com/optimization/"
+      ]
+    },
+    "packaging": {
+      "function": "Analyse versions, spécificateurs, noms et conditions des paquets Python.",
+      "genesis": "Est requis par plusieurs bibliothèques et pytest; aucun calcul métier de tournée ne lui est confié.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core, langfuse, langsmith, pytest.",
+      "example": "Un outil compare une version installée à une contrainte >=4 plutôt que comparer deux chaînes arbitrairement.",
+      "evidence": [
+        "pyproject.toml",
+        ".venv/Lib/site-packages/packaging-26.3.dist-info/METADATA",
+        "requirements.txt",
+        "https://packaging.pypa.io/"
+      ]
+    },
+    "pandas": {
+      "function": "Fournit DataFrame, regroupements et traitements de données tabulaires.",
+      "genesis": "Est requis par OR-Tools, mais aucun import applicatif direct ne génère les analyses Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par ortools.",
+      "example": "Une dépendance peut exposer des résultats tabulaires; le rapport et les CSV Genesis utilisent leurs propres données et fonctions.",
+      "evidence": [
+        "services/genesis/solver.py",
+        ".venv/Lib/site-packages/pandas-3.0.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://pandas.pydata.org"
+      ]
+    },
+    "pluggy": {
+      "function": "Organise les hooks et plugins Python au moyen de points d’extension explicites.",
+      "genesis": "Fournit le système de plugins de pytest utilisé pour la vérification du backend.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pytest.",
+      "example": "pytest appelle un hook de collecte ou de résultat auprès des plugins enregistrés.",
+      "evidence": [
+        "tests/conftest.py",
+        ".venv/Lib/site-packages/pluggy-1.6.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://pluggy.readthedocs.io/en/stable/"
+      ]
+    },
+    "protobuf": {
+      "function": "Encode et décode des messages typés dans le format binaire Protocol Buffers.",
+      "genesis": "Est requis par OR-Tools et la chaîne OTLP; Genesis ne déclare pas de service RPC Protobuf.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par googleapis-common-protos, opentelemetry-proto, ortools.",
+      "example": "Les paramètres du solveur sont représentés par des messages générés, distincts des contrats JSON de l’API.",
+      "evidence": [
+        "services/genesis/solver.py",
+        ".venv/Lib/site-packages/protobuf-6.33.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://developers.google.com/protocol-buffers/"
+      ]
+    },
+    "psycopg": {
+      "function": "Fournit le pilote Python PostgreSQL pour exécuter des requêtes et gérer les transactions.",
+      "genesis": "Est installé pour le profil PostgreSQL et le saver correspondant; seul le profil SQLite est vérifié localement.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint-postgres.",
+      "example": "Une URL SQLAlchemy PostgreSQL pourrait employer ce pilote, sans prouver un test PostgreSQL exécuté.",
+      "evidence": [
+        "services/genesis/db.py",
+        ".venv/Lib/site-packages/psycopg-3.3.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://psycopg.org/"
+      ]
+    },
+    "psycopg-binary": {
+      "function": "Distribue l’implémentation compilée de Psycopg et ses composants binaires.",
+      "genesis": "Est installé pour le profil PostgreSQL facultatif; aucun usage de ce profil n’est attesté.",
+      "inclusion": "Version épinglée dans requirements.txt; liens conditionnels distincts : psycopg (implementation_name != \"pypy\" and extra == \"binary\").",
+      "example": "Il permet au pilote de charger son implémentation compilée sans construire ces composants localement.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/psycopg_binary-3.3.6.dist-info/METADATA",
+        "requirements.txt",
+        "https://psycopg.org/"
+      ]
+    },
+    "psycopg-pool": {
+      "function": "Maintient un ensemble réutilisable de connexions Psycopg.",
+      "genesis": "Est requis par le saver PostgreSQL installé, que le workflow Genesis ne sélectionne pas.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint-postgres; liens conditionnels distincts : psycopg (extra == \"pool\").",
+      "example": "Un saver PostgreSQL peut emprunter puis rendre une connexion au pool.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/psycopg_pool-3.3.3.dist-info/METADATA",
+        "requirements.txt",
+        "https://psycopg.org/"
+      ]
+    },
+    "pydantic": {
+      "function": "Valide et sérialise des objets à partir de types Python et de contraintes explicites.",
+      "genesis": "Définit les commandes, véhicules, arrêts, plans et sorties explicatives Genesis, avec bornes et champs supplémentaires contrôlés.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic, fastapi, langchain-core, langfuse, langgraph, langsmith.",
+      "example": "Une quantité de colis hors borne ou un champ interdit échoue avant la planification.",
+      "evidence": [
+        "services/genesis/models.py",
+        ".venv/Lib/site-packages/pydantic-2.14.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic/pydantic"
+      ]
+    },
+    "pydantic_core": {
+      "function": "Exécute en Rust les fonctions centrales de validation et sérialisation de Pydantic.",
+      "genesis": "Supporte les modèles Pydantic de Genesis sans import métier direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pydantic.",
+      "example": "Le moteur vérifie le type et les bornes d’un entier avant de construire l’objet validé.",
+      "evidence": [
+        "services/genesis/models.py",
+        ".venv/Lib/site-packages/pydantic_core-2.50.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic"
+      ]
+    },
+    "Pygments": {
+      "function": "Reconnaît les langages et produit une coloration syntaxique du code.",
+      "genesis": "Est requis par pytest; aucun moteur de coloration du tableau de bord ne l’importe.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pytest.",
+      "example": "pytest peut améliorer la présentation d’un extrait de code dans un diagnostic de test.",
+      "evidence": [
+        "scripts/check.ps1",
+        ".venv/Lib/site-packages/pygments-2.21.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://pygments.org"
+      ]
+    },
+    "pytest": {
+      "function": "Collecte et exécute les tests Python avec assertions, fixtures et paramétrisation.",
+      "genesis": "Vérifie domaines, budgets, transactions, APIs, recovery et workflows dans tests/.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Les fixtures de petites tournées contrôlent dépassement de capacité et erreurs de fenêtres horaires.",
+      "evidence": [
+        "tests/test_domain.py",
+        ".venv/Lib/site-packages/pytest-9.1.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://docs.pytest.org/en/latest/"
+      ]
+    },
+    "python-dateutil": {
+      "function": "Étend datetime avec analyse de dates, calculs relatifs et récurrences.",
+      "genesis": "Est requis par pandas; les modules métier Genesis utilisent datetime de la bibliothèque standard.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pandas.",
+      "example": "relativedelta peut représenter un mois civil sans le réduire à un nombre fixe de secondes.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/python_dateutil-2.9.0.post0.dist-info/METADATA",
+        "requirements.txt",
+        "https://dateutil.readthedocs.io/en/stable/"
+      ]
+    },
+    "python-dotenv": {
+      "function": "Charge des paires de configuration d’un fichier dotenv dans l’environnement.",
+      "genesis": "L’API et le worker chargent la configuration locale; aucune valeur privée n’est incluse dans cette présentation.",
+      "inclusion": "Version épinglée dans requirements.txt; liens conditionnels distincts : uvicorn (extra == \"standard\").",
+      "example": "load_dotenv fournit les réglages de lancement et le worker peut actualiser ceux qu’il consulte.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/python_dotenv-1.2.4.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/theskumar/python-dotenv"
+      ]
+    },
+    "PyYAML": {
+      "function": "Lit et écrit des documents YAML en objets Python.",
+      "genesis": "Est requis par langchain-core; aucun format métier Genesis n’est chargé directement avec PyYAML.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core.",
+      "example": "Une bibliothèque peut lire une configuration YAML; les commandes et plans Genesis utilisent leurs contrats JSON.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/pyyaml-6.0.3.dist-info/METADATA",
+        "requirements.txt",
+        "https://pyyaml.org/wiki/PyYAMLDocumentation"
+      ]
+    },
+    "regex": {
+      "function": "Fournit des expressions régulières étendues et une gestion avancée d’Unicode.",
+      "genesis": "Est requis par tiktoken installé; aucun filtre métier Genesis ne l’importe.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par tiktoken.",
+      "example": "Le tokeniseur peut découper du texte selon des motifs avant d’appliquer son encodage BPE.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/regex-2026.9.29.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/mrabarnett/mrab-regex"
+      ]
+    },
+    "requests": {
+      "function": "Fournit un client HTTP synchrone avec sessions, réponses et gestion TLS.",
+      "genesis": "Supporte notamment Langsmith et l’exporteur OTLP; les requêtes routières Genesis utilisent HTTPX.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langsmith, opentelemetry-exporter-otlp-proto-http, requests-toolbelt, tiktoken.",
+      "example": "Un exporteur configuré peut envoyer son lot de télémétrie via une session Requests.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/requests-2.34.2.dist-info/METADATA",
+        "requirements.txt",
+        "https://requests.readthedocs.io"
+      ]
+    },
+    "requests-toolbelt": {
+      "function": "Ajoute des utilitaires à Requests, notamment encodage multipart et adaptateurs de transport.",
+      "genesis": "Est requis par Langsmith sans appel direct dans Genesis.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langsmith.",
+      "example": "Un client dépendant peut construire un corps multipart pour transmettre des fichiers.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/requests_toolbelt-1.0.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/requests/toolbelt"
+      ]
+    },
+    "ruff": {
+      "function": "Analyse rapidement le code Python pour erreurs de lint et conventions configurées.",
+      "genesis": "Le script de vérification l’utilise avec les règles E4, E7, E9 et F de pyproject.toml.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Un import inutilisé ou un nom non défini provoque un diagnostic avant livraison.",
+      "evidence": [
+        "scripts/check.ps1",
+        ".venv/Lib/site-packages/ruff-0.17.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://docs.astral.sh/ruff/"
+      ]
+    },
+    "six": {
+      "function": "Fournit des utilitaires de compatibilité entre Python 2 et Python 3.",
+      "genesis": "Est requis par python-dateutil; Genesis lui-même demande une version Python moderne.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par python-dateutil.",
+      "example": "Une dépendance réutilise une fonction de compatibilité sans rendre Genesis exécutable sous Python 2.",
+      "evidence": [
+        "pyproject.toml",
+        ".venv/Lib/site-packages/six-1.17.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/benjaminp/six"
+      ]
+    },
+    "sniffio": {
+      "function": "Identifie le moteur asynchrone actif dans le contexte courant.",
+      "genesis": "Est requis par Anthropic et Langsmith; aucun appel métier direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par anthropic, langsmith.",
+      "example": "Un SDK peut savoir s’il s’exécute dans un contexte asyncio ou Trio avant de choisir son comportement.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/sniffio-1.3.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/python-trio/sniffio"
+      ]
+    },
+    "SQLAlchemy": {
+      "function": "Décrit les tables SQL et fournit requêtes, connexions et transactions.",
+      "genesis": "Genesis utilise son API Core pour commandes, runs, événements, réservations et dépenses SQLite.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par alembic.",
+      "example": "Une transaction réserve le budget et écrit l’état associé avant l’appel externe.",
+      "evidence": [
+        "services/genesis/db.py",
+        ".venv/Lib/site-packages/sqlalchemy-2.1.4.dist-info/METADATA",
+        "requirements.txt",
+        "https://www.sqlalchemy.org"
+      ]
+    },
+    "sqlite-vec": {
+      "function": "Ajoute à SQLite des fonctions et tables de recherche vectorielle.",
+      "genesis": "Est requis par le paquet de checkpoints SQLite, mais Genesis ne charge pas de recherche vectorielle applicative.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-checkpoint-sqlite.",
+      "example": "Le store fourni par la dépendance peut rechercher des vecteurs similaires; la mémoire de routes Genesis interroge son historique SQL.",
+      "evidence": [
+        "services/genesis/route_memory.py",
+        ".venv/Lib/site-packages/sqlite_vec-0.1.9.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/asg017/sqlite-vec"
+      ]
+    },
+    "starlette": {
+      "function": "Fournit les primitives ASGI de requêtes, réponses, middleware et streaming.",
+      "genesis": "Sous-tend FastAPI; les réponses JSON et flux SSE de Genesis utilisent cette infrastructure.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par fastapi.",
+      "example": "StreamingResponse envoie des événements conservés sans lancer un nouvel agent.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/starlette-1.7.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/Kludex/starlette"
+      ]
+    },
+    "tenacity": {
+      "function": "Fournit des politiques réutilisables de reprise, attente et arrêt.",
+      "genesis": "Est requis par langchain-core; Genesis conserve sa propre politique de tentatives IA et de réservation.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core.",
+      "example": "Une bibliothèque peut limiter une opération à quelques tentatives sans décider du budget applicatif.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/tenacity-9.2.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/jd/tenacity"
+      ]
+    },
+    "tiktoken": {
+      "function": "Encode du texte en tokens BPE pour certaines familles de modèles.",
+      "genesis": "Est déclaré et installé, mais aucun module métier Genesis ne l’utilise pour mesurer les tokens Anthropic.",
+      "inclusion": "Version épinglée dans requirements.txt; aucun parent d’exécution dans les 87 distributions de cet inventaire.",
+      "example": "Le SDK fournit l’usage réellement retourné; la présence de tiktoken ne prouve pas un comptage local de ces appels.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/tiktoken-0.14.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/openai/tiktoken"
+      ]
+    },
+    "truststore": {
+      "function": "Permet à TLS de s’appuyer sur le magasin natif de certificats du système.",
+      "genesis": "Est requis par httpcore2 et httpx2, donc disponible sous le SDK Anthropic installé.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par httpcore2, httpx2 (sys_platform != \"emscripten\").",
+      "example": "Sous Windows, une connexion peut utiliser les autorités de confiance gérées par le système.",
+      "evidence": [
+        "services/genesis/llm.py",
+        ".venv/Lib/site-packages/truststore-0.10.4.dist-info/METADATA",
+        "requirements.txt",
+        "https://truststore.readthedocs.io"
+      ]
+    },
+    "typing-inspection": {
+      "function": "Analyse les annotations de types à l’exécution.",
+      "genesis": "Est requis par FastAPI et Pydantic, sans appel métier direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par fastapi, pydantic.",
+      "example": "Un moteur de schéma peut reconnaître une union de types ou les métadonnées d’Annotated.",
+      "evidence": [
+        "services/genesis/models.py",
+        ".venv/Lib/site-packages/typing_inspection-0.4.4.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/pydantic/typing-inspection"
+      ]
+    },
+    "typing_extensions": {
+      "function": "Distribue des types et fonctionnalités de typing rétroportés ou expérimentaux.",
+      "genesis": "Supporte les bibliothèques typées installées; Genesis utilise principalement typing de Python.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par alembic, anthropic, anyio (python_version < \"3.15\"), fastapi, langchain-core, langchain-protocol, langfuse, langsmith, opentelemetry-api, opentelemetry-exporter-otlp-proto-http, opentelemetry-sdk, opentelemetry-semantic-conventions, ortools, psycopg-pool, pydantic, pydantic_core, SQLAlchemy, typing-inspection; liens conditionnels distincts : httpx2 (python_version < \"3.13\"), psycopg (python_version < \"3.13\"), starlette (python_version < \"3.13\"), uvicorn (python_version < \"3.11\").",
+      "example": "Une dépendance peut importer TypedDict ou une nouvelle annotation sur plusieurs versions de Python.",
+      "evidence": [
+        "pyproject.toml",
+        ".venv/Lib/site-packages/typing_extensions-4.16.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://typing-extensions.readthedocs.io/"
+      ]
+    },
+    "tzdata": {
+      "function": "Distribue les règles IANA des fuseaux horaires pour les systèmes qui en ont besoin.",
+      "genesis": "Est notamment requis par pandas et Psycopg sous Windows; ce n’est pas le moteur de formatage horaire du navigateur.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par pandas (sys_platform == \"win32\"), psycopg (sys_platform == \"win32\"); liens conditionnels distincts : pandas (sys_platform == \"emscripten\").",
+      "example": "La base fournit les règles America/Toronto à zoneinfo lorsque le système n’offre pas cette base.",
+      "evidence": [
+        "requirements.txt",
+        ".venv/Lib/site-packages/tzdata-2026.5.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/python/tzdata"
+      ]
+    },
+    "urllib3": {
+      "function": "Fournit pools de connexions HTTP, gestion TLS et mécanismes de transport.",
+      "genesis": "Est requis par Requests; aucun appel métier Genesis direct ne l’importe.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par requests.",
+      "example": "Requests réutilise son pool réseau pour des requêtes répétées vers un même hôte.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/urllib3-2.8.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://urllib3.readthedocs.io"
+      ]
+    },
+    "uuid_utils": {
+      "function": "Génère et manipule rapidement des UUID avec une implémentation Rust.",
+      "genesis": "Est requis par langchain-core et Langsmith; les identifiants métier Genesis utilisent uuid de Python.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langchain-core, langsmith.",
+      "example": "Une dépendance peut produire un UUID performant sans modifier le schéma d’identité des runs Genesis.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/uuid_utils-0.17.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/aminalaee/uuid-utils"
+      ]
+    },
+    "uvicorn": {
+      "function": "Exécute une application ASGI et expose ses connexions HTTP.",
+      "genesis": "Le lanceur démarre l’API FastAPI en écoute locale sur loopback.",
+      "inclusion": "Version épinglée dans requirements.txt; liens conditionnels distincts : fastapi (extra == \"standard\"), fastapi (extra == \"standard-no-fastapi-cloud-cli\"), fastapi (extra == \"all\").",
+      "example": "La commande uvicorn genesis.api:app reçoit les requêtes web et transmet les réponses de l’API.",
+      "evidence": [
+        "scripts/start.ps1",
+        ".venv/Lib/site-packages/uvicorn-0.54.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://uvicorn.dev/"
+      ]
+    },
+    "websockets": {
+      "function": "Implémente les clients et serveurs du protocole WebSocket.",
+      "genesis": "Est requis par les SDK LangGraph et Langsmith; Genesis expose ses événements via SSE plutôt qu’un endpoint WebSocket explicite.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph-sdk, langsmith; liens conditionnels distincts : uvicorn (extra == \"standard\").",
+      "example": "Un SDK peut maintenir une connexion bidirectionnelle persistante; cela ne décrit pas le replay local Genesis.",
+      "evidence": [
+        "services/genesis/api.py",
+        ".venv/Lib/site-packages/websockets-16.1.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/python-websockets/websockets"
+      ]
+    },
+    "wrapt": {
+      "function": "Fournit des décorateurs et proxies qui préservent correctement les objets enveloppés.",
+      "genesis": "Est requis par Langfuse facultatif, sans import métier direct.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langfuse.",
+      "example": "Un décorateur peut observer une fonction tout en conservant sa signature et son comportement d’appel.",
+      "evidence": [
+        "services/genesis/worker.py",
+        ".venv/Lib/site-packages/wrapt-2.5.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/GrahamDumpleton/wrapt"
+      ]
+    },
+    "xxhash": {
+      "function": "Calcule rapidement des empreintes non cryptographiques.",
+      "genesis": "Est requis par LangGraph et Langsmith; les hashes métier Genesis utilisent hashlib.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langgraph, langsmith.",
+      "example": "Une bibliothèque peut comparer des états par hash rapide; cette empreinte ne remplace pas les certificats ni SHA-256 Genesis.",
+      "evidence": [
+        "services/genesis/models.py",
+        ".venv/Lib/site-packages/xxhash-4.0.1.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/ifduyue/python-xxhash"
+      ]
+    },
+    "zstandard": {
+      "function": "Compresse et décompresse au format Zstandard.",
+      "genesis": "Est requis par Langsmith; aucune archive métier Genesis n’est produite directement avec ce module.",
+      "inclusion": "Version épinglée dans requirements.txt; requis immédiatement par langsmith.",
+      "example": "Un client dépendant peut compresser un lot de données pour réduire son volume de transport.",
+      "evidence": [
+        "services/genesis/workflow.py",
+        ".venv/Lib/site-packages/zstandard-0.25.0.dist-info/METADATA",
+        "requirements.txt",
+        "https://github.com/indygreg/python-zstandard"
+      ]
+    }
+  },
+  "javascript": {
+    "@fontsource-variable/inter": {
+      "function": "Distribue les fichiers et styles de la police Inter à graisse variable.",
+      "genesis": "main.tsx l’importe pour servir la police avec l’application locale.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 5.2.8 conservée dans son package-lock.json.",
+      "example": "Les titres et textes peuvent varier de graisse sans requête vers un service de polices tiers.",
+      "evidence": [
+        "apps/web/src/main.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://fontsource.org/docs/getting-started/variable"
+      ]
+    },
+    "@xyflow/react": {
+      "function": "Fournit des nœuds, liens et interactions pour dessiner des graphes dans React.",
+      "genesis": "Observability construit le graphe des rôles et transmissions observées avec ReactFlow.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 12.10.0 conservée dans son package-lock.json.",
+      "example": "Sélectionner une étape relie son rôle, ses liens et son résultat; le graphe ne calcule pas de route.",
+      "evidence": [
+        "apps/web/src/Observability.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://reactflow.dev/learn"
+      ]
+    },
+    "echarts": {
+      "function": "Fournit des graphiques interactifs, axes, légendes et moteurs de rendu SVG/Canvas.",
+      "genesis": "Chart enregistre les séries barre, heatmap, Sankey et camembert et utilise le moteur SVG.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 6.1.0 conservée dans son package-lock.json.",
+      "example": "La répartition des coûts et la matrice de latence présentent les données observées avec des alternatives tabulaires.",
+      "evidence": [
+        "apps/web/src/Chart.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://echarts.apache.org/handbook/en/get-started/"
+      ]
+    },
+    "lucide-react": {
+      "function": "Fournit des icônes SVG sous forme de composants React.",
+      "genesis": "Habille les commandes de navigation, rafraîchissement, export et états de l’interface.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 0.577.0 conservée dans son package-lock.json.",
+      "example": "Download accompagne une commande d’export CSV; son libellé reste nécessaire à la compréhension.",
+      "evidence": [
+        "apps/web/src/Analytics.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://lucide.dev/guide/packages/lucide-react"
+      ]
+    },
+    "maplibre-gl": {
+      "function": "Dessine des cartes WebGL avec sources GeoJSON, couches et contrôles.",
+      "genesis": "RouteMap et DispatchMap montrent les géométries, arrêts et véhicules dont le mouvement reste simulé.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 6.13.0 conservée dans son package-lock.json.",
+      "example": "Une couche relie un arrêt sélectionné au tracé conservé; elle ne calcule ni tournée ni trafic réel.",
+      "evidence": [
+        "apps/web/src/DispatchMap.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://maplibre.org/maplibre-gl-js/docs/"
+      ]
+    },
+    "react": {
+      "function": "Construit l’interface en composants déclaratifs avec état et effets.",
+      "genesis": "Les vues opérations, analytique et agents composent les formulaires, filtres et données de l’API.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 19.2.0 conservée dans son package-lock.json; peer requis par react-dom, @xyflow/react et lucide-react.",
+      "example": "Changer un filtre met à jour l’état puis les vues et requêtes dépendantes.",
+      "evidence": [
+        "apps/web/src/App.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://react.dev/learn"
+      ]
+    },
+    "react-dom": {
+      "function": "Relie React au DOM du navigateur et fournit aussi un rendu serveur.",
+      "genesis": "main.tsx monte App avec createRoot; certains tests utilisent renderToStaticMarkup.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (dependencies); résolution 19.2.0 conservée dans son package-lock.json; peer requis par @xyflow/react.",
+      "example": "Le conteneur HTML reçoit l’arbre de composants et ses mises à jour.",
+      "evidence": [
+        "apps/web/src/main.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://react.dev/reference/react-dom/client/createRoot"
+      ]
+    },
+    "@types/react": {
+      "function": "Décrit les signatures React pour la vérification TypeScript.",
+      "genesis": "Contrôle les props, hooks et références à la compilation; aucun code de ce paquet n’est exécuté par le navigateur.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 19.2.14 conservée dans son package-lock.json; peer requis par @types/react-dom.",
+      "example": "Une prop d’un type erroné peut être détectée avant le build.",
+      "evidence": [
+        "apps/web/tsconfig.json",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react"
+      ]
+    },
+    "@types/react-dom": {
+      "function": "Décrit les API React DOM pour TypeScript.",
+      "genesis": "Vérifie les appels de montage et rendu à la compilation.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 19.2.3 conservée dans son package-lock.json.",
+      "example": "Le compilateur vérifie le type du conteneur donné à createRoot.",
+      "evidence": [
+        "apps/web/src/main.tsx",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom"
+      ]
+    },
+    "@vitejs/plugin-react": {
+      "function": "Intègre la transformation JSX et le rafraîchissement React à Vite.",
+      "genesis": "vite.config.ts l’enregistre dans plugins pour le développement et le build.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 5.1.4 conservée dans son package-lock.json.",
+      "example": "Modifier un composant peut actualiser son rendu par Fast Refresh pendant le développement.",
+      "evidence": [
+        "apps/web/vite.config.ts",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react"
+      ]
+    },
+    "prettier": {
+      "function": "Reformate le code selon des règles cohérentes de présentation.",
+      "genesis": "Est déclaré dans le frontend, mais aucun script de formatage Genesis ne l’appelle; le générateur de types QA installé le requiert aussi.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 3.9.10 conservée dans son package-lock.json; requis aussi par json-schema-to-typescript dans le lock QA.",
+      "example": "json-schema-to-typescript peut formater son texte généré avec Prettier, sans génération effectivement exécutée dans Genesis.",
+      "evidence": [
+        "apps/web/package.json",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://prettier.io/docs/"
+      ]
+    },
+    "typescript": {
+      "function": "Vérifie les types et compile TypeScript vers JavaScript.",
+      "genesis": "Le script build exécute tsc -b avant Vite pour vérifier le frontend.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 5.9.3 conservée dans son package-lock.json.",
+      "example": "Une incompatibilité entre une réponse API typée et son utilisateur peut interrompre le build.",
+      "evidence": [
+        "apps/web/package.json",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://www.typescriptlang.org/docs/"
+      ]
+    },
+    "vite": {
+      "function": "Fournit le serveur de développement et le regroupement des modules pour distribution.",
+      "genesis": "Les scripts dev et build lancent l’interface locale et produisent son bundle.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 7.3.7 conservée dans son package-lock.json; requis par vitest et peer de @vitejs/plugin-react.",
+      "example": "Le serveur écoute sur loopback et le build assemble modules, styles et workers de carte.",
+      "evidence": [
+        "apps/web/vite.config.ts",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://vite.dev/guide/"
+      ]
+    },
+    "vitest": {
+      "function": "Exécute des tests JavaScript/TypeScript dans l’environnement Vite.",
+      "genesis": "Le frontend l’utilise pour filtres, exports, replay et certains rendus statiques de composants.",
+      "inclusion": "Déclaré directement dans apps/web/package.json (devDependencies); résolution 4.1.11 conservée dans son package-lock.json.",
+      "example": "analyticsExport.test.ts contrôle les valeurs, unités et protections CSV.",
+      "evidence": [
+        "apps/web/src/analyticsExport.test.ts",
+        "apps/web/package.json",
+        "apps/web/package-lock.json",
+        "https://vitest.dev/guide/"
+      ]
+    },
+    "@axe-core/playwright": {
+      "function": "Intègre le moteur axe-core à Playwright pour détecter des violations d’accessibilité.",
+      "genesis": "Les tests QA importent AxeBuilder pour auditer les pages à des étapes précises.",
+      "inclusion": "Déclaré directement dans qa/package.json (devDependencies); résolution 4.11.1 conservée dans son package-lock.json.",
+      "example": "Une analyse peut détecter un contrôle sans nom accessible; ce contrôle n’est pas un audit WCAG complet.",
+      "evidence": [
+        "qa/tests/observatory.spec.ts",
+        "qa/package.json",
+        "qa/package-lock.json",
+        "https://github.com/dequelabs/axe-core-npm/tree/develop/packages/playwright"
+      ]
+    },
+    "@playwright/test": {
+      "function": "Pilote des navigateurs et exécute des parcours avec assertions, fixtures et attentes.",
+      "genesis": "La suite QA décrit commandes, budgets, cartes et parcours de routes dans des profils locaux.",
+      "inclusion": "Déclaré directement dans qa/package.json (devDependencies); résolution 1.59.1 conservée dans son package-lock.json.",
+      "example": "Un scénario peut remplir un formulaire puis vérifier la proposition et le départ explicite de la simulation.",
+      "evidence": [
+        "qa/tests/routes.browser.spec.ts",
+        "qa/package.json",
+        "qa/package-lock.json",
+        "https://playwright.dev/docs/intro"
+      ]
+    },
+    "json-schema-to-typescript": {
+      "function": "Génère des déclarations TypeScript à partir de schémas JSON.",
+      "genesis": "Est déclaré dans QA mais aucun script ni appel de génération Genesis n’est trouvé; les contrats web présents sont écrits dans le dépôt.",
+      "inclusion": "Déclaré directement dans qa/package.json (devDependencies); résolution 15.0.4 conservée dans son package-lock.json.",
+      "example": "Il pourrait produire une interface depuis un schéma; sa présence n’atteste pas une synchronisation automatique des contrats.",
+      "evidence": [
+        "qa/package.json",
+        "qa/package.json",
+        "qa/package-lock.json",
+        "https://github.com/bcherny/json-schema-to-typescript"
+      ]
+    }
+  }
+}

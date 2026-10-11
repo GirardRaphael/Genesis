@@ -60,7 +60,7 @@ The candid [transport-company audit checklist](docs/TRANSPORT-CHECKLIST.md) is t
 
 ## Engineering references
 
-- [Technical presentation](presentations/README.md): 32-slide French synthesis with complete library inventory in speaker notes; original 64-slide reference preserved.
+- [Technical presentation](presentations/README.md): 36-slide French synthesis explaining library functions, Genesis use and dependency relationships; detailed notes cover all 104 packages. Prior 32/64-slide decks preserved.
 - [Plan](docs/PLAN.md), [requirements](docs/REQUIREMENTS.md), [logistics contract](docs/LOGISTICS-SPEC.md).
 - [Implementation contract](docs/IMPLEMENTATION-CONTRACT.md), [agent instructions](AGENTS.md), [budget](docs/BUDGET.md).
 - [UI specification](docs/UI-SPEC.md), [tools and skills](docs/TOOLS-AND-SKILLS.md), [model policy](docs/MODEL-POLICY.md).

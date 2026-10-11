@@ -3,7 +3,7 @@ import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { slides as narrative } from './content-condensed.mjs';
+import { slides as narrative, referenceGroups, webReference } from './content-libraries.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const runtime=process.env.GENESIS_DECK_RUNTIME;
@@ -48,7 +48,7 @@ function rows(s,items,x,y,w,step,dark=false){
 }
 function nativeTable(s,d,i){
   const values=[d.columns||['COUCHE','TECHNOLOGIES','RÔLE'],...d.rows];
-  const widths=values[0].length===3?[260,330,562]:[310,842];
+  const widths=d.columnWidths||(values[0].length===3?[260,330,562]:[310,842]);
   const table=s.tables.add({rows:values.length,columns:values[0].length,left:64,top:198,width:1152,height:410,values,columnWidths:widths});
   tables.push(i+1);table.styleOptions={headerRow:false,bandedRows:false};
   table.borders.assign({fill:'#D7E1E3',width:1});
@@ -115,21 +115,27 @@ async function draw(d,i){
 }
 
 const inventory=JSON.parse(await fs.readFile(path.join(root,'presentations/package-inventory.json'),'utf8'));
+const details=JSON.parse(await fs.readFile(path.join(root,'presentations/package-details.json'),'utf8'));
 const req=(await fs.readFile(path.join(root,'requirements.txt'),'utf8')).trim().split(/\r?\n/).filter(Boolean).map(v=>v.split('=='));
 const states={runtime:'Usage direct',support:'Support de dépendance',optional:'Intégration optionnelle',tooling:'Développement et tests',installed:'Installé sans usage métier direct'};
-const groups={
-  runtime:{title:'Python dans l’application',definition:'Bibliothèques appelées directement par le code Genesis.',items:[['API et contrats','FastAPI, Uvicorn et Pydantic structurent les frontières.'],['Exécution et calcul','LangGraph et OR-Tools portent le workflow et les routes.'],['Données et fournisseurs','SQLAlchemy, HTTPX et Anthropic relient les services.']]},
-  support:{title:'Le socle de dépendances Python',definition:'Support transitif des frameworks, SDK et outils épinglés.',items:[['Transport et protocoles','HTTP, TLS, concurrence et sérialisation.'],['Exécution des bibliothèques','Types, structures de données et compatibilité.'],['Traçabilité des versions','Chaque paquet et son rôle figurent dans les notes.']]},
-  optional:{title:'Intégrations optionnelles',definition:'Le paquet installé ne prouve pas une intégration exécutée.',items:[['Langfuse','Export secondaire configuré, validation cloud ouverte.'],['PostgreSQL','Psycopg et son pool pour un profil non validé localement.'],['Checkpoints PostgreSQL','Saver installé, le workflow courant emploie SQLite.']]},
-  tooling:{title:'Outils de qualité Python',definition:'Tests automatisés et analyse statique du projet.',items:[['pytest','Exécuter les fixtures, assertions et régressions.'],['Ruff','Détecter erreurs de code et imports incohérents.'],['Portée','Aucun de ces outils ne certifie une opération réelle.']]},
-  installed:{title:'Installation et usage effectif',definition:'Ces paquets ne démontrent pas une fonction métier activée.',items:[['Analyse et vecteurs','NumPy, Pandas et sqlite-vec dans l’environnement.'],['Infrastructure déclarée','Alembic et adaptateurs présents, usage à distinguer.'],['Référence complète','Versions, fonction et statut pour chaque paquet en notes.']]},
-};
-assert.equal(narrative.length,26);
+assert.equal(narrative.length,30);
+for(const language of ['python','javascript']){
+  assert.deepEqual(Object.keys(details[language]).sort(),Object.keys(inventory[language]).sort());
+  for(const entry of Object.values(details[language])){
+    for(const field of ['function','genesis','inclusion','example'])assert(entry[field]?.trim(),`Missing package field ${field}`);
+    assert(entry.evidence.length>0);
+    for(const ref of entry.evidence)if(!ref.startsWith('https://'))await fs.access(path.join(root,ref));
+  }
+}
+function packageNote(language,name,version,status){
+  const d=details[language][name];
+  return `${name}${language==='python'?'==':'@'}${version}\nClassement de référence : ${states[status]}.\nFonction : ${d.function}\nUtilisation Genesis : ${d.genesis}\nPourquoi présent : ${d.inclusion}\nExemple : ${d.example}\nSources :\n${d.evidence.join('\n')}`;
+}
 const slides=[...narrative],packageKeys=[];
-for(const [status,g]of Object.entries(groups)){
+for(const [status,g]of Object.entries(referenceGroups)){
   const batch=req.filter(([name])=>{assert(inventory.python[name],`Missing description: ${name}`);return inventory.python[name].status===status;});
   packageKeys.push(...batch.map(([n,v])=>`python:${n}==${v}`));
-  slides.push({kind:'inventory',title:g.title,count:String(batch.length),definition:g.definition,items:g.items,caption:'Inventaire intégral de ce groupe dans les notes : nom, version, fonction et statut.',notes:`${states[status]}. Les versions décrivent le dépôt, sans affirmation de dernière version disponible.\n\n`+batch.map(([n,v])=>`${n}==${v}\nStatut : ${states[status]}. Fonction : ${inventory.python[n].purpose}`).join('\n\n'),sources:['requirements.txt','pyproject.toml','presentations/package-inventory.json']});
+  slides.push({kind:'table',...g,columns:['PAQUET OU GROUPE','SUPPORT / FONCTION','RÔLE ET LIMITE'],columnWidths:[292,330,530],caption:`${batch.length} paquets du groupe en notes : fonction, usage, dépendances, exemple et sources.`,notes:`${states[status]}. Les versions décrivent le dépôt, sans affirmation de dernière version disponible. Les relations Python proviennent des métadonnées installées, dont les 87 versions correspondent aux épingles. Les extras conditionnels restent distincts de l’usage actif. Les exemples du tableau peuvent citer un paquet détaillé dans un autre groupe.\n\n`+batch.map(([n,v])=>packageNote('python',n,v,inventory.python[n].status)).join('\n\n'),sources:['requirements.txt','pyproject.toml','presentations/package-inventory.json','presentations/package-details.json']});
 }
 const js=[];
 for(const rel of ['apps/web/package.json','qa/package.json']){
@@ -138,11 +144,15 @@ for(const rel of ['apps/web/package.json','qa/package.json']){
     assert(inventory.javascript[n],`Missing description: ${n}`);js.push([n,v,rel]);packageKeys.push(`${rel}:${n}@${v}`);
   }
 }
-slides.push({kind:'inventory-js',title:'Interface, build et QA',entries:js,caption:'17 dépendances directes. Fonctions détaillées en notes, transitives dans les lockfiles.',notes:'Chaque dépendance directe déclarée est conservée ci-dessous. Les arbres transitifs npm restent dans les deux package-lock.json.\n\n'+js.map(([n,v,rel])=>`${n}@${v}\nManifeste : ${rel}. Statut : ${states[inventory.javascript[n].status]}. Fonction : ${inventory.javascript[n].purpose}`).join('\n\n'),sources:['apps/web/package.json','qa/package.json','apps/web/package-lock.json','qa/package-lock.json','presentations/package-inventory.json']});
-assert.equal(slides.length,32);assert.equal(req.length,87);assert.equal(js.length,17);assert.equal(new Set(packageKeys).size,104);
+slides.push({kind:'table',...webReference,caption:'17 paquets directs détaillés en notes. Les lockfiles conservent les transitifs.',notes:'Chaque dépendance directe déclarée est conservée ci-dessous. Les arbres transitifs npm restent dans les deux package-lock.json. Un paquet de développement peut produire du code livré au navigateur, sans que son moteur soit lui-même exécuté par le site.\n\n'+js.map(([n,v,rel])=>`Manifeste : ${rel}.\n${packageNote('javascript',n,v,inventory.javascript[n].status)}`).join('\n\n'),sources:['apps/web/package.json','qa/package.json','apps/web/package-lock.json','qa/package-lock.json','presentations/package-details.json']});
+assert.equal(slides.length,36);assert.equal(req.length,87);assert.equal(js.length,17);assert.equal(new Set(packageKeys).size,104);
 const notes=slides.map(s=>s.notes).join('\n');
 for(const [n,v]of req)assert(notes.includes(`${n}==${v}`),`Omitted Python package ${n}`);
 for(const [n,v]of js)assert(notes.includes(`${n}@${v}`),`Omitted JS package ${n}`);
+for(const entries of Object.values(details))for(const entry of Object.values(entries)){
+  for(const field of ['function','genesis','inclusion','example'])assert(notes.includes(entry[field]),`Omitted detail: ${field}`);
+  for(const ref of entry.evidence)assert(notes.includes(ref),`Omitted source: ${ref}`);
+}
 for(const s of slides)for(const ref of s.sources||[])if(!ref.startsWith('https://'))await fs.access(path.join(root,ref));
 if(/Ã|â€|Â/.test(JSON.stringify(slides)))throw new Error('Invalid text encoding');
 for(const [i,s]of slides.entries())await draw(s,i);
@@ -157,5 +167,5 @@ for(const [i,s]of p.slides.items.entries()){
   console.log('Rendered',i+1,'/',slides.length);
 }
 const finalPath=path.join(output,`Genesis-Synthese-Technique-2026-10-11-${revision}.pptx`);
-await finalizePresentation({workspaceDir:root,candidatePath:candidate,finalPath,explicitTotalSlideCount:32,pythonExecutable:path.join(runtime,'python/python.exe'),integrityValidatorPath:path.join(skill,'container_tools/inspect_presentation_package_integrity.py'),layoutValidatorPath:path.join(skill,'container_tools/inspect_presentation_layout_geometry.py'),layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...tables.flatMap(n=>['--require-native-table-slide',String(n)])],requiredNativeTableOwnerSlides:tables,requiredNativeChartOwnerSlides:charts,materializeLiteralChartWorkbooks:true,fontPolicy:{basis:'reference',families:[font],referencePath:source,referenceSha256:createHash('sha256').update(await fs.readFile(source)).digest('hex')},verifyArtifactToolImport:true,receiptPath:path.join(build,'validation.json')});
+await finalizePresentation({workspaceDir:root,candidatePath:candidate,finalPath,explicitTotalSlideCount:36,pythonExecutable:path.join(runtime,'python/python.exe'),integrityValidatorPath:path.join(skill,'container_tools/inspect_presentation_package_integrity.py'),layoutValidatorPath:path.join(skill,'container_tools/inspect_presentation_layout_geometry.py'),layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...tables.flatMap(n=>['--require-native-table-slide',String(n)])],requiredNativeTableOwnerSlides:tables,requiredNativeChartOwnerSlides:charts,materializeLiteralChartWorkbooks:true,fontPolicy:{basis:'reference',families:[font],referencePath:source,referenceSha256:createHash('sha256').update(await fs.readFile(source)).digest('hex')},verifyArtifactToolImport:true,receiptPath:path.join(build,'validation.json')});
 console.log(JSON.stringify({finalPath,slides:slides.length,python:req.length,javascript:js.length}));
