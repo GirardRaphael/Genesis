@@ -1,0 +1,21 @@
+# U20 — Shorter, updated technical presentation
+
+Date: 2026-10-11. User asks to shorten the existing 64-slide French technical deck, update it and diversify its appearance. Scope supports U15/R14/R17 and U02/U04/U05. Target: 32 slides, with 26 narrative slides and six reference slides. Full dependency names, pinned versions, purposes and classifications remain in editable speaker notes, generated from the same manifests. Preserve the original PPTX and authoring source.
+
+Lead owns new condensed presentation content/builder/output, README/status/action-log integration and rendering. Read-only compression inventory: gpt-6-luna/medium. Separate strong reviewers inspect facts, coverage and rendered slides before delivery/publication. No application code, private configuration, provider execution or operational data changes.
+
+Design retains the original 16:9 canvas, Arial, dark teal and restrained pale background. Replace repeated table/list pages with varied editorial text, native comparisons/data charts, numbered sequences and a clearly identified synthetic QA application screenshot. Retain editable text/tables/charts and complete source notes. New U17–U19 material covers order intake, optional explanations, configurable fleet, isolated QA and application-only recovery. The blocked operator-worker restart and company-release gates remain explicit.
+
+Acceptance: 32 total slides, coherent shorter narrative, actual current repository evidence, complete 87 Python/17 direct web/QA dependency coverage in notes, no invented savings/GPS/traffic or production claim, no clipping/overlap, every final slide rendered and visually inspected, finalizer checks, independent review and normal reviewed Git publication. Native PowerPoint validation is claimed only if actually performed. Private drafts/renders/receipts remain ignored.
+
+## Delivered artifact and verification
+
+`presentations/output/Genesis-Synthese-Technique-2026-10-11-v4.pptx` contains 32 slides and 32 note parts. SHA256: `7ad7e6285fa0fd989c97b9b9ee372e202b4b85e5649bed0e1ab3fb30ceba5820`. The original 64-slide v4 deck retains SHA256 `e8f40c91ad2a3d45a25b7a45a7f0c7c283e0f8544bdd87753de1a19d169beab0`.
+
+The new `content-condensed.mjs` and `build-condensed.mjs` reuse the branded cover and generate the shorter body. The builder asserts slide counts, every manifest dependency, local source existence and valid text encoding. All 104 dependency entries retain their name, version, purpose and status in notes. Three native tables and one native chart remain editable; the chart has an embedded data workbook. The screenshot is a public-place synthetic QA asset, explicitly identified in the slide and notes.
+
+Artifact Tool rendered all 32 final slides. Lead inspected 1–16 individually, and the independent reviewer inspected 17–32 individually. Final note-only polish leaves slide PNGs unchanged from the reviewed v2 renders. Structural package, geometry, reference-font, first-party import and native-chart checks pass with zero findings/warnings. The independent reviewer also parses the actual PPTX ZIP/XML for notes coverage. Evidence remains in ignored `artifacts/private/presentation-condensed/v4`; the public review is `docs/reviews/condensed-presentation-review.md`.
+
+Build corrections: the first finalization required the source font-reference SHA256; it was supplied. The policy bar-chart axis title was moved to its numeric axis. A v3 attempt narrowed the finalizer workspace too far and was rejected because the output lay outside that directory; the actual repository workspace was restored for v4. Apparent missing glyphs in some image tool displays disappeared when reopened and were contradicted by intact pixels/layout/OOXML. No source workaround was introduced for these transient display observations. Earlier drafts and finalizer scratch data were archived privately without replacing the original deck.
+
+No application tests were rerun because application code and dependencies are unchanged. The 245 Python/77 web/four harness results are cited historical U18/U19 evidence. No operator restart, model call, credential read or email was performed. Native PowerPoint/Google Slides opening, a timed rehearsal and a company deployment remain unverified. Normal publication follows scoped independent approval and staged-path checks; A103 records this work.

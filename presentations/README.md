@@ -1,28 +1,30 @@
 # Genesis technical presentation
 
-The French editable PowerPoint contains 64 slides, detailed speaker notes, source references and a complete inventory of the 87 pinned Python packages and 17 direct web/QA dependencies. It distinguishes application runtime, dependency infrastructure, optional integrations, installed-only packages and proposed work. The npm transitive graph remains in the repository lockfiles.
+The current French editable PowerPoint contains 32 slides: 26 narrative slides and six reference slides. Detailed speaker notes retain sources and all 87 pinned Python packages and 17 direct web/QA dependencies, including their purposes and classifications. It incorporates U17–U19 order intake, optional explanations, configurable local fleet, isolated QA and application-database recovery. The original 64-slide deck remains available as the earlier detailed reference.
 
 ## Reading the deck
 
 | Slides | Subject |
 |---|---|
-| 1–6 | Business purpose, actual delivery scope, three workspaces, architecture and repository |
-| 7–13 | React/TypeScript, visualization libraries, build, API, storage and durable worker |
-| 14–24 | LangGraph, roles, broker request, maps, optimization, validation, Anthropic and route memory |
-| 25–31 | Memory metrics, metering, C$100 cap, unknown billing, email, replay and analytics |
-| 32–42 | Optional integrations, testing, evidence, demonstration, production gates, SSE and workflow distinctions |
-| 43–60 | Complete Python environment inventory, with purpose and classification in notes |
-| 61–64 | Complete direct web and QA dependencies |
+| 1–6 | Purpose, delivery scope, three workspaces, order journey and architecture |
+| 7–12 | Frontend, API, persistence, five roles, explanation policies and Anthropic |
+| 13–18 | Maps, allocation strategies, certificates, configured fleet, application view and route memory |
+| 19–24 | Six visualizations, cost accounting, budget/email, historical benchmark, QA and recovery |
+| 25–26 | Company-release priorities and demonstration flow |
+| 27–31 | Python runtime, support, optional, tooling and installed-only groups; full inventory in notes |
+| 32 | All direct web and QA dependencies; purposes and classifications in notes |
 
-The main narrative is slides 1–42; the remaining slides are a technical reference appendix. Speaker notes explain why the technology is used, how it is wired into Genesis, sources and operational limits. Tables and text remain editable. No client savings, real GPS tracking, live traffic, globally optimal routes, SMTP inbox receipt or production readiness are asserted.
+Speaker notes explain why technologies are used, how they connect to Genesis and their operational limits. Text, tables and the policy chart remain editable. The chart describes expected explanation-call counts, not a new experiment. The application screenshot is an existing synthetic QA view. The npm transitive graph remains in the lockfiles. No client savings, real GPS, live traffic, globally optimal routes, inbox receipt or production readiness are asserted. Operator-worker activation remains distinct from isolated QA evidence.
 
 ## Source and regeneration
 
-- `content.mjs`: main narrative and notes, citing repository paths and official library documentation.
+- `content-condensed.mjs`: current 26-slide narrative and detailed source notes.
+- `build-condensed.mjs`: imports the original cover/theme, builds varied native layouts and generates six inventory slides from manifests. It checks all 104 package entries, local citations and encoding, renders all slides and finalizes the new output.
 - `package-inventory.json`: descriptions/classifications; package versions are read from actual manifests at build time.
-- `build.mjs`: creates native slide tables/text using the desktop's bundled `@oai/artifact-tool`, renders every slide, checks local citations and text encoding, and runs package/layout/import validation.
-- `output/Genesis-Architecture-Technologies-2026-10-11-v4.pptx`: reviewed deliverable. Earlier drafts remain private.
+- `output/Genesis-Synthese-Technique-2026-10-11-v4.pptx`: current condensed deliverable.
+- `content.mjs`, `build.mjs` and `output/Genesis-Architecture-Technologies-2026-10-11-v4.pptx`: preserved original authoring sources and 64-slide reference.
+- `assets/dispatch-qa.png`: public-place synthetic QA screenshot used on slide 17.
 
-Authoring uses the bundled Codex Presentations runtime; it adds no library to the Genesis application. Set `GENESIS_DECK_RUNTIME` to the bundled dependency directory and `GENESIS_DECK_SKILL` to the installed Presentations skill directory, then invoke `presentations/build.mjs` with the bundled Node executable. The builder derives its Node module and Python paths from that runtime. To create a revision, choose new candidate, final and receipt filenames in the builder first; the finalizer refuses to overwrite a published output or receipt. Follow the skill's operation marker and validation workflow for a new authoring operation.
+Authoring uses the bundled Codex Presentations runtime; it adds no application dependency. Set `GENESIS_DECK_RUNTIME` to the bundled dependency directory, `GENESIS_DECK_SKILL` to the Presentations skill directory and `GENESIS_DECK_REVISION` to a fresh value such as `v5`. Invoke `presentations/build-condensed.mjs` with the bundled Node executable. The builder derives Node module and Python paths from that runtime. Use a new revision for each build: the finalizer refuses to overwrite a published output or receipt. Follow the skill's operation-marker and validation workflow for each new authoring operation. Archive finalizer-created `.chart-data-*` scratch directories under the ignored private build directory after verification.
 
-Private drafts, slide renders and validation receipts are in the ignored `artifacts/private/presentation` directory. This deck was rendered and visually reviewed with Artifact Tool. It was not opened or edited in native PowerPoint or Google Slides. See `docs/reviews/presentation-review.md` for the reviewed artifact hash and verification scope.
+Private drafts, renders and receipts are under ignored `artifacts/private/presentation-condensed/<revision>`; original evidence remains under `artifacts/private/presentation`. Every current slide was rendered and individually reviewed with Artifact Tool. Native PowerPoint and Google Slides rendering remain unverified. See `docs/reviews/condensed-presentation-review.md` for current coverage, artifact hash and review scope, and `docs/reviews/presentation-review.md` for the preserved original.
