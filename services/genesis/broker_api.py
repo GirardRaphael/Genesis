@@ -27,7 +27,8 @@ class BrokerRequest(BaseModel):
     depot: Place
     vehicle_ids: list[Literal["van1", "van2", "van3", "van4"]] = Field(default_factory=lambda: ["van1", "van2", "van3", "van4"], min_length=1, max_length=4)
     objective: Literal["cost", "fastest", "balanced"] = "balanced"
-    explanation_policy: Literal["always", "routine"] = "always"
+    explanation_policy: Literal["always", "routine", "none"] = "always"
+    order_ids: list[UUID] | None = Field(default=None, min_length=1, max_length=10)
     activation_cost_cad: Decimal = Field(default=Decimal("18"), ge=0, le=10000)
     cost_per_km_cad: Decimal = Field(default=Decimal("0.95"), ge=0, le=1000)
     driver_cost_per_hour_cad: Decimal = Field(default=Decimal("28"), ge=0, le=1000)
@@ -38,16 +39,18 @@ class BrokerRequest(BaseModel):
 
     @model_validator(mode="after")
     def boundaries(self):
+        if self.order_ids is not None and len(set(self.order_ids)) != len(self.order_ids):
+            raise ValueError("order_ids must be unique")
         if len(set(self.vehicle_ids)) != len(self.vehicle_ids):
             raise ValueError("vehicle_ids must be unique")
         if not _inside(list(self.depot.coordinates)):
             raise ValueError("depot outside Montréal demonstration area")
         if any(not _inside(list(place.coordinates)) for d in self.deliveries for place in (d.pickup, d.dropoff)):
             raise ValueError("delivery outside Montréal demonstration area")
-        if self.mode == "fixture" and self.budget_usd is not None:
-            # The default live budget is ignored for explicitly chosen fixture runs.
+        if (self.mode == "fixture" or self.explanation_policy == "none") and self.budget_usd is not None:
+            # Modes without model calls do not carry a billable budget.
             self.budget_usd = None
-        if self.mode == "live" and self.budget_usd is None:
+        if self.mode == "live" and self.explanation_policy != "none" and self.budget_usd is None:
             raise ValueError("live mode requires a USD budget")
         return self
 
@@ -93,7 +96,7 @@ def register_broker(app: FastAPI) -> None:
         if not any(vehicle["available"] for vehicle in snapshot["vehicles"]):
             raise HTTPException(409, {"code": "fleet_unavailable", "message": "No selected van is free for a new plan", "retryable": True})
         request.update({"scenario_id": "BROKER", "policy": "broker_dispatch", "seed": 0, "workflow_kind": "broker"})
-        if body.mode == "live":
+        if body.mode == "live" and body.explanation_policy != "none":
             try:
                 request["provider"] = os.getenv("GENESIS_PROVIDER", "anthropic")
                 request["model_policy"] = {role: live_configuration(role)[0] for role in ("planning", "traffic", "optimization", "monitoring", "exception")}

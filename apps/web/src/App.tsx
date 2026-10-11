@@ -82,8 +82,8 @@ const Dispatch = lazy(() =>
 );
 const headings: Record<View, [string, string]> = {
   dispatch: [
-    "Livraisons sur l’île de Montréal",
-    "Créez plusieurs livraisons, préparez leur trajet et suivez la simulation sur les rues réelles.",
+    "Commandes et répartition",
+    "Centralisez les demandes montréalaises, comparez les tournées et contrôlez leur départ simulé.",
   ],
   analytics: [
     "Analytique des opérations",

@@ -80,3 +80,9 @@ On 2026-10-11 the user rejected redundant primary pages. Keep Opérations, Analy
 ### D34 — Selected addresses follow the strict Place contract
 
 U16 removes geocoder metadata at the shared address-selection boundary, retaining only label and coordinates for pickup, drop-off and depot. Keep the API's unknown-field rejection: ignoring arbitrary extra input would hide the client mismatch. QA geocoder results include IDs so the preview, manual and broker request checks exercise the real provider shape. This changes no backend schema, routing algorithm, model policy or persisted history.
+
+### D35 — Durable order intake; explanations optional for daily planning
+
+U17 uses the existing database, solver, independent certificate and five-role graph. Persist a minimal local order ledger with immutable delivery payloads, normalized unique references and atomic plan claims. Reference retries are idempotent only for identical content. Structured CSV is previewed and committed as a bounded all-or-nothing batch. An organizational service date must not imply unsupported calendar scheduling.
+
+The daily planner defaults to `explanation_policy=none`: all tools/checks still run without Anthropic key, billing reservations or generated explanations. Keep live/fixture provenance backward compatible and disclose the separate policy in detail/UI; never count a no-model run as a paid model experiment. Complete five-role Anthropic explanations and original scenario experiments remain available, satisfying the user's reminder to retain explicitly required project technologies and workflows. Hide diagnostic density behind disclosures rather than remove required charts or telemetry. Prepared trips remain simulation-only and wait for an explicit start.

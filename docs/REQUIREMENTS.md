@@ -47,6 +47,18 @@ Source: `C:\Users\xxrap\Downloads\Projet_Observatoire_Multiagents_IA.docx`, SHA2
 
 ## Rubric priority
 
+U17 broker extension (2026-10-11): persistent orders, bounded CSV intake, duplicate/concurrent-plan guards, optional paid explanations and proposal review before simulated departure. The original R01–R19 requirements remain intact. See [U17 contract and verification](work/U17-broker-order-workflow.md) and [operator guide](BROKER-ORDERS.md).
+
+| Required project capability | U17 preservation |
+|---|---|
+| Advanced stack: LangGraph, Langfuse integration, React Flow, Apache ECharts | No stack substitution or dependency removal; existing graph/exporter/chart paths retained |
+| At least four distinct collaborating agents and two tools | Five role workflow, typed tool calls, evidence artifacts and handoffs retained even with model explanations omitted |
+| At least 20 executions across at least five scenarios | Existing experiment profile and historical evidence retained; deterministic broker runs do not substitute for live model experiment evidence |
+| Graph, timeline, Sankey, agent comparison, heatmap, KPI visuals | All six remain accessible through Analytique/Agents; operator diagnostics are collapsed, not deleted |
+| Detailed traces, cost/tokens, filters, comparisons, report/presentation | Existing observatory and presentation remain; no fabricated tokens for omitted calls |
+
+The course's complete multiagent explanation profile remains explicitly selectable. Standard broker planning without paid explanations is an additional operational policy, not a claim that tool-only execution satisfies every live-agent evaluation requirement. Langfuse external export remains an unverified configuration until separately connected and tested.
+
 Multiagent functioning 15; data collection/quality 10; visualization accuracy 25; interactivity/usability 15; interpretation 20; technical organization 5; report/documentation 5; presentation 5. These are the brief's proposed points, not earned scores.
 
 ## Scope distinctions

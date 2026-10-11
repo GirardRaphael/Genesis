@@ -496,3 +496,23 @@
   color: #72463f;
   font-size: 11px;
 }
+.broker-options {
+  margin-top: 12px;
+  padding: 10px 0;
+  border-top: 1px solid #e2e9e9;
+  border-bottom: 1px solid #e2e9e9;
+}
+.broker-options > summary {
+  color: #245f68;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.broker-options > summary:focus-visible {
+  outline: 2px solid #146c78;
+  outline-offset: 3px;
+}
+.broker-diagnostics .broker-trace-link {
+  width: auto;
+}

@@ -342,7 +342,7 @@ class Runtime:
                         if role == "monitoring"
                         else "GENESIS_ANTHROPIC_MODEL"
                     )
-                    if self.request["mode"] == "live"
+                    if self.request["mode"] == "live" and self.request.get("explanation_policy") != "none"
                     else None,
                     "duration_ms": int((time.monotonic() - began) * 1000),
                     "input_tokens": None,
@@ -353,6 +353,8 @@ class Runtime:
                     "started_at": started_at,
                     "finished_at": now(),
                 }
+                if self.request.get("explanation_policy") == "none":
+                    agent["usage_source"] = "not_applicable_deterministic_policy"
                 detail = self.store.get_run(self.run_id)["detail"]
                 self.store.update_detail(
                     self.run_id,

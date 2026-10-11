@@ -1045,13 +1045,28 @@ def register_dispatch(app: FastAPI) -> None:
 
     @app.post("/api/v1/dispatch/trips/{trip_id}/cancel")
     def cancel_trip(trip_id: UUID):
-        row = get_row(trip_id)
-        if _project(row)["status"] == "completed":
-            raise _error(409, "trip_completed", "Completed trip cannot be cancelled")
-        with app.state.store.engine.begin() as conn:
+        with app.state.store.transaction() as conn:
+            initial = conn.execute(select(_trips).where(_trips.c.id == str(trip_id))).mappings().first()
+            if initial is None:
+                raise _error(404, "trip_not_found", "Dispatch trip not found")
+            owner_run_id = json.loads(initial["request_json"]).get("owner_run_id")
+            # Match start/finalization lock order so cancellation cannot release an order as a trip starts.
+            owner = app.state.store._run(conn, owner_run_id) if owner_run_id else None
+            if app.state.store.engine.dialect.name == "postgresql":
+                conn.execute(text("LOCK TABLE dispatch_trips IN SHARE ROW EXCLUSIVE MODE"))
+            row = conn.execute(select(_trips).where(_trips.c.id == str(trip_id)).with_for_update()).mappings().one()
+            if _project(row)["status"] == "completed":
+                raise _error(409, "trip_completed", "Completed trip cannot be cancelled")
             conn.execute(
                 update(_trips)
                 .where(_trips.c.id == str(trip_id), _trips.c.status.in_(["ready", "running"]))
                 .values(status="cancelled", cancelled_at=_stamp())
             )
+            if owner:
+                from .orders import release_rejected_proposal
+
+                proposal_trips = conn.execute(select(_trips).where(
+                    _trips.c.idempotency_key.like(f"broker:{owner_run_id}:%"),
+                )).mappings().all()
+                release_rejected_proposal(conn, owner, proposal_trips)
         return _project(get_row(trip_id))

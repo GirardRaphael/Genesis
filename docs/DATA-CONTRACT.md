@@ -12,6 +12,8 @@ Dispatch selected-stop state is presentation-only `(tripId, stopId)`. Resolve it
 
 ## Identity and ordering
 
+U17 adds project-scoped durable orders and tracked broker request claims. See [BROKER-ORDERS.md](BROKER-ORDERS.md) for states, endpoint constraints, immutable payload and proposal-versus-delivery semantics. `explanation_policy=none` explicitly skips model calls; actual tool durations and handoffs remain. Request `mode=live` alone is not evidence of a model attempt. `model_policy_id=deterministic-tools-v1` identifies that omission policy, while leaf-attempt records remain authoritative for usage. Customer/reference/date metadata stays in local order storage and is not included in model evidence.
+
 Use UUID identities for project, run, invocation, model call, tool call, attempt, event, artifact and evaluation. One agent invocation may contain several model calls and tool calls. A retry is a new attempt under the same logical call. A revised analysis is a new invocation referencing the superseded artifact. Every stored row belongs to one project, including checkpoint and artifact metadata.
 
 Each event has `schema_version`, `event_id`, `project_id`, `run_id`, `run_seq`, `kind`, `occurred_at`, `ingested_at`, optional `invocation_id`, `attempt_id`, `caused_by_event_id`, `trace_id`, `span_id`, and a schema-validated redacted `payload`. UTC RFC3339 timestamps preserve milliseconds; the UI renders in its explicit timezone, initially America/Toronto. Derive durations from a monotonic clock within a process and store integer milliseconds. Do not subtract clocks from unrelated workers as if they were synchronized.

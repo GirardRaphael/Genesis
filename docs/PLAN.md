@@ -2,6 +2,8 @@
 
 ## 1 Product decision
 
+2026-10-11 U17 execution update: start the broker usefulness roadmap with durable order intake, CSV preview, duplicate/concurrent-plan protection and deterministic standard planning. Preserve the advanced academic stack, five roles, complete explanation policy, all required visualizations and historical experiments. [Broker order guide](BROKER-ORDERS.md) distinguishes this local operator slice from the later authenticated carrier/driver/production milestones.
+
 Build **Genesis Logistics Observatory**, selected from Annex A11 by the user. A dispatcher compares delivery plans, inspects delays/capacity/cost, simulates disruptions and understands the five agents' outputs. The route map and verified visit plan are the primary business views; the original multiagent observatory exposes the workflow, tool evidence, reliability, tokens and separate AI spend.
 
 The user has selected A11; teacher approval and commercial demand remain unverified. Validate the hypothesis through three dispatcher/fleet-operator interviews covering a recent planning problem, actual constraints, baseline process and purchase decision. Record evidence rather than invented market scores, revenue or savings. "Very high potential" in the brief is an idea rating, not validated demand. A useful product must improve dispatch decisions against an existing planner with comparable service coverage.

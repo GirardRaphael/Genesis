@@ -125,6 +125,21 @@ budget_alerts = Table(
     Column("claim_id", String),
 )
 
+orders = Table(
+    "broker_orders", metadata,
+    Column("id", String, primary_key=True),
+    Column("project_id", String, nullable=False),
+    Column("reference_key", String, nullable=False),
+    Column("input", JSON, nullable=False),
+    Column("input_hash", String, nullable=False),
+    Column("status", String, nullable=False),
+    Column("plan_id", String),
+    Column("version", Integer, nullable=False),
+    Column("created_at", String, nullable=False),
+    Column("updated_at", String, nullable=False),
+    UniqueConstraint("project_id", "reference_key"),
+)
+
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
@@ -268,6 +283,10 @@ class Store:
 
     def create_run(self, request, key):
         with self.transaction() as conn:
+            # Serialize admission/idempotency on PostgreSQL too; SQLite uses BEGIN IMMEDIATE.
+            conn.execute(select(budgets.c.project_id).where(
+                budgets.c.project_id == PROJECT_ID
+            ).with_for_update()).one()
             old = (
                 conn.execute(
                     select(runs).where(
@@ -298,6 +317,10 @@ class Store:
                 owner=None,
                 generation=0,
             )
+            if request.get("order_ids") is not None:
+                from .orders import claim_orders
+
+                claim_orders(conn, request, row["id"])
             conn.execute(insert(runs).values(**row))
             self._event(
                 conn,
@@ -429,7 +452,19 @@ class Store:
                     .values(status="cancelled", finished_at=row["finished_at"])
                 )
                 self._event(conn, row, "run.cancelled", {"before_start": True})
+                self._finish_orders(conn, run_id, "cancelled", {})
             return row
+
+    def _finish_orders(self, conn, run_id, status, detail):
+        planned = status == "succeeded" and detail.get("final_kind") == "accepted_plan"
+        conn.execute(update(orders).where(
+            orders.c.project_id == PROJECT_ID, orders.c.plan_id == run_id,
+            orders.c.status == "planning",
+        ).values(
+            status="planned" if planned else "open",
+            plan_id=run_id if planned else None,
+            version=orders.c.version + 1, updated_at=now(),
+        ))
 
     def claim(self, owner, lease_seconds=60):
         from datetime import timedelta
@@ -503,11 +538,23 @@ class Store:
                 return
             if row["cancel_requested"]:
                 status = "cancelled"
-            if status != "succeeded" and row["request"].get("workflow_kind") == "broker":
+            detail = {**row["detail"], **changes}
+            if row["request"].get("workflow_kind") == "broker" and (
+                status != "succeeded" or detail.get("final_kind") != "accepted_plan"
+            ):
                 from .dispatch import retire_broker_trips
 
                 retire_broker_trips(conn, run_id)
-            detail = {**row["detail"], **changes}
+            self._finish_orders(conn, run_id, status, detail)
+            if row["request"].get("order_ids") and status == "succeeded":
+                from .dispatch import _trips
+                from .orders import release_rejected_proposal
+
+                # Trips may be rejected before finalization; the owner lock also fences start/cancel.
+                proposal_trips = conn.execute(select(_trips).where(
+                    _trips.c.idempotency_key.like(f"broker:{run_id}:%"),
+                )).mappings().all()
+                release_rejected_proposal(conn, {**row, "status": status, "detail": detail}, proposal_trips)
             conn.execute(
                 update(runs)
                 .where(runs.c.id == run_id)

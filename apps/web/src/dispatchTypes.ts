@@ -11,7 +11,10 @@ export type Delivery = {
   parcels: number;
 };
 
-export type BrokerDelivery = Delivery & { deadline_minutes?: number };
+export type BrokerDelivery = Delivery & {
+  id?: string;
+  deadline_minutes?: number;
+};
 
 export type BrokerCandidate = {
   strategy: string;
@@ -38,10 +41,12 @@ export type BrokerPlan = {
   id: string;
   status: string;
   workflow_kind?: "broker";
+  provenance?: "live" | "fixture";
+  explanation_policy?: "none" | "always" | "routine";
   final_kind?: "accepted_plan" | "accepted_diagnostic" | null;
   request?: {
     mode?: "live" | "fixture";
-    explanation_policy?: "always" | "routine";
+    explanation_policy?: "none" | "always" | "routine";
   };
   route_memory?: {
     outcome: "miss" | "changed" | "reused";

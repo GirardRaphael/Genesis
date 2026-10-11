@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { api } from "./api";
 import { BrokerPlanning } from "./BrokerPlanning";
+import { OrderBoard } from "./OrderBoard";
+import type { BrokerOrder } from "./orderData";
 import { DispatchMap, dispatchColor } from "./DispatchMap";
 import { RouteLibrary } from "./RouteLibrary";
 import { selectedDispatchStop, type StopSelection } from "./dispatchSelection";
@@ -118,6 +120,9 @@ export function Dispatch() {
   const [parcels, setParcels] = useState(1);
   const [deadline, setDeadline] = useState(120);
   const [draft, setDraft] = useState<BrokerDelivery[]>([]);
+  const [selectedOrders, setSelectedOrders] = useState<BrokerOrder[]>([]);
+  const untrackedDraft = useRef<BrokerDelivery[]>([]);
+  const composer = useRef<HTMLElement>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [preview, setPreview] = useState<DispatchPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
@@ -295,6 +300,7 @@ export function Dispatch() {
   }
 
   function addDelivery() {
+    if (selectedOrders.length) return;
     if (draft.length >= 10 && editing == null) {
       setFormError("Un trajet peut contenir au plus 10 livraisons.");
       return;
@@ -315,7 +321,16 @@ export function Dispatch() {
       );
       return;
     }
-    const delivery = { pickup, dropoff, parcels, deadline_minutes: deadline };
+    const delivery = {
+      id:
+        editing == null
+          ? crypto.randomUUID()
+          : (draft[editing].id ?? crypto.randomUUID()),
+      pickup,
+      dropoff,
+      parcels,
+      deadline_minutes: deadline,
+    };
     setDraft((current) =>
       editing == null
         ? [...current, delivery]
@@ -330,7 +345,7 @@ export function Dispatch() {
   }
 
   async function createTrip() {
-    if (creating.current) return;
+    if (creating.current || selectedOrders.length) return;
     if (!draft.length) {
       setFormError("Ajoutez au moins une livraison avant de créer le trajet.");
       return;
@@ -398,10 +413,10 @@ export function Dispatch() {
           <span className="dispatch-overline">
             GENESIS / CENTRE DE RÉPARTITION
           </span>
-          <h2>Chaque trajet, au même endroit.</h2>
+          <h2>Des commandes aux tournées.</h2>
           <p>
-            Planifiez des livraisons montréalaises et suivez leur simulation sur
-            des routes réelles. Positions simulées, jamais des données GPS.
+            Centralisez les demandes, comparez les affectations et vérifiez
+            chaque tournée. Routes réelles, positions et livraisons simulées.
           </p>
         </div>
         <div className="dispatch-hero-stats">
@@ -419,8 +434,35 @@ export function Dispatch() {
           </div>
         </div>
       </div>
+      <OrderBoard
+        draft={selectedOrders.length ? [] : draft}
+        refreshKey={refresh}
+        onSelectOrders={(orders) => {
+          if (!selectedOrders.length) untrackedDraft.current = draft;
+          setSelectedOrders(orders);
+          setDraft(
+            orders.map((order) => ({
+              id: order.id,
+              pickup: order.pickup,
+              dropoff: order.dropoff,
+              parcels: order.parcels,
+              deadline_minutes: order.deadline_minutes,
+            })),
+          );
+          setEditing(null);
+          setPickup(null);
+          setDropoff(null);
+          setFormError("");
+          focusDraft();
+          composer.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }}
+      />
       <div className="dispatch-board">
         <section
+          ref={composer}
           className="dispatch-composer"
           aria-labelledby="dispatch-create-title"
         >
@@ -429,80 +471,110 @@ export function Dispatch() {
               <Plus size={19} />
             </span>
             <div>
-              <span className="dispatch-kicker">NOUVELLE MISSION</span>
+              <span className="dispatch-kicker">PRÉPARATION / AFFECTATION</span>
               <h2 id="dispatch-create-title">Préparer les livraisons</h2>
             </div>
           </div>
-          <p className="dispatch-helper">
-            Recherchez des lieux publics ou des adresses, puis choisissez chaque
-            résultat avant d’ajouter la livraison.
-          </p>
-          <PlaceSearch
-            label="Lieu de ramassage"
-            place={pickup}
-            onChange={(place) => {
-              setPickup(place);
-              if (place) focusDraft();
-            }}
-          />
-          <PlaceSearch
-            label="Lieu de livraison"
-            place={dropoff}
-            onChange={(place) => {
-              setDropoff(place);
-              if (place) focusDraft();
-            }}
-          />
-          <div className="dispatch-form-row">
-            <label>
-              Colis
-              <input
-                type="number"
-                min={1}
-                max={40}
-                step={1}
-                value={parcels}
-                onChange={(event) => setParcels(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              Échéance après départ · min
-              <input
-                type="number"
-                min={1}
-                max={480}
-                step={1}
-                value={deadline}
-                onChange={(event) => setDeadline(Number(event.target.value))}
-              />
-            </label>
-          </div>
-          <button
-            className="dispatch-add"
-            type="button"
-            onClick={addDelivery}
-            disabled={
-              busy === "create" || (draft.length >= 10 && editing == null)
-            }
-          >
-            <Plus size={16} />{" "}
-            {editing == null
-              ? "Ajouter cette livraison"
-              : `Mettre à jour la livraison ${editing + 1}`}
-          </button>
-          {editing != null && (
-            <button
-              type="button"
-              className="dispatch-example"
-              onClick={() => {
-                setEditing(null);
-                setPickup(null);
-                setDropoff(null);
-              }}
-            >
-              Annuler la modification
-            </button>
+          {selectedOrders.length > 0 && (
+            <div className="dispatch-order-context" role="status">
+              <strong>{selectedOrders.length} commande(s) du carnet</strong>
+              <p>
+                {selectedOrders.map((order) => order.reference).join(" · ")}
+              </p>
+              <p>
+                Ces livraisons restent liées à leurs commandes. La planification
+                les réserve ensemble ; les tournées attendent votre démarrage.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrders([]);
+                  setDraft(untrackedDraft.current);
+                  setEditing(null);
+                  setPickup(null);
+                  setDropoff(null);
+                }}
+              >
+                Revenir à la saisie libre · conserver les commandes au carnet
+              </button>
+            </div>
           )}
+          <fieldset
+            className="dispatch-inputs"
+            disabled={selectedOrders.length > 0}
+          >
+            <legend className="sr-only">Saisie des lieux et colis</legend>
+            <p className="dispatch-helper">
+              Recherchez des lieux publics ou des adresses, puis choisissez
+              chaque résultat avant d’ajouter la livraison.
+            </p>
+            <PlaceSearch
+              label="Lieu de ramassage"
+              place={pickup}
+              onChange={(place) => {
+                setPickup(place);
+                if (place) focusDraft();
+              }}
+            />
+            <PlaceSearch
+              label="Lieu de livraison"
+              place={dropoff}
+              onChange={(place) => {
+                setDropoff(place);
+                if (place) focusDraft();
+              }}
+            />
+            <div className="dispatch-form-row">
+              <label>
+                Colis
+                <input
+                  type="number"
+                  min={1}
+                  max={40}
+                  step={1}
+                  value={parcels}
+                  onChange={(event) => setParcels(Number(event.target.value))}
+                />
+              </label>
+              <label>
+                Échéance après départ · min
+                <input
+                  type="number"
+                  min={1}
+                  max={480}
+                  step={1}
+                  value={deadline}
+                  onChange={(event) => setDeadline(Number(event.target.value))}
+                />
+              </label>
+            </div>
+            <button
+              className="dispatch-add"
+              type="button"
+              onClick={addDelivery}
+              disabled={
+                busy === "create" || (draft.length >= 10 && editing == null)
+              }
+            >
+              <Plus size={16} />{" "}
+              {editing == null
+                ? "Ajouter cette livraison"
+                : `Mettre à jour la livraison ${editing + 1}`}
+            </button>
+            {editing != null && (
+              <button
+                type="button"
+                className="dispatch-example"
+                onClick={() => {
+                  setEditing(null);
+                  setPickup(null);
+                  setDropoff(null);
+                }}
+              >
+                Annuler la modification
+              </button>
+            )}
+          </fieldset>
           <div className="dispatch-draft-head">
             <strong>Livraisons à planifier</strong>
             <span>{draft.length}/10</span>
@@ -525,7 +597,7 @@ export function Dispatch() {
                   </div>
                   <button
                     type="button"
-                    disabled={busy === "create"}
+                    disabled={busy === "create" || selectedOrders.length > 0}
                     aria-label={`Modifier la livraison ${index + 1}`}
                     onClick={() => {
                       setPickup(item.pickup);
@@ -539,7 +611,7 @@ export function Dispatch() {
                   </button>
                   <button
                     type="button"
-                    disabled={busy === "create"}
+                    disabled={busy === "create" || selectedOrders.length > 0}
                     aria-label={`Retirer la livraison ${index + 1}`}
                     onClick={() => {
                       if (editing != null) {
@@ -563,9 +635,11 @@ export function Dispatch() {
           <button
             type="button"
             className="dispatch-example"
-            disabled={busy === "create"}
+            disabled={busy === "create" || selectedOrders.length > 0}
             onClick={() => {
-              setDraft(EXAMPLE.map((item) => ({ ...item })));
+              setDraft(
+                EXAMPLE.map((item) => ({ ...item, id: crypto.randomUUID() })),
+              );
               setEditing(null);
               setPickup(null);
               setDropoff(null);
@@ -637,46 +711,54 @@ export function Dispatch() {
           </div>
           <BrokerPlanning
             deliveries={draft}
+            orderIds={
+              selectedOrders.length
+                ? selectedOrders.map((order) => order.id)
+                : undefined
+            }
             depot={depot}
             trips={trips}
+            onPlanSubmitted={() => setRefresh((n) => n + 1)}
             onTripsCreated={(ids) => {
               setRefresh((n) => n + 1);
               if (ids[0]) selectTrip(ids[0]);
             }}
           />
-          <details className="dispatch-manual">
-            <summary>Créer manuellement un trajet routier</summary>
-            <p>
-              Option avancée : conserve l’ordre des livraisons saisies, sans
-              courtier ni comparaison d’affectation.
-            </p>
-            <label>
-              Véhicule
-              <select
-                value={vehicle}
-                onChange={(event) => setVehicle(event.target.value)}
+          {!selectedOrders.length && (
+            <details className="dispatch-manual">
+              <summary>Créer manuellement un trajet routier</summary>
+              <p>
+                Option avancée : conserve l’ordre des livraisons saisies, sans
+                courtier ni comparaison d’affectation.
+              </p>
+              <label>
+                Véhicule
+                <select
+                  value={vehicle}
+                  onChange={(event) => setVehicle(event.target.value)}
+                >
+                  {[1, 2, 3, 4].map((n) => (
+                    <option key={n} value={`van${n}`}>
+                      Véhicule {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="dispatch-create"
+                disabled={busy === "create" || !draft.length}
+                onClick={() => void createTrip()}
               >
-                {[1, 2, 3, 4].map((n) => (
-                  <option key={n} value={`van${n}`}>
-                    Véhicule {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="dispatch-create"
-              disabled={busy === "create" || !draft.length}
-              onClick={() => void createTrip()}
-            >
-              {busy === "create" ? (
-                <LoaderCircle size={16} className="spin" />
-              ) : (
-                <Route size={16} />
-              )}{" "}
-              Créer sans courtier <ArrowRight size={16} />
-            </button>
-          </details>
+                {busy === "create" ? (
+                  <LoaderCircle size={16} className="spin" />
+                ) : (
+                  <Route size={16} />
+                )}{" "}
+                Créer sans courtier <ArrowRight size={16} />
+              </button>
+            </details>
+          )}
         </section>
 
         <section
@@ -896,7 +978,10 @@ export function Dispatch() {
           refresh + trips.filter((trip) => trip.status === "completed").length
         }
         onLoad={(deliveries) => {
-          setDraft(deliveries);
+          setSelectedOrders([]);
+          setDraft(
+            deliveries.map((item) => ({ ...item, id: crypto.randomUUID() })),
+          );
           setEditing(null);
           setPickup(null);
           setDropoff(null);
@@ -1065,7 +1150,10 @@ function PlaceSearch({
                   request.current += 1;
                   controller.current?.abort();
                   setSearching(false);
-                  onChange({ label: item.label, coordinates: item.coordinates });
+                  onChange({
+                    label: item.label,
+                    coordinates: item.coordinates,
+                  });
                   setText(item.label);
                   setItems([]);
                 }}

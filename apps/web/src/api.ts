@@ -13,6 +13,7 @@ export async function api<T>(
     try {
       const error = await res.json();
       message =
+        error.error?.message ||
         error.message ||
         error.detail?.message ||
         (typeof error.detail === "string" ? error.detail : message);

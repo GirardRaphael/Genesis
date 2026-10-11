@@ -6,6 +6,8 @@ Implemented: independently validated baseline/OR-Tools routes, a bounded depot-o
 
 Cost monitoring refreshes during operations and shows every model attempt, agent/model totals and the overall ledger across all handled requests.
 
+The broker intake slice adds a persistent **Carnet de commandes**: save geocoded deliveries with customer/reference/date, preview a bounded CSV import, find pending requests and prepare selected orders together. Duplicate references and competing plans are rejected transactionally. Standard planning uses road tools, OR-Tools and independent checks **without a model key or model charge**; optional Anthropic explanations remain available. Trips wait for an explicit simulation start. See [broker order workflow](docs/BROKER-ORDERS.md).
+
 The operator interface has three workspaces: Opérations opens Montréal dispatch, Analytique contains global reporting, and Agents groups execution activity, history, comparisons and detailed results. Historical links remain valid. Removable active filters, named compact/mobile navigation and Montréal daylight-saving-aware timestamps make the current scope visible. Analytics offers a local CSV export with units, timestamps, coverage and explicit limits; selected delivery stops link their schedule, map marker and paired pickup/drop-off details. See [interface refinement and verification scope](docs/work/U14-interface.md).
 
 Optional email alerts notify one configured recipient when the shared API budget guard triggers. The dashboard shows queued, SMTP-accepted, failed or uncertain delivery. Configure the SMTP fields in the private `.env`; see [budget-email setup and delivery contract](docs/BUDGET-EMAIL.md). No external email service is configured by default.
@@ -20,7 +22,7 @@ Requires Python 3.12–3.14, Node 22+ and PowerShell. Verified here with Python 
 
 ```powershell
 Copy-Item .env.example .env
-# Add ANTHROPIC_API_KEY privately to .env for live requests; fixture mode needs no key.
+# ANTHROPIC_API_KEY is optional for broker route calculation; needed for AI explanations.
 .\scripts\start.ps1 -Install -SeedDemo
 ```
 

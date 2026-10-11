@@ -22,6 +22,7 @@ from .llm import LiveUnavailable, live_configuration
 from .traffic import router as traffic_router
 from .dispatch import register_dispatch
 from .broker_api import register_broker
+from .orders import register_orders
 
 load_dotenv()
 POLICIES = ["baseline_only", "solver_with_one_replan", "broker_dispatch"]
@@ -85,9 +86,13 @@ def detail(row):
         "cancel_requested": row["cancel_requested"],
         "project_id": row["project_id"],
         "request": row["request"],
-        "model_policy_id": "configured-role-tiers-v1"
-        if row["request"]["mode"] == "live"
-        else "deterministic-fixture-v1",
+        "model_policy_id": (
+            "deterministic-tools-v1"
+            if row["request"].get("explanation_policy") == "none"
+            else "configured-role-tiers-v1"
+            if row["request"]["mode"] == "live"
+            else "deterministic-fixture-v1"
+        ),
         "schema_version": "v1",
     }
 
@@ -103,6 +108,7 @@ def create_app(store=None):
     register_dispatch(app)
     app.state.reload_local_env = store is None
     register_broker(app)
+    register_orders(app)
 
     def refresh_local_configuration():
         if app.state.reload_local_env:
@@ -217,12 +223,25 @@ def create_app(store=None):
 
     @app.exception_handler(RequestValidationError)
     async def invalid(request, exc):
+        # Do not echo submitted values, exception contexts or arbitrary extra-field names.
+        fields = []
+        known = {"deliveries", "pickup", "dropoff", "depot", "label", "coordinates",
+                 "parcels", "deadline_minutes", "vehicle_ids", "order_ids", "items",
+                 "reference", "customer", "service_date", "version", "csv", "limit",
+                 "offset", "q", "status", "budget_usd", "mode", "explanation_policy",
+                 "activation_cost_cad", "cost_per_km_cad", "driver_cost_per_hour_cad",
+                 "service_minutes", "balance_value_cad_per_minute", "objective"}
+        for issue in exc.errors()[:20]:
+            path = ".".join(str(part) if isinstance(part, int) or part in known else "field"
+                            for part in issue["loc"] if part not in {"body", "query", "path"})
+            fields.append({"field": path, "code": issue["type"]})
         return JSONResponse(
             status_code=422,
             content={
                 "error": {
                     "code": "invalid_input",
-                    "message": "Request fields or query bounds are invalid",
+                    "message": "Champs invalides : " + ", ".join(dict.fromkeys(item["field"] for item in fields)),
+                    "fields": fields,
                     "request_id": getattr(request.state, "request_id", str(uuid4())),
                     "retryable": False,
                 }

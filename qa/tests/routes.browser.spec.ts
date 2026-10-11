@@ -126,7 +126,8 @@ test('preview failure, route visibility controls and mobile keyboard accessibili
   await expect(page.locator('.dispatch-preview-summary')).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Trajets enregistrés', exact: true }).uncheck();
   await expect(page.getByRole('checkbox', { name: 'Trajets enregistrés', exact: true })).not.toBeChecked();
-  await expect(page.getByRole('radio', { name: 'Routine · explications ciblées', exact: true })).toBeChecked();
+  await page.getByText('Explications IA et mode de démonstration · facultatifs', { exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Sans IA · planification déterministe', exact: true })).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
   const violations = (await new AxeBuilder({ page }).include('.dispatch').analyze()).violations;
   expect(violations).toEqual([]);
@@ -141,12 +142,14 @@ test('broker revalidates completed recurring work and exposes zero actual explan
   await selectAddress(page, 'Lieu de livraison', '1050');
   await page.getByRole('button', { name: 'Ajouter cette livraison', exact: true }).click();
   await selectAddress(page, 'Dépôt de départ présumé', '4500');
-  await page.getByRole('radio', { name: 'Démonstration sans appel IA', exact: true }).check();
+  await page.getByText('Explications IA et mode de démonstration · facultatifs', { exact: true }).click();
+  await page.getByRole('radio', { name: 'Démonstration déterministe sans appel IA', exact: true }).check();
+  await page.getByRole('radio', { name: 'Routine · explications ciblées', exact: true }).check();
   for (const van of ['V1', 'V3', 'V4']) {
     await page.getByRole('checkbox', { name: new RegExp(`^${van}\\b`) }).uncheck();
   }
   const firstCreated = page.waitForResponse((response) => response.url().endsWith('/dispatch/plans') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: /Planifier avec les agents/ }).click();
+  await page.getByRole('button', { name: /Comparer les tournées/ }).click();
   const first = await firstCreated;
   expectPlaceFields(first.request().postDataJSON());
   expect(first.status()).toBe(202);
@@ -159,9 +162,9 @@ test('broker revalidates completed recurring work and exposes zero actual explan
     await expect.poll(async () => (await (await request.get(`${API}/dispatch/trips/${id}`)).json()).status, { timeout: 20_000 }).toBe('completed');
   }
   // NoPaidModels raises if the history path accidentally attempts generation.
-  await page.getByRole('radio', { name: /Anthropic en direct/ }).check();
+  await page.getByRole('radio', { name: /Routes actuelles/ }).check();
   const secondCreated = page.waitForResponse((response) => response.url().endsWith('/dispatch/plans') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: /Planifier avec les agents/ }).click();
+  await page.getByRole('button', { name: /Comparer les tournées/ }).click();
   const second = await secondCreated;
   expect(second.status()).toBe(202);
   const secondId = (await second.json()).id;
@@ -173,6 +176,7 @@ test('broker revalidates completed recurring work and exposes zero actual explan
   expect(reused.route_memory.omitted_explanation_roles).toHaveLength(5);
   expect(reused.agents.every((agent: { model: string | null; cost: string | null }) => agent.model === null && agent.cost === null)).toBe(true);
   expect((await (await request.get(`${API}/runs/${secondId}/usage`)).json()).attempts).toEqual([]);
+  await page.getByText('Détails techniques · cinq étapes, appels et historique', { exact: true }).click();
   await expect(page.getByText('Tournée habituelle revérifiée', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'screenshots/routes-memory-reused.png', fullPage: true });
 });

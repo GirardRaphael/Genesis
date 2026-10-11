@@ -21,6 +21,8 @@ def _cents(value: str) -> int:
 
 class BrokerRuntime(Runtime):
     def explanation_skip_reason(self, role, state, result):
+        if self.request.get("explanation_policy") == "none":
+            return "not_applicable_deterministic_policy"
         if self.request.get("explanation_policy", "always") != "routine":
             return None
         if role in {"planning", "traffic"}:
@@ -146,7 +148,7 @@ class BrokerRuntime(Runtime):
             "explanation_policy": self.request.get("explanation_policy", "always"),
             "fresh_road_computed_at": state["traffic"].get("road_computed_at"),
             "omitted_explanation_roles": [a["role"] for a in self.store.get_run(self.run_id)["detail"]["agents"] if a.get("output", {}).get("explanation_omitted")],
-            "planned_explanation_calls": 0 if self.request["mode"] == "fixture" else 5 if self.request.get("explanation_policy", "always") == "always" else 0 if memory["outcome"] == "reused" else 3,
+            "planned_explanation_calls": 0 if self.request["mode"] == "fixture" or self.request.get("explanation_policy") == "none" else 5 if self.request.get("explanation_policy", "always") == "always" else 0 if memory["outcome"] == "reused" else 3,
         })
         self.event("route_memory.assessed", memory, agent_id(self.run_id, "optimization"))
         self.store.update_detail(self.run_id, {"route_memory": memory}, self.fence)

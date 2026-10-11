@@ -41,6 +41,9 @@ All fixes above are scoped to the local prototype. Tests are evidence for their 
 
 ## P1 — must demonstrate operational value
 
+- [x] U17 local intake slice: persistent reference/customer/date backlog, bounded CSV preview, all-or-nothing import, immutable order-to-plan linkage and concurrent-claim protection. Deterministic planning can run without Anthropic. Automated/source acceptance only; new browser acceptance awaits local service restart.
+- [ ] Extend this backlog to authenticated carrier acceptance and actual service events; service dates currently organize work rather than enforce calendar windows. Measure time from intake to accepted assignment during a staffed pilot.
+
 - [ ] Version real shifts, breaks, service windows, capacity in weight/volume/pallets, temperature, depot returns and loading rules; reject unsupported orders explicitly.
 - [ ] Obtain legal incident/speed data and calibrate ETA. Municipal worksite permits are contextual; they do not validate traffic-aware routing or automatically avoid closures.
 - [ ] Add a pending-order queue and bounded reoptimization for new work while preserving accepted assignments, completed stops and onboard cargo. Currently unavailable fleets require a later plan, not autonomous reassignment.

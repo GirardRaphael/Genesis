@@ -91,6 +91,8 @@ type Props = {
   deliveries: BrokerDelivery[];
   depot: Place | null;
   trips: DispatchTrip[];
+  orderIds?: string[];
+  onPlanSubmitted?: (planId: string) => void;
   onTripsCreated: (ids: string[]) => void;
 };
 
@@ -98,6 +100,8 @@ export function BrokerPlanning({
   deliveries,
   depot,
   trips,
+  orderIds,
+  onPlanSubmitted,
   onTripsCreated,
 }: Props) {
   const [fleet, setFleet] = useState<Fleet | null>(null);
@@ -109,8 +113,8 @@ export function BrokerPlanning({
   );
   const [mode, setMode] = useState<"live" | "fixture">("live");
   const [explanationPolicy, setExplanationPolicy] = useState<
-    "always" | "routine"
-  >("routine");
+    "none" | "always" | "routine"
+  >("none");
   const [rates, setRates] = useState({
     activation_cost_cad: 18,
     cost_per_km_cad: 0.95,
@@ -122,6 +126,7 @@ export function BrokerPlanning({
   const [plan, setPlan] = useState<BrokerPlan | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [error, setError] = useState("");
+  const [planError, setPlanError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelRequested, setCancelRequested] = useState(false);
@@ -211,7 +216,7 @@ export function BrokerPlanning({
         if (!controller.signal.aborted) {
           setPlan(detail);
           setUsage(metering);
-          setError("");
+          setPlanError("");
           if (detail.created_trip_ids?.length && notified.current !== planId) {
             notified.current = planId;
             if (submittedPlanId.current === planId)
@@ -221,7 +226,7 @@ export function BrokerPlanning({
         }
       } catch (reason) {
         if (!controller.signal.aborted)
-          setError(
+          setPlanError(
             reason instanceof Error ? reason.message : "Plan indisponible",
           );
       } finally {
@@ -237,7 +242,10 @@ export function BrokerPlanning({
   }, [planId, planRefresh]);
 
   const available = fleet?.vehicles.filter((item) => item.available) || [];
-  const liveUnavailable = mode === "live" && health?.live_available === false;
+  const liveUnavailable =
+    mode === "live" &&
+    explanationPolicy !== "none" &&
+    health?.live_available === false;
   const costsValid =
     Object.entries(rates).every(
       ([key, value]) =>
@@ -270,7 +278,10 @@ export function BrokerPlanning({
       ...rates,
       mode,
       explanation_policy: explanationPolicy,
-      ...(mode === "live" ? { budget_usd: 1 } : {}),
+      ...(orderIds !== undefined ? { order_ids: orderIds } : {}),
+      ...(mode === "live" && explanationPolicy !== "none"
+        ? { budget_usd: 1 }
+        : {}),
     };
     const body = JSON.stringify(payload);
     if (submission.current?.body !== body)
@@ -305,6 +316,7 @@ export function BrokerPlanning({
       setUsage(null);
       setPlanId(result.id);
       setPlanRefresh((n) => n + 1);
+      onPlanSubmitted?.(result.id);
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : "Planification impossible",
@@ -322,14 +334,14 @@ export function BrokerPlanning({
           <Sparkles size={18} />
         </span>
         <div>
-          <span className="dispatch-kicker">COURTIER À CINQ AGENTS</span>
-          <h3 id="broker-title">Planification coordonnée</h3>
+          <span className="dispatch-kicker">PROPOSITION DE TOURNÉES</span>
+          <h3 id="broker-title">Planifier les livraisons</h3>
         </div>
       </div>
       <p className="broker-lead">
-        Les agents préparent et expliquent les options. Le solveur borné propose
-        les tournées ; un certificat indépendant vérifie capacité, précédence et
-        délais.
+        Le solveur compare les affectations ; un certificat indépendant vérifie
+        capacité, ordre des arrêts et délais. Par défaut, aucun appel IA.
+        Vérifiez la proposition avant de démarrer une simulation.
       </p>
       <div className="broker-field">
         <span className="broker-label">Véhicules admissibles</span>
@@ -456,62 +468,90 @@ export function BrokerPlanning({
           livraison.
         </p>
       </details>
-      <fieldset className="broker-mode">
-        <legend>Mode d’exécution</legend>
-        <label>
-          <input
-            type="radio"
-            name="broker-mode"
-            checked={mode === "live"}
-            onChange={() => setMode("live")}
-          />{" "}
-          Anthropic en direct <span>max. 1,00 $ US / plan</span>
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="broker-mode"
-            checked={mode === "fixture"}
-            onChange={() => setMode("fixture")}
-          />{" "}
-          Démonstration sans appel IA
-        </label>
-      </fieldset>
-      <p className="broker-budget">
-        Plafond global de 100 $ CAD appliqué par le serveur. Dépenses API
-        estimées en USD, séparées du coût de flotte en CAD.
+      <p className="broker-origin-note">
+        Routes routières statiques, sans trafic en direct. Les positions et les
+        durées de livraison seront simulées.
       </p>
-      <fieldset className="broker-explanations">
-        <legend>Explications et contexte historique</legend>
-        <label>
-          <input
-            type="radio"
-            name="broker-explanations"
-            checked={explanationPolicy === "routine"}
-            onChange={() => setExplanationPolicy("routine")}
-          />{" "}
-          Routine · explications ciblées
-        </label>
-        <p>
-          Les routes, la capacité, les délais et la flotte sont contrôlés à
-          nouveau. Deux explications sont omises ; si une tournée terminée
-          correspond exactement au plan revérifié, les trois autres peuvent
-          aussi être omises. Le contexte historique est borné.
+      <details className="broker-options">
+        <summary>
+          Explications IA et mode de démonstration · facultatifs
+        </summary>
+        <fieldset className="broker-mode">
+          <legend>Mode d’exécution</legend>
+          <label>
+            <input
+              type="radio"
+              name="broker-mode"
+              checked={mode === "live"}
+              onChange={() => setMode("live")}
+            />{" "}
+            Routes actuelles · IA selon la politique choisie
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="broker-mode"
+              checked={mode === "fixture"}
+              onChange={() => setMode("fixture")}
+            />{" "}
+            Démonstration déterministe sans appel IA
+          </label>
+        </fieldset>
+        <p className="broker-budget">
+          Plafond global de 100 $ CAD appliqué par le serveur. Dépenses API
+          estimées en USD, séparées du coût de flotte en CAD.
         </p>
-        <label>
-          <input
-            type="radio"
-            name="broker-explanations"
-            checked={explanationPolicy === "always"}
-            onChange={() => setExplanationPolicy("always")}
-          />{" "}
-          Complètes · cinq explications
-        </label>
-        <p>
-          Chaque rôle explique ses résultats. Le nombre réel d’appels et les
-          tokens restent visibles ; aucun gain en dollars n’est présumé.
+        <fieldset className="broker-explanations">
+          <legend>Explications et contexte historique</legend>
+          <label>
+            <input
+              type="radio"
+              name="broker-explanations"
+              checked={explanationPolicy === "none"}
+              onChange={() => setExplanationPolicy("none")}
+            />{" "}
+            Sans IA · planification déterministe
+          </label>
+          <p>
+            Les cinq étapes exécutent leurs outils et gardent leurs preuves.
+            Aucune clé Anthropic ni budget API requis.
+          </p>
+          <label>
+            <input
+              type="radio"
+              name="broker-explanations"
+              checked={explanationPolicy === "routine"}
+              onChange={() => setExplanationPolicy("routine")}
+            />{" "}
+            Routine · explications ciblées
+          </label>
+          <p>
+            Les routes, la capacité, les délais et la flotte sont contrôlés à
+            nouveau. Deux explications sont omises ; si une tournée terminée
+            correspond exactement au plan revérifié, les trois autres peuvent
+            aussi être omises. Le contexte historique est borné.
+          </p>
+          <label>
+            <input
+              type="radio"
+              name="broker-explanations"
+              checked={explanationPolicy === "always"}
+              onChange={() => setExplanationPolicy("always")}
+            />{" "}
+            Complètes · cinq explications Anthropic
+          </label>
+          <p>
+            Chaque rôle explique ses résultats. Le nombre réel d’appels et les
+            tokens restent visibles ; aucun gain en dollars n’est présumé. Ce
+            profil conserve les cinq agents IA pour l’observatoire et les
+            expériences académiques.
+          </p>
+        </fieldset>
+        <p className="broker-budget">
+          Explications Anthropic facultatives : maximum 1,00 $ US par plan.
+          Elles expliquent les contrôles et ne peuvent pas valider une tournée.
         </p>
-      </fieldset>
+      </details>
       {liveUnavailable && (
         <p className="broker-error" role="alert">
           IA en direct indisponible :{" "}
@@ -540,11 +580,16 @@ export function BrokerPlanning({
         ) : (
           <Sparkles size={16} />
         )}{" "}
-        Planifier avec les agents <ArrowRight size={16} />
+        Comparer les tournées <ArrowRight size={16} />
       </button>
       {error && (
         <p className="broker-error" role="alert">
           {error}
+        </p>
+      )}
+      {planError && (
+        <p className="broker-error" role="alert">
+          Actualisation du plan : {planError}
         </p>
       )}
       {planId && (
@@ -607,6 +652,8 @@ function PlanResult({
     (item) => item.strategy === selected,
   );
   const final = !!plan && TERMINAL.has(plan.status);
+  const policy = plan?.request?.explanation_policy ?? plan?.explanation_policy;
+  const mode = plan?.request?.mode ?? plan?.provenance;
   return (
     <div className="broker-result">
       <div className="broker-result-head">
@@ -621,7 +668,7 @@ function PlanResult({
                   ? "Analyse terminée"
                   : final
                     ? "Diagnostic de la mission"
-                    : "Agents au travail"}
+                    : "Planification en cours"}
           </h3>
         </div>
         <button
@@ -646,6 +693,16 @@ function PlanResult({
               : "Demander l’annulation de la mission"}
         </button>
       )}
+      <p className="broker-origin-note">
+        {mode === "fixture"
+          ? "Démonstration déterministe · aucun appel IA"
+          : policy === "none"
+            ? "Planification déterministe · routes statiques · aucun appel IA"
+            : plan
+              ? "Planification avec explications IA · routes statiques"
+              : "Chargement du mode de planification"}
+        {" · "}suivi des véhicules simulé.
+      </p>
       <div className={`broker-run-status ${plan?.status || "queued"}`}>
         {!plan || !final ? (
           <LoaderCircle size={14} className="spin" />
@@ -664,60 +721,6 @@ function PlanResult({
                 ? "Échec"
                 : plan?.status || "Diagnostic"}
       </div>
-      <div className="broker-agent-list">
-        {ROLES.map((role, index) => {
-          const agent = plan?.agents?.find((item) => item.role === role);
-          const spend = usage?.agents?.find((item) => item.role === role);
-          const omitted =
-            plan?.route_memory?.omitted_explanation_roles.includes(role);
-          return (
-            <div key={role} className="broker-agent">
-              <span className="broker-agent-index">{index + 1}</span>
-              <div>
-                <strong>{ROLE_NAMES[role]}</strong>
-                <small>
-                  {omitted
-                    ? "Contrôle déterministe · explication IA omise"
-                    : plan?.request?.mode === "fixture"
-                      ? "Démonstration déterministe"
-                      : agent?.model ||
-                        agent?.requested_model ||
-                        (agent ? "Modèle indisponible" : "En attente")}
-                </small>
-              </div>
-              <span className="broker-agent-status">
-                {agent?.status === "succeeded" ? (
-                  <Check size={13} />
-                ) : agent?.status === "running" ? (
-                  <LoaderCircle size={13} className="spin" />
-                ) : null}
-                {agentStatus(agent?.status)}
-              </span>
-              <small>
-                {omitted
-                  ? "Aucun appel d’explication"
-                  : spend?.total_tokens == null
-                    ? "tokens —"
-                    : `${num(spend.total_tokens, 0)} tokens`}{" "}
-                · {money(spend?.cost_usd, "USD")}
-              </small>
-            </div>
-          );
-        })}
-      </div>
-      {usage && (
-        <p className="broker-usage">
-          {usage.totals.calls} appels · {num(usage.totals.total_tokens, 0)}{" "}
-          tokens déclarés · {money(usage.totals.cost_usd, "USD")} API estimés ·
-          couverture coût {num(usage.totals.cost_coverage * 100, 0)} %
-        </p>
-      )}
-      {plan?.route_memory && (
-        <BrokerOutcome
-          memory={plan.route_memory}
-          policy={plan.request?.explanation_policy}
-        />
-      )}
       {final && (
         <>
           <div
@@ -823,19 +826,80 @@ function PlanResult({
                 );
               })}
               <small>
-                Les tournées prêtes peuvent démarrer dans le suivi des trajets.
-                Aucun véhicule réel n’est commandé.
+                Vérifiez les arrêts, les délais et le certificat avant de
+                démarrer la simulation dans le suivi des trajets. Une simulation
+                terminée ne constitue pas une preuve de livraison réelle.
               </small>
             </div>
           ) : null}
         </>
       )}
-      <a
-        className="broker-trace-link"
-        href={`?view=observatory&run=${encodeURIComponent(planId)}`}
-      >
-        Inspecter les sorties des cinq agents <ArrowRight size={14} />
-      </a>
+      <details className="broker-options broker-diagnostics">
+        <summary>
+          Détails techniques · cinq étapes, appels et historique
+        </summary>
+        <div className="broker-agent-list">
+          {ROLES.map((role, index) => {
+            const agent = plan?.agents?.find((item) => item.role === role);
+            const spend = usage?.agents?.find((item) => item.role === role);
+            const omitted =
+              policy === "none" ||
+              plan?.route_memory?.omitted_explanation_roles.includes(role);
+            return (
+              <div key={role} className="broker-agent">
+                <span className="broker-agent-index">{index + 1}</span>
+                <div>
+                  <strong>{ROLE_NAMES[role]}</strong>
+                  <small>
+                    {omitted
+                      ? "Contrôle déterministe · explication IA omise"
+                      : mode === "fixture"
+                        ? "Démonstration déterministe"
+                        : agent?.model ||
+                          agent?.requested_model ||
+                          (agent ? "Modèle indisponible" : "En attente")}
+                  </small>
+                </div>
+                <span className="broker-agent-status">
+                  {agent?.status === "succeeded" ? (
+                    <Check size={13} />
+                  ) : agent?.status === "running" ? (
+                    <LoaderCircle size={13} className="spin" />
+                  ) : null}
+                  {agentStatus(agent?.status)}
+                </span>
+                <small>
+                  {omitted
+                    ? "Aucun appel d’explication"
+                    : spend?.total_tokens == null
+                      ? "tokens —"
+                      : `${num(spend.total_tokens, 0)} tokens`}{" "}
+                  {omitted
+                    ? " · tokens et coût API sans objet"
+                    : ` · ${money(spend?.cost_usd, "USD")}`}
+                  {agent ? ` · ${num(agent.duration_ms, 0)} ms` : ""}
+                </small>
+              </div>
+            );
+          })}
+        </div>
+        {usage && policy !== "none" && (
+          <p className="broker-usage">
+            {usage.totals.calls} appels · {num(usage.totals.total_tokens, 0)}{" "}
+            tokens déclarés · {money(usage.totals.cost_usd, "USD")} API estimés
+            · couverture coût {num(usage.totals.cost_coverage * 100, 0)} %
+          </p>
+        )}
+        {plan?.route_memory && (
+          <BrokerOutcome memory={plan.route_memory} policy={policy} />
+        )}
+        <a
+          className="broker-trace-link"
+          href={`?view=observatory&run=${encodeURIComponent(planId)}`}
+        >
+          Inspecter les sorties des cinq agents <ArrowRight size={14} />
+        </a>
+      </details>
     </div>
   );
 }
@@ -845,7 +909,7 @@ export function BrokerOutcome({
   policy,
 }: {
   memory: NonNullable<BrokerPlan["route_memory"]>;
-  policy?: "always" | "routine";
+  policy?: "none" | "always" | "routine";
 }) {
   return (
     <div className="broker-memory" role="status">
@@ -868,8 +932,13 @@ export function BrokerOutcome({
       <p>
         {memory.omitted_explanation_roles.length} rôle(s) sans explication IA ·{" "}
         {memory.planned_explanation_calls} appels d’explication prévus par la
-        politique {policy === "routine" ? "routine" : "complète"}. Les contrôles
-        déterministes restent exécutés.
+        politique{" "}
+        {policy === "none"
+          ? "déterministe"
+          : policy === "routine"
+            ? "routine"
+            : "complète"}
+        . Les contrôles déterministes restent exécutés.
       </p>
       {memory.source_run_id && (
         <a
