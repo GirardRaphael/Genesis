@@ -1,0 +1,422 @@
+{
+  "python": {
+    "absl-py": {
+      "purpose": "Support transitif d’OR-Tools (utilitaires Abseil)",
+      "status": "support"
+    },
+    "aiosqlite": {
+      "purpose": "Adaptateur SQLite asynchrone; aucun appel applicatif observé",
+      "status": "installed"
+    },
+    "alembic": {
+      "purpose": "Outil de migrations SQL; aucune migration active trouvée",
+      "status": "installed"
+    },
+    "annotated-doc": {
+      "purpose": "Métadonnées de documentation pour schémas annotés",
+      "status": "support"
+    },
+    "annotated-types": {
+      "purpose": "Métadonnées de contraintes utilisées par Pydantic",
+      "status": "support"
+    },
+    "anthropic": {
+      "purpose": "SDK des appels IA directs; seul fournisseur live actif",
+      "status": "runtime"
+    },
+    "anyio": {
+      "purpose": "Concurrence async utilisée sous FastAPI et ses clients",
+      "status": "support"
+    },
+    "backoff": {
+      "purpose": "Reprises du SDK Langfuse facultatif",
+      "status": "support"
+    },
+    "certifi": {
+      "purpose": "Certificats CA pour connexions TLS des clients HTTP",
+      "status": "support"
+    },
+    "charset-normalizer": {
+      "purpose": "Détection d’encodage pour le client Requests",
+      "status": "support"
+    },
+    "click": {
+      "purpose": "Support CLI d’Uvicorn et des outils installés",
+      "status": "support"
+    },
+    "colorama": {
+      "purpose": "Couleurs terminal pour outils Python sous Windows",
+      "status": "support"
+    },
+    "distro": {
+      "purpose": "Détection de distribution système pour SDK dépendants",
+      "status": "support"
+    },
+    "docstring_parser": {
+      "purpose": "Analyse de docstrings par bibliothèques de schémas",
+      "status": "support"
+    },
+    "fastapi": {
+      "purpose": "API REST, validation HTTP et flux d’événements locaux",
+      "status": "runtime"
+    },
+    "googleapis-common-protos": {
+      "purpose": "Protos partagés requis par la chaîne OpenTelemetry",
+      "status": "support"
+    },
+    "h11": {
+      "purpose": "Protocole HTTP/1.1 bas niveau pour serveur et clients",
+      "status": "support"
+    },
+    "httpcore": {
+      "purpose": "Transport HTTP bas niveau utilisé par HTTPX",
+      "status": "support"
+    },
+    "httpcore2": {
+      "purpose": "Transport bas niveau de httpx2 pour le SDK Anthropic",
+      "status": "support"
+    },
+    "httpx": {
+      "purpose": "Requêtes bornées vers géocodage, routes et permis urbains",
+      "status": "runtime"
+    },
+    "httpx2": {
+      "purpose": "Client HTTP indirect du SDK Anthropic installé",
+      "status": "support"
+    },
+    "idna": {
+      "purpose": "Encodage des noms de domaine pour clients HTTP",
+      "status": "support"
+    },
+    "immutabledict": {
+      "purpose": "Structures immuables de support pour OR-Tools",
+      "status": "support"
+    },
+    "iniconfig": {
+      "purpose": "Lecture de configuration utilisée par pytest",
+      "status": "tooling"
+    },
+    "jiter": {
+      "purpose": "Analyse JSON rapide utilisée par le SDK Anthropic",
+      "status": "support"
+    },
+    "jsonpatch": {
+      "purpose": "Diff d’état utilisé dans l’écosystème LangGraph",
+      "status": "support"
+    },
+    "jsonpointer": {
+      "purpose": "Résolution de chemins JSON pour jsonpatch",
+      "status": "support"
+    },
+    "langchain-core": {
+      "purpose": "Types de messages et primitives sous LangGraph",
+      "status": "support"
+    },
+    "langchain-protocol": {
+      "purpose": "Protocole de compatibilité de l’écosystème LangChain",
+      "status": "support"
+    },
+    "langfuse": {
+      "purpose": "Export facultatif des événements vers Langfuse externe",
+      "status": "optional"
+    },
+    "langgraph": {
+      "purpose": "Orchestration du workflow agent séquentiel avec reprise",
+      "status": "runtime"
+    },
+    "langgraph-checkpoint": {
+      "purpose": "Contrats de checkpoints utilisés par LangGraph",
+      "status": "support"
+    },
+    "langgraph-checkpoint-postgres": {
+      "purpose": "Saver PostgreSQL installé; non utilisé par le graphe",
+      "status": "installed"
+    },
+    "langgraph-checkpoint-sqlite": {
+      "purpose": "Checkpoints SQLite persistants du workflow local",
+      "status": "runtime"
+    },
+    "langgraph-prebuilt": {
+      "purpose": "Composants préfabriqués de l’écosystème LangGraph",
+      "status": "support"
+    },
+    "langgraph-sdk": {
+      "purpose": "Client SDK de support pour intégrations LangGraph",
+      "status": "support"
+    },
+    "langsmith": {
+      "purpose": "Support LangChain; aucun appel explicite dans Genesis",
+      "status": "support"
+    },
+    "Mako": {
+      "purpose": "Moteur de gabarits utilisé par Alembic installé",
+      "status": "installed"
+    },
+    "MarkupSafe": {
+      "purpose": "Échappement des chaînes pour gabarits Mako",
+      "status": "support"
+    },
+    "numpy": {
+      "purpose": "Calcul numérique installé; aucun import applicatif trouvé",
+      "status": "installed"
+    },
+    "opentelemetry-api": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-exporter-http-transport": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-exporter-otlp-common": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-exporter-otlp-proto-common": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-exporter-otlp-proto-http": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-proto": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-sdk": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "opentelemetry-semantic-conventions": {
+      "purpose": "Support indirect de l’export Langfuse facultatif",
+      "status": "support"
+    },
+    "orjson": {
+      "purpose": "Sérialiseur rapide sous-jacent aux intégrations installées",
+      "status": "support"
+    },
+    "ormsgpack": {
+      "purpose": "Sérialisation compacte utilisée par les checkpoints",
+      "status": "support"
+    },
+    "ortools": {
+      "purpose": "Solveur borné des tournées, fenêtres horaires et capacités",
+      "status": "runtime"
+    },
+    "packaging": {
+      "purpose": "Comparaison de versions pour les outils Python",
+      "status": "support"
+    },
+    "pandas": {
+      "purpose": "Analyse tabulaire installée; aucun import applicatif trouvé",
+      "status": "installed"
+    },
+    "pluggy": {
+      "purpose": "Système de plugins utilisé par pytest",
+      "status": "tooling"
+    },
+    "protobuf": {
+      "purpose": "Messages binaires requis par OR-Tools et protos installés",
+      "status": "support"
+    },
+    "psycopg": {
+      "purpose": "Pilote PostgreSQL pour profil alternatif non vérifié",
+      "status": "optional"
+    },
+    "psycopg-binary": {
+      "purpose": "Binaire du pilote PostgreSQL du profil optionnel",
+      "status": "optional"
+    },
+    "psycopg-pool": {
+      "purpose": "Pool du pilote PostgreSQL; profil alternatif optionnel",
+      "status": "optional"
+    },
+    "pydantic": {
+      "purpose": "Contrats de données et validation des entrées/sorties",
+      "status": "runtime"
+    },
+    "pydantic_core": {
+      "purpose": "Moteur Rust sous-jacent à Pydantic",
+      "status": "support"
+    },
+    "Pygments": {
+      "purpose": "Coloration syntaxique optionnelle des outils de documentation",
+      "status": "support"
+    },
+    "pytest": {
+      "purpose": "Exécution des tests backend dans tests/",
+      "status": "tooling"
+    },
+    "python-dateutil": {
+      "purpose": "Utilitaires dates installés pour bibliothèques dépendantes",
+      "status": "support"
+    },
+    "python-dotenv": {
+      "purpose": "Chargement de configuration locale depuis l’environnement",
+      "status": "runtime"
+    },
+    "PyYAML": {
+      "purpose": "Lecture YAML de support par dépendances installées",
+      "status": "support"
+    },
+    "regex": {
+      "purpose": "Expressions régulières Unicode pour dépendances LangChain",
+      "status": "support"
+    },
+    "requests": {
+      "purpose": "Client HTTP de dépendance; l’application utilise HTTPX",
+      "status": "installed"
+    },
+    "requests-toolbelt": {
+      "purpose": "Utilitaires de transport pour Requests installé",
+      "status": "support"
+    },
+    "ruff": {
+      "purpose": "Lint Python selon les règles locales du pyproject",
+      "status": "tooling"
+    },
+    "six": {
+      "purpose": "Compatibilité Python 2/3 de bibliothèques dépendantes",
+      "status": "support"
+    },
+    "sniffio": {
+      "purpose": "Détection du runtime async pour AnyIO/HTTPX",
+      "status": "support"
+    },
+    "SQLAlchemy": {
+      "purpose": "Transactions et stockage SQLite des missions et événements",
+      "status": "runtime"
+    },
+    "sqlite-vec": {
+      "purpose": "Extension SQLite vectorielle installée; non appelée",
+      "status": "installed"
+    },
+    "starlette": {
+      "purpose": "Couche ASGI sous FastAPI pour requêtes et réponses",
+      "status": "support"
+    },
+    "tenacity": {
+      "purpose": "Utilitaire de reprises bornées pour intégrations Python",
+      "status": "support"
+    },
+    "tiktoken": {
+      "purpose": "Tokeniseur installé; aucun comptage applicatif par ce module",
+      "status": "installed"
+    },
+    "truststore": {
+      "purpose": "Accès au magasin de certificats système pour clients HTTP",
+      "status": "support"
+    },
+    "typing-inspection": {
+      "purpose": "Inspection des annotations utilisée par Pydantic",
+      "status": "support"
+    },
+    "typing_extensions": {
+      "purpose": "Compatibilité des types Python pour dépendances",
+      "status": "support"
+    },
+    "tzdata": {
+      "purpose": "Base de fuseaux horaires pour environnements sans tzdata système",
+      "status": "support"
+    },
+    "urllib3": {
+      "purpose": "Transport HTTP bas niveau de Requests installé",
+      "status": "support"
+    },
+    "uuid_utils": {
+      "purpose": "Génération d’identifiants accélérée par dépendances",
+      "status": "support"
+    },
+    "uvicorn": {
+      "purpose": "Serveur ASGI qui expose l’API locale FastAPI",
+      "status": "runtime"
+    },
+    "websockets": {
+      "purpose": "Transport WebSocket optionnel sous serveur ASGI",
+      "status": "support"
+    },
+    "wrapt": {
+      "purpose": "Décorateurs/proxies employés par bibliothèques de télémétrie",
+      "status": "support"
+    },
+    "xxhash": {
+      "purpose": "Hachage rapide de support pour dépendances installées",
+      "status": "support"
+    },
+    "zstandard": {
+      "purpose": "Compression Zstandard pour formats de dépendances",
+      "status": "support"
+    }
+  },
+  "javascript": {
+    "@fontsource-variable/inter": {
+      "purpose": "Police Inter Variable servie localement par l’interface",
+      "status": "runtime"
+    },
+    "@xyflow/react": {
+      "purpose": "Graphe interactif des rôles et transmissions agent",
+      "status": "runtime"
+    },
+    "echarts": {
+      "purpose": "Graphiques SVG d’analytique et d’observabilité",
+      "status": "runtime"
+    },
+    "lucide-react": {
+      "purpose": "Icônes utilisées dans les commandes et états UI",
+      "status": "runtime"
+    },
+    "maplibre-gl": {
+      "purpose": "Cartes, géométries, arrêts et véhicules simulés",
+      "status": "runtime"
+    },
+    "react": {
+      "purpose": "Composants et état de l’application web",
+      "status": "runtime"
+    },
+    "react-dom": {
+      "purpose": "Montage React dans le document HTML",
+      "status": "runtime"
+    },
+    "@types/react": {
+      "purpose": "Types TypeScript pour React en compilation",
+      "status": "tooling"
+    },
+    "@types/react-dom": {
+      "purpose": "Types TypeScript du rendu DOM React",
+      "status": "tooling"
+    },
+    "@vitejs/plugin-react": {
+      "purpose": "Transformation JSX et intégration React à Vite",
+      "status": "tooling"
+    },
+    "prettier": {
+      "purpose": "Formateur déclaré; aucun script de formatage configuré",
+      "status": "installed"
+    },
+    "typescript": {
+      "purpose": "Compilation et vérification statique TypeScript",
+      "status": "tooling"
+    },
+    "vite": {
+      "purpose": "Serveur local et bundler de production de l’interface",
+      "status": "tooling"
+    },
+    "vitest": {
+      "purpose": "Tests unitaires et composants de l’interface",
+      "status": "tooling"
+    },
+    "@axe-core/playwright": {
+      "purpose": "Audits automatisés d’accessibilité dans les parcours",
+      "status": "tooling"
+    },
+    "@playwright/test": {
+      "purpose": "Parcours navigateur reproductibles de QA",
+      "status": "tooling"
+    },
+    "json-schema-to-typescript": {
+      "purpose": "Générateur déclaré; aucun usage ou script trouvé",
+      "status": "installed"
+    }
+  }
+}

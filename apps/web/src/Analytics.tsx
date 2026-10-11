@@ -6,7 +6,7 @@ import { api } from "./api";
 import { money, num, statusLabel } from "./state";
 import type { Selection } from "./state";
 import type { Cohort } from "./types";
-import { roleName } from "./Observability";
+import { CohortCharts, roleName } from "./Observability";
 import {
   requestStatus,
   scenarioRows,
@@ -753,6 +753,10 @@ export function Analytics({
                 : "Toutes les exécutions filtrées sont incluses."}
             </p>
           </section>
+          <details className="panel data-alternative">
+            <summary>Durées des agents par scénario</summary>
+            <CohortCharts metrics={snapshot.metrics} />
+          </details>
         </>
       )}
     </section>
